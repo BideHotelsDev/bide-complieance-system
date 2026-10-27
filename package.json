@@ -1,0 +1,27 @@
+{
+  "name": "bide-comply",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.3.4",
+  "scripts": {
+    "dev:web": "pnpm --filter @bide-comply/web dev",
+    "dev:field": "pnpm --filter @bide-comply/field dev",
+    "dev:api": "uv run --directory apps/api uvicorn bide_comply.main:app --reload --port 8310",
+    "dev:worker": "uv run --directory apps/api arq bide_comply.worker.WorkerSettings",
+    "dev:infra": "uv run --directory apps/api python -m bide_comply.devinfra",
+    "db:migrate": "uv run --directory apps/api alembic upgrade head",
+    "db:revision": "uv run --directory apps/api alembic revision --autogenerate -m",
+    "seed": "uv run --directory apps/api python -m bide_comply.seed",
+    "seed:demo": "uv run --directory apps/api python -m bide_comply.seed --demo",
+    "gen:client": "uv run --directory apps/api python -m bide_comply.openapi ../../packages/api-client/openapi.json && pnpm --filter @bide-comply/api-client gen",
+    "test:api": "uv run --directory apps/api pytest",
+    "test:web": "pnpm --filter @bide-comply/web test",
+    "build": "pnpm -r --filter './apps/*' build",
+    "lint": "eslint . && uv run --directory apps/api ruff check",
+    "format": "prettier --write . && uv run --directory apps/api ruff format",
+    "format:check": "prettier --check . && uv run --directory apps/api ruff format --check",
+    "typecheck": "pnpm -r typecheck",
+    "check": "pnpm lint && pnpm format:check && pnpm typecheck",
+    "db:reset": "uv run --directory apps/api python -m bide_comply.seed --reset"
+  }
+}
