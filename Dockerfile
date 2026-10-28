@@ -29,6 +29,8 @@ RUN uv sync --frozen --no-dev
 COPY --from=web /repo/apps/web/dist /app/web-dist
 COPY --from=web /repo/apps/field/dist /app/field-dist
 ENV PATH="/app/.venv/bin:$PATH" WEB_DIST_DIR=/app/web-dist FIELD_DIST_DIR=/app/field-dist
+# The app user has no home directory; Fontconfig (WeasyPrint) needs somewhere writable for its font cache.
+ENV XDG_CACHE_HOME=/tmp/cache
 # Run as an unprivileged user.
 RUN useradd --system --uid 10001 app && chown -R app /app
 USER app

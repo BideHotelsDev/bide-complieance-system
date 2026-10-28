@@ -73,6 +73,11 @@ def _cookie(response: Response, name: str, value: str, max_age: int, path: str =
     )
 
 
+def _drop_cookie(response: Response, name: str, path: str = "/") -> None:
+    """Clear a cookie with the same flags it was set with."""
+    response.delete_cookie(name, path=path, httponly=True, secure=settings.environment != "development", samesite="lax")
+
+
 def _client_label(request: Request, app: str) -> str:
     ua = (request.headers.get("user-agent") or "").lower()
     browser = next((b for b in ("edg", "chrome", "firefox", "safari") if b in ua), "browser")
@@ -154,7 +159,7 @@ def start_session(conn: Connection, response: Response, p: dict, device_id: uuid
     conn.execute(update(device).where(device.c.id == device_id).values(last_seen_at=now))
     _set_access(response, sid, p["id"])
     _cookie(response, REFRESH_COOKIE, raw, int(life.total_seconds()), path="/api/auth")
-    response.delete_cookie(PENDING_COOKIE, path="/")
+    _drop_cookie(response, PENDING_COOKIE, "/")
 
 
 def _set_access(response: Response, sid: uuid.UUID, pid: uuid.UUID) -> None:
@@ -423,7 +428,7 @@ def google_callback(request: Request, conn: ConnDep, code: str, state: str) -> R
     resp = RedirectResponse(_app_base(app), status_code=302)
     result = establish(conn, request, resp, dict(p), app, pk["x"], "Google")
     resp.headers["location"] = _app_base(app) + result["next"]
-    resp.delete_cookie(PKCE_COOKIE, path="/api/auth/google")
+    _drop_cookie(resp, PKCE_COOKIE, "/api/auth/google")
     return resp
 
 
@@ -654,8 +659,8 @@ def logout(request: Request, response: Response, conn: ConnDep) -> dict:
     raw = request.cookies.get(REFRESH_COOKIE)
     if raw:
         conn.execute(update(auth_session).where(auth_session.c.refresh_hash == _h(raw)).values(revoked_at=clock.now()))
-    response.delete_cookie(ACCESS_COOKIE, path="/")
-    response.delete_cookie(REFRESH_COOKIE, path="/api/auth")
+    _drop_cookie(response, ACCESS_COOKIE, "/")
+    _drop_cookie(response, REFRESH_COOKIE, "/api/auth")
     return {"ok": True}
 
 
