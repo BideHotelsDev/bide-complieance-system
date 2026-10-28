@@ -5,7 +5,7 @@ from datetime import date, timedelta
 
 from fastapi import APIRouter, Query, Request
 from pydantic import BaseModel
-from sqlalchemy import select, update
+from sqlalchemy import insert, select, update
 
 from bide_comply import audit, clock
 from bide_comply.api import listing
@@ -86,6 +86,7 @@ def list_certificates(
                 "title": c["title"],
                 "property": c["property"],
                 "property_code": c["code"],
+                "property_id": str(c["property_id"]) if c["property_id"] else None,
                 "why": c["why_needed"],
                 "provider": c["provider_text"] or c["issuer"],
                 "issuer": c["issuer"],
@@ -137,7 +138,7 @@ def list_certificates(
         page=page,
         page_size=page_size,
         noun=("certificate", "certificates"),
-        where="across all properties" if not property else "",
+        where="across all properties" if not property and pr.scope is None else "",
         order_phrase="Most urgent first.",
     )
     # Timeline: the next 12 months of expiries, with the 60-day window marked (design: Expiry timeline).
@@ -213,6 +214,67 @@ def file_required(certificate_id: uuid.UUID, body: UploadIn, request: Request, p
     if c["register_item_id"]:
         refresh_item(conn, c["register_item_id"])
     return {"ok": True, "linked_action": str(c["linked_action_id"]) if c["linked_action_id"] else None}
+
+
+class NewIn(BaseModel):
+    evidence_id: uuid.UUID
+    property_id: uuid.UUID
+    title: str
+    issued_on: date
+    expires_on: date | None = None
+    issuer: str | None = None
+    type: str = "other"
+    replaces: uuid.UUID | None = None
+
+
+@router.post("")
+def file_new(body: NewIn, request: Request, pr: Current, conn: ConnDep) -> dict:
+    """File a certificate that wasn't on the required list, or a renewal that replaces one on file."""
+    pr.require_property(body.property_id)
+    pr.require("assign", body.property_id)
+    title = body.title.strip()
+    if not title:
+        raise problem(422, "title", "Say what the certificate is.")
+    if not ev_service.stored(conn, [body.evidence_id], pr.person_id):
+        raise problem(422, "evidence", "The file didn't finish uploading. Try again.")
+    old = None
+    if body.replaces:
+        old = conn.execute(select(certificate).where(certificate.c.id == body.replaces)).mappings().first()
+        if not old or old["property_id"] != body.property_id:
+            raise problem(404, "not_found", "The certificate it replaces wasn't found.")
+    new_id = uuid.uuid4()
+    conn.execute(
+        insert(certificate).values(
+            id=new_id,
+            property_id=body.property_id,
+            register_item_id=old["register_item_id"] if old else None,
+            type=old["type"] if old else (body.type or "other"),
+            title=title,
+            why_needed=old["why_needed"] if old else None,
+            provider_text=old["provider_text"] if old else None,
+            issuer=body.issuer,
+            issued_on=body.issued_on,
+            expires_on=body.expires_on,
+            evidence_id=body.evidence_id,
+            filing="filed",
+        )
+    )
+    if old:
+        conn.execute(update(certificate).where(certificate.c.id == old["id"]).values(superseded_by=new_id))
+    audit.record(
+        conn,
+        actor_for(request, pr),
+        category="check",
+        action="certificate.file",
+        summary=f"Filed {title}",
+        entity_type="certificate",
+        entity_id=new_id,
+        property_id=body.property_id,
+        after={"issued_on": body.issued_on, "expires_on": body.expires_on},
+    )
+    if old and old["register_item_id"]:
+        refresh_item(conn, old["register_item_id"])
+    return {"ok": True, "id": str(new_id)}
 
 
 @router.get("/people")

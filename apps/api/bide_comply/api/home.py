@@ -584,6 +584,7 @@ def mobile_home(pr: Current, conn: ConnDep) -> dict:
     return {
         "first_name": pr.name.split()[0],
         "needs": t["now"][:6],
+        "signatures": t["signatures"],
         "properties": rows,
         "since": clock.today() - timedelta(days=1),
     }

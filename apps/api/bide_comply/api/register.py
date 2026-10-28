@@ -403,7 +403,7 @@ def register_detail(ref: str, pr: Current, conn: ConnDep) -> dict:
             {
                 "at": None,
                 "date": a["raised_on"],
-                "text": f"Action {a['ref']} raised from {a['source_label'].lower()}",
+                "text": f"Action {a['ref']} raised from {a['source_label'][:1].lower()}{a['source_label'][1:]}",
                 "who": None,
             }
         )
@@ -471,6 +471,34 @@ def register_detail(ref: str, pr: Current, conn: ConnDep) -> dict:
         "can_assign": pr.can("assign", r["property_id"]),
         "can_toggle": pr.can("register.toggle", r["property_id"]),
         "notes": r["notes"],
+    }
+
+
+@router.get("/register/{ref}/assign-options")
+def assign_options(ref: str, pr: Current, conn: ConnDep) -> dict:
+    """Named people, pools and contractors for the reassign dialog (golden rule: no generic names)."""
+    r = conn.execute(select(register_item).where(register_item.c.ref == ref.upper())).mappings().first()
+    if not r:
+        raise problem(404, "not_found", "Not found.")
+    pr.require_property(r["property_id"])
+    pr.require("assign", r["property_id"])
+    ppl = conn.execute(
+        select(person.c.id, person.c.name, person.c.title)
+        .where(person.c.employment_status == "active")
+        .order_by(person.c.name)
+    ).all()
+    pools = conn.execute(
+        select(pool.c.id, pool.c.name).where(pool.c.property_id == r["property_id"]).order_by(pool.c.name)
+    ).all()
+    cons = conn.execute(
+        select(contractor.c.id, contractor.c.name, contractor.c.trade)
+        .where(contractor.c.active.is_(True))
+        .order_by(contractor.c.name)
+    ).all()
+    return {
+        "people": [{"id": str(x.id), "name": x.name, "sub": x.title} for x in ppl],
+        "pools": [{"id": str(x.id), "name": x.name, "sub": None} for x in pools],
+        "contractors": [{"id": str(x.id), "name": x.name, "sub": x.trade} for x in cons],
     }
 
 

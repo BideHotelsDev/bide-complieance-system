@@ -230,6 +230,15 @@ def property_summary(conn: Connection, p: dict, score=None, today: date | None =
     }
 
 
+def week_labels(weeks: list[date]) -> list[str]:
+    """ "7 Sep", "14", "21", "28", "5 Oct": the month only where it changes, as in the design's axes."""
+    out, last = [], None
+    for wk in weeks:
+        out.append(f"{wk.day} {wk:%b}" if wk.month != last else str(wk.day))
+        last = wk.month
+    return out
+
+
 def weekly_on_time(conn: Connection, pr: Principal, property_id: uuid.UUID | None, weeks: int = 8) -> list[dict]:
     """On-time % per week (DSH-04): completed by due ÷ (tasks due − approved N/A)."""
     today = clock.today()
@@ -263,8 +272,8 @@ def weekly_on_time(conn: Connection, pr: Principal, property_id: uuid.UUID | Non
         elif r.status == "missed":
             t.missed += 1
     return [
-        {"week": wk, "label": f"{wk.day} {wk:%b}", "on_time": t.on_time_pct, "due": t.denominator}
-        for wk, t in buckets.items()
+        {"week": wk, "label": lb, "on_time": t.on_time_pct, "due": t.denominator}
+        for (wk, t), lb in zip(buckets.items(), week_labels(list(buckets)), strict=True)
     ]
 
 
@@ -283,7 +292,8 @@ def weekly_actions(conn: Connection, pr: Principal, property_id: uuid.UUID | Non
             opened[clock.monday_of(r.raised_on)] = opened.get(clock.monday_of(r.raised_on), 0) + 1
         if r.closed_on and r.closed_on >= start:
             closed[clock.monday_of(r.closed_on)] = closed.get(clock.monday_of(r.closed_on), 0) + 1
-    return [{"week": wk, "label": f"{wk.day} {wk:%b}", "opened": opened[wk], "closed": closed[wk]} for wk in opened]
+    labels = week_labels(list(opened))
+    return [{"week": wk, "label": lb, "opened": opened[wk], "closed": closed[wk]} for wk, lb in zip(opened, labels, strict=True)]
 
 
 def heatmap(conn: Connection, pr: Principal, props: list[dict]) -> dict:
@@ -522,6 +532,19 @@ def todo(conn: Connection, pr: Principal, property_id: uuid.UUID | None = None) 
             "today": sum(1 for i in now_items if i["kind"] in ("call",) or (i.get("due_on") and i["due_on"] <= today)),
         },
         "reviews": {"pending": pending, "spot_check": spot},
+        "mine": [
+            {
+                "id": str(a["id"]),
+                "ref": a["ref"],
+                "title": a["description"],
+                "property": a["property"],
+                "priority": a["priority"],
+                "due_on": a["due_on"],
+                "class": a["class"],
+                "link": f"/actions?sel={a['ref']}",
+            }
+            for a in mine
+        ],
         "signatures": [
             {"id": str(s["id"]), "title": s["title"], "property": s["property"], "due_on": s["due_on"]}
             for s in sign_items
