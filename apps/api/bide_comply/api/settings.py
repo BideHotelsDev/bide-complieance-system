@@ -144,7 +144,10 @@ def save_rules(body: RulesIn, request: Request, pr: Current, conn: ConnDep) -> d
                 422, "recipients", f"\u201c{notify.TRIGGERS[r.trigger]}\u201d needs at least one person to tell."
             )
         existing = conn.execute(
-            select(escalation_rule.c.timing).where(
+            select(escalation_rule.c.timing)
+            .order_by(escalation_rule.c.updated_at.desc())
+            .limit(1)
+            .where(
                 escalation_rule.c.trigger == r.trigger,
                 escalation_rule.c.property_id.is_(body.property_id)
                 if body.property_id is None
@@ -152,6 +155,14 @@ def save_rules(body: RulesIn, request: Request, pr: Current, conn: ConnDep) -> d
             )
         ).scalar()
         timing = {**(existing or notify.DEFAULT_RULES[r.trigger]["timing"]), **({"note": r.note} if r.note else {})}
+        if body.property_id is None:
+            # NULLs never conflict in a unique index, so the all-properties rule is replaced rather than upserted
+            # (this also clears any duplicates an earlier upsert left behind).
+            conn.execute(
+                escalation_rule.delete().where(
+                    escalation_rule.c.trigger == r.trigger, escalation_rule.c.property_id.is_(None)
+                )
+            )
         stmt = pg_insert(escalation_rule).values(
             id=uuid.uuid4(),
             property_id=body.property_id,
@@ -249,8 +260,9 @@ EXAMPLE = {
 }
 
 
-def tone_check(text: str) -> list[dict]:
-    """Plain words, no capitals or exclamation marks, says what to do next, under 280 characters (design: Content)."""
+def tone_check(text: str, limit: int = 280) -> list[dict]:
+    """Plain words, no capitals or exclamation marks, says what to do next, under 280 characters (design: Content).
+    On-screen text (privacy notice, tour) isn't a notification, so it gets a longer limit."""
     shouting = bool(re.search(r"\b[A-Z]{4,}\b", re.sub(r"\{[a-z_]+\}", "", text)))
     return [
         {
@@ -262,8 +274,12 @@ def tone_check(text: str) -> list[dict]:
             "rule": "Says what to do next",
             "ok": bool(re.search(r"\b(open|tell|book|call|do|take|send|check|review)\b", text, re.I)),
         },
-        {"rule": "Under 280 characters", "ok": len(fill(text)) <= 280},
+        {"rule": f"Under {limit} characters", "ok": len(fill(text)) <= limit},
     ]
+
+
+def _limit(r) -> int:
+    return 280 if r["group"] == "alerts" else 800
 
 
 def fill(text: str) -> str:
@@ -315,7 +331,7 @@ def content_item(key: str, pr: Current, conn: ConnDep) -> dict:
         "placeholders": r["placeholders"],
         "preview": fill(body),
         "short": fill(r["short_body"]) if r["short_body"] else None,
-        "tone": tone_check(body),
+        "tone": tone_check(body, _limit(r)),
         "can_edit": pr.can("content.edit"),
     }
 
@@ -338,7 +354,7 @@ def save_content(key: str, body: ContentIn, pr: Current, conn: ConnDep) -> dict:
         .where(content_message.c.key == key)
         .values(draft_body=body.body, updated_by=pr.person_id)
     )
-    return {"preview": fill(body.body), "tone": tone_check(body.body)}
+    return {"preview": fill(body.body), "tone": tone_check(body.body, _limit(r))}
 
 
 @router.post("/content/publish")
@@ -358,7 +374,7 @@ def publish_content(request: Request, pr: Current, conn: ConnDep) -> dict:
         actor_for(request, pr),
         category="settings",
         action="content.publish",
-        summary=f"Published {len(drafts)} wording changes",
+        summary=f"Published {len(drafts)} wording change{'' if len(drafts) == 1 else 's'}",
         entity_type="content",
         before={d.key: d.body for d in drafts},
         after={d.key: d.draft_body for d in drafts},
@@ -700,7 +716,7 @@ def audit_log(
             "changes": [
                 {"field": k, "before": (r["before"] or {}).get(k), "after": v} for k, v in (r["after"] or {}).items()
             ]
-            if r["before"] is not None
+            if r["before"] is not None or r["after"]
             else [],
             "hash": r["hash"],
             "prev_hash": r["prev_hash"],
