@@ -115,10 +115,11 @@ class LocalStorage(_ApiUrls):
 
 
 class S3Storage(_ApiUrls):
-    # Railway's bucket closes idle keep-alive connections; a read on one gets the headers and then nothing
-    # (IncompleteRead, 0 bytes). boto's retries only cover the request, and a plain retry picks up another stale
-    # connection from the pool, so get() starts again on a new client with a fresh pool.
-    READ_ATTEMPTS = 3
+    # Railway's bucket sometimes sends the headers and then nothing (IncompleteRead, 0 bytes read): about one read in
+    # ten normally, one in two during their October 2026 recovery. boto's retries only cover the request, so get()
+    # starts the read again, each time on a new client with a fresh connection pool. Six tries keep a 50% failure
+    # rate under 2%.
+    READ_ATTEMPTS = 6
 
     def __init__(self) -> None:
         self.bucket = settings.s3_bucket
@@ -150,7 +151,7 @@ class S3Storage(_ApiUrls):
             except (ResponseStreamingError, IncompleteReadError):
                 if attempt == self.READ_ATTEMPTS:
                     raise
-                time.sleep(0.2 * attempt)
+                time.sleep(0.25 * attempt)
                 self.client = self._new_client()
         raise AssertionError("unreachable")
 
