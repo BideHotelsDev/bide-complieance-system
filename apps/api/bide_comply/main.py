@@ -93,6 +93,8 @@ def _spa(dist: Path, prefix: str) -> None:
 
     @app.get(prefix + "/{path:path}", include_in_schema=False)
     def serve(path: str):
+        if path.startswith("api/") or path == "api":
+            raise HTTPException(404, detail={"code": "not_found", "message": "Not found."})
         f = (dist / path).resolve()
         if path and dist.resolve() in f.parents and f.is_file():
             return FileResponse(f)

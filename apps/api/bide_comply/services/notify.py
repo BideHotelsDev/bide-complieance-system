@@ -235,7 +235,7 @@ def escalate(
         item = dict(conn.execute(select(register_item).where(register_item.c.id == register_item_id)).mappings().one())
     people = resolve(conn, r["recipients"], property_id, item, extra)
     eid = uuid.uuid4()
-    res = conn.execute(
+    inserted = conn.execute(
         pg_insert(escalation)
         .values(
             id=eid,
@@ -250,8 +250,10 @@ def escalate(
             recipients=[str(p) for p in people],
         )
         .on_conflict_do_nothing(index_elements=["dedupe_key"])
-    )
-    if res.rowcount == 0:
+        .returning(escalation.c.id)
+    ).scalar()
+    # Already raised for this subject: say nothing again (rowcount isn't reliable here; RETURNING is).
+    if inserted is None:
         return None
     notify(
         conn,

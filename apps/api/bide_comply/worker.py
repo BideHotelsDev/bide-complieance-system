@@ -51,6 +51,7 @@ async def deliver(ctx) -> None:
     now = clock.now()
     with engine.begin() as conn:
         posted: set = set()
+        channel_lines: list[str] = []
         rows = (
             conn.execute(
                 select(notification, person.c.email, person.c.slack_id, person.c.preferences)
@@ -76,12 +77,12 @@ async def deliver(ctx) -> None:
                 if "slack_dm" in n["channels"] and not (can_mute and "slack" in muted):
                     done["slack"] = slack.dm(n["slack_id"], n["email"], n["title"], link) or "logged"
                 if "slack_channel" in n["channels"] and n["escalation_id"] and n["escalation_id"] not in posted:
-                    # One channel post per escalation, whoever it went to. The summary names the check and the
-                    # property, never a person (SLK-01).
+                    # Collected into one channel post per run. Each line names the check and the property, never a
+                    # person (SLK-01).
                     summary = conn.execute(
                         select(escalation.c.summary).where(escalation.c.id == n["escalation_id"])
                     ).scalar()
-                    slack.post(settings.slack_compliance_channel, summary or n["title"], link)
+                    channel_lines.append(summary or n["title"])
                     posted.add(n["escalation_id"])
                     done["channel"] = True
                 if "email" in n["channels"] and n["email"] and not (can_mute and "email" in muted):
@@ -91,6 +92,17 @@ async def deliver(ctx) -> None:
                 done["error"] = str(e)[:200]
                 log.warning("delivery failed for %s: %s", n["id"], e)
             conn.execute(update(notification).where(notification.c.id == n["id"]).values(delivered=done))
+        if channel_lines:
+            # Counts and a short summary, not a message per item: a busy morning stays one post (SLK-01).
+            shown = channel_lines[:8]
+            more = len(channel_lines) - len(shown)
+            text = (
+                f"{len(channel_lines)} new {'item needs' if len(channel_lines) == 1 else 'items need'} attention:\n"
+                + "\n".join(f"• {line}" for line in shown)
+            )
+            if more:
+                text += f"\n…and {more} more."
+            slack.post(settings.slack_compliance_channel, text, f"{settings.web_base_url}/todo")
 
 
 async def monday_digest(ctx) -> None:
