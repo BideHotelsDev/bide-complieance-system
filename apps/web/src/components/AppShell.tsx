@@ -29,6 +29,9 @@ export function AppShell() {
       return false
     }
   })
+  // Tablets (below laptop width) get the icon rail, so pages keep their room; the toggle opens it for this visit.
+  const narrow = useNarrow()
+  const [openOnNarrow, setOpenOnNarrow] = React.useState(false)
   React.useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -43,14 +46,16 @@ export function AppShell() {
     if (me.error?.status === 401) void navigate({ to: "/signin", search: { next: path } })
   }, [me.error, navigate, path])
   const toggle = () =>
-    setCollapsed((c) => {
-      try {
-        localStorage.setItem("bc-sidebar", c ? "open" : "collapsed")
-      } catch {
-        /* ignore */
-      }
-      return !c
-    })
+    narrow
+      ? setOpenOnNarrow((o) => !o)
+      : setCollapsed((c) => {
+          try {
+            localStorage.setItem("bc-sidebar", c ? "open" : "collapsed")
+          } catch {
+            /* ignore */
+          }
+          return !c
+        })
   if (!me.data)
     return (
       <div className="p-8">
@@ -68,7 +73,11 @@ export function AppShell() {
             Skip to content
           </a>
           <div className={focus ? "hidden" : "hidden md:block"}>
-            <Sidebar onSearch={() => setSearch(true)} collapsed={collapsed} onToggle={toggle} />
+            <Sidebar
+              onSearch={() => setSearch(true)}
+              collapsed={narrow ? !openOnNarrow : collapsed}
+              onToggle={toggle}
+            />
           </div>
           <div className="flex min-w-0 flex-1 flex-col">
             {/* Phone Home draws its own header (design: Manager on phone), with the menu button in it. */}
@@ -97,5 +106,18 @@ export function AppShell() {
         </div>
       </PhoneMenuProvider>
     </ContactProvider>
+  )
+}
+
+const NARROW = "(min-width: 768px) and (max-width: 1023.98px)"
+
+function useNarrow(): boolean {
+  return React.useSyncExternalStore(
+    (l) => {
+      const m = window.matchMedia(NARROW)
+      m.addEventListener("change", l)
+      return () => m.removeEventListener("change", l)
+    },
+    () => window.matchMedia(NARROW).matches,
   )
 }

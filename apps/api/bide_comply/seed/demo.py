@@ -173,7 +173,7 @@ def run(conn: Connection) -> None:
             3,
         ),
         ("EH", "Elderberry Hall", "Fishburn", None, "setup", "Loads in December", None, "Durham", {}, None, 4),
-        ("BS", "bide Stays", None, None, "setup", "Loads in December", None, None, {}, None, 5),
+        ("BS", "Bide Stays", None, None, "setup", "Loads in December", None, None, {}, None, 5),
     ]
     for code, name, town, s, stage, note, since, la, features, geo, sort in rows:
         pid = uuid.uuid4()

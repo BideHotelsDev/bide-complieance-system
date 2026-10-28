@@ -25,7 +25,8 @@ export function PageHeader({
 }) {
   return (
     <header className={cn("flex flex-wrap items-start gap-x-6 gap-y-3", className)}>
-      <div className="min-w-0 flex-1">
+      {/* The title keeps a readable width: on a phone the actions drop below it rather than squeezing it. */}
+      <div className="min-w-[min(100%,15rem)] flex-1">
         {eyebrow && <div className="mb-1 text-[13px] text-muted-foreground">{eyebrow}</div>}
         <div className="flex flex-wrap items-center gap-2.5">
           <h1 className="m-0 text-[22px] leading-tight font-semibold tracking-[-0.015em]">{title}</h1>

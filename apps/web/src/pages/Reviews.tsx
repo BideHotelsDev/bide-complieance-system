@@ -554,7 +554,7 @@ function Submission({
                 </span>
               )}
             </label>
-            <div className="flex gap-2 self-end">
+            <div className="flex flex-wrap justify-end gap-2 self-end">
               <Button
                 variant="outline"
                 className="border-st-red/30 text-st-red"
