@@ -75,6 +75,14 @@ export function Sidebar({ onSearch, collapsed, onToggle }: { onSearch: () => voi
       return false
     }
   })
+  // Opening Help marks the tour done (Help sets the flag); re-read it on every page change.
+  React.useEffect(() => {
+    try {
+      if (localStorage.getItem("bc-tour") === "done") setTour(false)
+    } catch {
+      /* ignore */
+    }
+  }, [path])
   const [settingsOpen, setSettingsOpen] = React.useState(path.startsWith("/settings"))
   if (!me) return null
   const show = navFor(me)

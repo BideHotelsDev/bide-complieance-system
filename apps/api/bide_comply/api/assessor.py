@@ -12,10 +12,19 @@ from bide_comply import audit, clock
 from bide_comply.api.register import register_rows, resolve_property
 from bide_comply.auth import Current, actor_for
 from bide_comply.db import ConnDep
-from bide_comply.schema import action, audit_walk, audit_walk_line, register_item, signature_request, template
+from bide_comply.schema import (
+    action,
+    audit_walk,
+    audit_walk_line,
+    evidence,
+    register_item,
+    signature_request,
+    template,
+)
 from bide_comply.services import actions as action_service
+from bide_comply.services import evidence as evidence_service
 from bide_comply.services import notify
-from bide_comply.services.common import problem
+from bide_comply.services.common import names, problem
 
 router = APIRouter(prefix="/api/audit-walks", tags=["assessor"])
 
@@ -68,6 +77,24 @@ def walk(key: str, pr: Current, conn: ConnDep, group: str = "fire") -> dict:
             )
         )
     }
+    # Photos already attached to a line, as thumbnails, so a reopened walk shows them.
+    photo_ids = {uuid.UUID(x) for ln in lines.values() for x in (ln["photo_ids"] or [])}
+    photos = (
+        {
+            str(e["id"]): evidence_service.view(dict(e), thumb=True)
+            for e in conn.execute(select(evidence).where(evidence.c.id.in_(photo_ids))).mappings()
+        }
+        if photo_ids
+        else {}
+    )
+    action_refs = {
+        r.id: r.ref
+        for r in conn.execute(
+            select(action.c.id, action.c.ref).where(
+                action.c.id.in_([ln["action_id"] for ln in lines.values() if ln.get("action_id")])
+            )
+        )
+    }
     items = []
     for r in rows:
         ln = lines.get(uuid.UUID(r["id"]))
@@ -84,13 +111,15 @@ def walk(key: str, pr: Current, conn: ConnDep, group: str = "fire") -> dict:
                 "verdict": ln["verdict"] if ln else None,
                 "finding": ln["finding"] if ln else None,
                 "priority": ln["priority"] if ln else None,
-                "action_ref": None,
+                "action_ref": action_refs.get(ln["action_id"]) if ln and ln.get("action_id") else None,
                 "photo_ids": ln["photo_ids"] if ln else [],
+                "photos": [photos[x] for x in (ln["photo_ids"] or []) if x in photos] if ln else [],
             }
         )
     done = [i for i in items if i["verdict"]]
     return {
         "walk_id": str(w["id"]),
+        "property_id": str(p["id"]),
         "property": p["name"],
         "code": p["code"],
         "quarter": w["quarter"],
@@ -124,6 +153,9 @@ def walk(key: str, pr: Current, conn: ConnDep, group: str = "fire") -> dict:
             )
         ],
         "can_finish": len(done) == len(items) and w["status"] != "sent",
+        "sent_at": w["sent_at"],
+        # Who each "Doesn't match" goes to, so the assessor knows before sending.
+        "action_owner": names(conn, {action_service.system_owner(conn)}).get(action_service.system_owner(conn)),
     }
 
 

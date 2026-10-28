@@ -154,6 +154,10 @@ def scorecard(pr: Current, conn: ConnDep, week: date | None = None, property: uu
         ).scalar()
         league.append({"property": p["name"], "score": s.percent, "clean_sheet": overdue == 0, "red_line": s.red_line})
     league.sort(key=lambda x: -(x["score"] if x["score"] is not None else -1))
+    # Properties not yet trading are listed after the league: they join once they open (SCO-04).
+    for p in views.visible_properties(conn, pr):
+        if p["stage"] != "trading":
+            league.append({"property": p["name"], "score": None, "joins": "Joins once it opens"})
     for i, row in enumerate(league, start=1):
         row["position"] = i if row["score"] is not None else None
     return {

@@ -13,6 +13,7 @@ from sqlalchemy import select, update
 from bide_comply import audit, clock
 from bide_comply.auth import Current, actor_for
 from bide_comply.authz import scope_filter
+from bide_comply.config import settings
 from bide_comply.db import ConnDep
 from bide_comply.jobs.queue import enqueue
 from bide_comply.schema import dutyholder, property_, report_export, scheduled_report
@@ -40,6 +41,33 @@ def options(pr: Current, conn: ConnDep) -> dict:
     }
 
 
+def _worker_alive() -> bool:
+    """True when an arq worker is running: it keeps a health-check key in Redis while it is up."""
+    try:
+        import redis
+
+        r = redis.Redis.from_url(settings.redis_url, socket_connect_timeout=1, socket_timeout=1)
+        try:
+            return bool(r.exists("arq:queue:health-check"))
+        finally:
+            r.close()
+    except Exception:  # noqa: BLE001 - no Redis means no worker
+        return False
+
+
+def _build_inline(conn, export_id: uuid.UUID) -> None:
+    """Build a pack in the request when no worker is running. A failure is recorded on the export, not raised."""
+    try:
+        packs.build(conn, export_id)
+        conn.commit()
+    except Exception as e:  # noqa: BLE001 - shown to the person as "couldn't build"
+        conn.rollback()
+        conn.execute(
+            update(report_export).where(report_export.c.id == export_id).values(status="failed", error=str(e)[:500])
+        )
+        conn.commit()
+
+
 class PackIn(BaseModel):
     property_id: uuid.UUID
     audience: str = "insurer"
@@ -64,7 +92,7 @@ def preview(body: PackIn, pr: Current, conn: ConnDep) -> dict:
     )
     est = packs.estimate(conn, body.property_id, body.date_from, body.date_to, body.sections)
     return {
-        "title": f"{p['name']}, {p['town'] or ''}",
+        "title": ", ".join(x for x in (p["name"], p["town"]) if x),
         "period": f"{body.date_from.day} {body.date_from:%b}–{body.date_to.day} {body.date_to:%b %Y}",
         "audience": packs.AUDIENCE.get(body.audience, body.audience),
         "dutyholder": p["dh"],
@@ -99,10 +127,17 @@ def build_pack(body: PackIn, request: Request, pr: Current, conn: ConnDep) -> di
         )
     )
     conn.commit()
-    if not enqueue("build_pack", str(eid)):
-        # No worker queue (development without Redis): build it now.
-        packs.build(conn, eid)
+    if not (_worker_alive() and enqueue("build_pack", str(eid))):
+        # No worker running (development): build it now so the pack is never left waiting.
+        _build_inline(conn, eid)
     return {"id": str(eid)}
+
+
+def _file_name(prop: str | None, at, ext: str) -> str:
+    """Name the file for what it is, where and when, e.g. The Villa - Inspection pack - 2026-10-28.pdf."""
+    when = clock.london(at).strftime("%Y-%m-%d") if at else ""
+    what = "Inspection pack" if ext == "pdf" else "Inspection pack evidence"
+    return " - ".join(x for x in (prop, what, when) if x) + f".{ext}"
 
 
 @router.get("/exports")
@@ -132,10 +167,16 @@ def exports(pr: Current, conn: ConnDep) -> dict:
                 "by": who.get(r["requested_by"]),
                 "at": r["created_at"],
                 "fingerprint": (r["fingerprint"] or "")[:16],
-                "pdf_url": storage.download_url(r["pdf_key"], "inspection-pack.pdf", inline=False)
+                "pdf_url": storage.download_url(
+                    r["pdf_key"], _file_name(r["property"], r["created_at"], "pdf"), inline=False
+                )
                 if r["pdf_key"]
                 else None,
-                "zip_url": storage.download_url(r["zip_key"], "evidence.zip", inline=False) if r["zip_key"] else None,
+                "zip_url": storage.download_url(
+                    r["zip_key"], _file_name(r["property"], r["created_at"], "zip"), inline=False
+                )
+                if r["zip_key"]
+                else None,
                 "error": r["error"],
             }
             for r in rows
@@ -145,15 +186,31 @@ def exports(pr: Current, conn: ConnDep) -> dict:
 
 @router.get("/exports/{export_id}")
 def export_status(export_id: uuid.UUID, pr: Current, conn: ConnDep) -> dict:
-    r = conn.execute(select(report_export).where(report_export.c.id == export_id)).mappings().first()
+    r = (
+        conn.execute(
+            select(report_export, property_.c.name.label("property"))
+            .outerjoin(property_, property_.c.id == report_export.c.property_id)
+            .where(report_export.c.id == export_id)
+        )
+        .mappings()
+        .first()
+    )
     if not r or (r["requested_by"] != pr.person_id and not pr.is_admin):
         raise problem(404, "not_found", "Not found.")
+    if r["status"] == "queued" and not _worker_alive():
+        # Queued while no worker was running: build it now rather than wait for one.
+        _build_inline(conn, export_id)
+        return export_status(export_id, pr, conn)
     return {
         "status": r["status"],
         "pages": r["pages"],
         "photos": r["photo_count"],
-        "pdf_url": storage.download_url(r["pdf_key"], "inspection-pack.pdf", inline=False) if r["pdf_key"] else None,
-        "zip_url": storage.download_url(r["zip_key"], "evidence.zip", inline=False) if r["zip_key"] else None,
+        "pdf_url": storage.download_url(r["pdf_key"], _file_name(r["property"], r["created_at"], "pdf"), inline=False)
+        if r["pdf_key"]
+        else None,
+        "zip_url": storage.download_url(r["zip_key"], _file_name(r["property"], r["created_at"], "zip"), inline=False)
+        if r["zip_key"]
+        else None,
         "fingerprint": (r["fingerprint"] or "")[:16],
         "error": r["error"],
     }
