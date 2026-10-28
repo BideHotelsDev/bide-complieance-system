@@ -283,6 +283,9 @@ async def build_pack(ctx, export_id: str) -> None:
 
 class WorkerSettings:
     redis_settings = redis_settings()
+    # The API checks this key to decide whether to queue a pack or build it inline. arq's default (hourly) leaves it
+    # missing for up to an hour after a deploy, because the outgoing worker deletes it on shutdown.
+    health_check_interval = 30
     functions = [build_pack]
     cron_jobs = [
         cron(tick, minute=set(range(0, 60, 5)), run_at_startup=True),

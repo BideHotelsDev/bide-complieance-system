@@ -61,3 +61,10 @@ def test_nightly_chain_check_is_recorded():
             .limit(1)
         ).scalar()
     assert last == "Checked the audit chain: intact"
+
+
+def test_worker_refreshes_its_health_key_often():
+    """After a deploy the outgoing worker deletes the key; the new one must put it back within a minute."""
+    from bide_comply import worker
+
+    assert worker.WorkerSettings.health_check_interval <= 60
