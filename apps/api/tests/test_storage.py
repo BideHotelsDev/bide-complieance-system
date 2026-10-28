@@ -1,6 +1,9 @@
 """The S3 backend hands out the API's own signed links unless direct bucket URLs are switched on."""
 
+import io
+
 import pytest
+from botocore.exceptions import ResponseStreamingError
 
 from bide_comply.config import settings
 from bide_comply.storage import S3Storage
@@ -19,6 +22,23 @@ class FakeBucket:
 
     def generate_presigned_url(self, *args, **kwargs):
         return "https://bucket.example/presigned"
+
+    def get_object(self, Bucket, Key):  # noqa: N803
+        return {"Body": io.BytesIO(self.objects[Key])}
+
+
+class DroppyBucket(FakeBucket):
+    """Loses the connection part-way through the first `drops` reads."""
+
+    def __init__(self, drops):
+        super().__init__()
+        self.drops = drops
+
+    def get_object(self, Bucket, Key):  # noqa: N803
+        if self.drops:
+            self.drops -= 1
+            raise ResponseStreamingError(error="IncompleteRead(0 bytes read, 5428 more expected)")
+        return super().get_object(Bucket, Key)
 
 
 @pytest.fixture
@@ -42,3 +62,12 @@ def test_s3_originals_are_write_once(s3):
     s3.put_once("k", b"x", "image/jpeg")
     with pytest.raises(FileExistsError):
         s3.put_once("k", b"y", "image/jpeg")
+
+
+def test_s3_reads_start_again_when_the_connection_drops(s3):
+    s3.client = DroppyBucket(drops=2)
+    s3.put("k", b"photo", "image/jpeg")
+    assert s3.get("k") == b"photo"
+    s3.client.drops = S3Storage.READ_ATTEMPTS
+    with pytest.raises(ResponseStreamingError):
+        s3.get("k")
