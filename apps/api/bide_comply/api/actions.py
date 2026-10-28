@@ -171,6 +171,17 @@ def list_actions(
     return out
 
 
+@router.get("/owner-options")
+def owner_options(pr: Current, conn: ConnDep) -> dict:
+    """Named people an Action can be given to (reassign and New Action dialogs). No generic names."""
+    ppl = conn.execute(
+        select(person.c.id, person.c.name, person.c.title)
+        .where(person.c.employment_status == "active")
+        .order_by(person.c.name)
+    ).all()
+    return {"people": [{"id": str(x.id), "name": x.name, "sub": x.title} for x in ppl]}
+
+
 def _get(conn, pr, ref: str) -> dict:
     a = (
         conn.execute(

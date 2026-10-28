@@ -427,7 +427,7 @@ def my_signoffs(pr: Current, conn: ConnDep, property: uuid.UUID | None = None) -
                     "id": str(a["id"]),
                     "type": "advisory",
                     "title": _decide_title(a["description"]),
-                    "detail": f"Advisory {a['ref']} · {a['description'][:80]}",
+                    "detail": f"Advisory {a['ref']} · {_clip(a['description'], 80)}",
                     "due_on": a["due_on"],
                     "status": "open",
                     "action_ref": a["ref"],
@@ -466,6 +466,13 @@ def my_signoffs(pr: Current, conn: ConnDep, property: uuid.UUID | None = None) -
             }
         )
     return {"properties": out_props}
+
+
+def _clip(text: str, n: int) -> str:
+    """Shorten at a word boundary, with an ellipsis, so a detail line never stops mid-word."""
+    if len(text) <= n:
+        return text
+    return text[:n].rsplit(" ", 1)[0].rstrip(".,;:") + "…"
 
 
 def _decide_title(desc: str) -> str:

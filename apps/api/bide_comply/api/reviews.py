@@ -324,6 +324,8 @@ def verify(submission_id: uuid.UUID, body: VerifyIn, request: Request, pr: Curre
 
 class BulkIn(BaseModel):
     ids: list[uuid.UUID]
+    # "Approve all N · I've looked at every photo": life-safety ones are approved too only when asked for.
+    include_life_safety: bool = False
 
 
 @router.post("/bulk-approve")
@@ -340,7 +342,7 @@ def bulk_approve(body: BulkIn, request: Request, pr: Current, conn: ConnDep) -> 
             )
             .where(submission.c.id == sid)
         ).scalar()
-        if t == "A":
+        if t == "A" and not body.include_life_safety:
             skipped += 1
             continue
         checks.verify(conn, pr, actor_for(request, pr), sid, result="approved", comment=None)
