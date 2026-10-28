@@ -1,0 +1,172 @@
+/*
+ * bide Comply design tokens (design: Foundations, Brand). Monochrome by default; colour is reserved for meaning
+ * (RAG status, task state). Every value here is a CSS variable the CMS theme editor can change at runtime (CMS-13):
+ * theme.ts writes the published tokens over these defaults before first paint. Components read tokens only, never
+ * fixed colours (PRD §10.1).
+ */
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --c-background: #fbfbfc;
+  --c-surface: #ffffff;
+  --c-sidebar: #f6f6f8;
+  --c-foreground: #111113;
+  --c-ink2: #3a3a42;
+  --c-muted: #6b6b76;
+  --c-subtle: #8a8a94;
+  --c-border: #e3e3e8;
+  --c-divider: #ebebef;
+  --c-primary: #111113;
+  --c-primary-foreground: #ffffff;
+  --c-accent: #2459c7;
+  --c-focus: #2459c7;
+  --c-hover: #f1f1f3;
+  --c-green: #17703c;
+  --c-green-bg: #e8f5ee;
+  --c-amber: #9a4f00;
+  --c-amber-bg: #fdf1e3;
+  --c-red: #b42424;
+  --c-red-bg: #fcebeb;
+  --c-grey: #5e5e69;
+  --c-grey-bg: #f1f1f3;
+  --c-blue: #2459c7;
+  --c-blue-bg: #eaf0fd;
+  --radius: 6px;
+  --font-sans-family: "Inter Variable", Inter, system-ui, sans-serif;
+}
+
+.dark {
+  --c-background: #0f0f11;
+  --c-surface: #17171a;
+  --c-sidebar: #131316;
+  --c-foreground: #ededf0;
+  --c-ink2: #c9c9d0;
+  --c-muted: #9a9aa5;
+  --c-subtle: #7a7a85;
+  --c-border: #2c2c32;
+  --c-divider: #26262b;
+  --c-primary: #ededf0;
+  --c-primary-foreground: #111113;
+  --c-accent: #8fa8e6;
+  --c-focus: #8fa8e6;
+  --c-hover: #1f1f23;
+  --c-green: #6fcf97;
+  --c-green-bg: #13291d;
+  --c-amber: #f2b060;
+  --c-amber-bg: #2e2112;
+  --c-red: #f28b8b;
+  --c-red-bg: #331616;
+  --c-grey: #a5a5ae;
+  --c-grey-bg: #232328;
+  --c-blue: #8fa8e6;
+  --c-blue-bg: #172036;
+}
+
+@theme inline {
+  --font-sans: var(--font-sans-family);
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* shadcn names, so the copied primitives follow the theme */
+  --color-background: var(--c-background);
+  --color-foreground: var(--c-foreground);
+  --color-card: var(--c-surface);
+  --color-card-foreground: var(--c-foreground);
+  --color-popover: var(--c-surface);
+  --color-popover-foreground: var(--c-foreground);
+  --color-primary: var(--c-primary);
+  --color-primary-foreground: var(--c-primary-foreground);
+  --color-secondary: var(--c-hover);
+  --color-secondary-foreground: var(--c-foreground);
+  --color-muted: var(--c-sidebar);
+  --color-muted-foreground: var(--c-muted);
+  --color-accent: var(--c-hover);
+  --color-accent-foreground: var(--c-foreground);
+  --color-destructive: var(--c-red);
+  --color-border: var(--c-border);
+  --color-input: var(--c-border);
+  --color-ring: var(--c-focus);
+
+  /* bide Comply names */
+  --color-surface: var(--c-surface);
+  --color-sidebar: var(--c-sidebar);
+  --color-ink: var(--c-foreground);
+  --color-ink2: var(--c-ink2);
+  --color-subtle: var(--c-subtle);
+  --color-divider: var(--c-divider);
+  --color-hover: var(--c-hover);
+  --color-link: var(--c-accent);
+  --color-focus: var(--c-focus);
+  --color-st-green: var(--c-green);
+  --color-st-green-bg: var(--c-green-bg);
+  --color-st-amber: var(--c-amber);
+  --color-st-amber-bg: var(--c-amber-bg);
+  --color-st-red: var(--c-red);
+  --color-st-red-bg: var(--c-red-bg);
+  --color-st-grey: var(--c-grey);
+  --color-st-grey-bg: var(--c-grey-bg);
+  --color-st-blue: var(--c-blue);
+  --color-st-blue-bg: var(--c-blue-bg);
+
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Type scale 12 / 13 / 14 / 16 / 20 / 24 (§10.1); labels never below 12 */
+  --text-xs: 12px;
+  --text-xs--line-height: 1.45;
+  --text-sm: 13px;
+  --text-sm--line-height: 1.45;
+  --text-base: 14px;
+  --text-base--line-height: 1.45;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    font-feature-settings: "cv11", "ss01";
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.01em;
+  }
+  :focus-visible {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 2px;
+  }
+  a {
+    color: var(--c-accent);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@utility mono-id {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  color: var(--c-subtle);
+}

@@ -1,0 +1,20 @@
+{
+  "name": "@bide-comply/api-client",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "gen": "openapi-typescript openapi.json -o src/schema.d.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@bide-comply/config": "workspace:*",
+    "openapi-typescript": "^7.10.1",
+    "typescript": "5.9.3",
+    "vite": "^8.3.5"
+  }
+}

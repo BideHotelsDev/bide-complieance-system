@@ -92,13 +92,14 @@ class LocalStorage:
         token = signer.sign({"k": key, "t": content_type, "m": max_bytes, "op": "put"})
         return {
             "method": "PUT",
-            "url": f"{settings.api_base_url}/api/files/upload/{token}",
+            "url": f"/api/files/upload/{token}",
             "headers": {"Content-Type": content_type},
         }
 
     def download_url(self, key: str, file_name: str, inline: bool = True) -> str:
         token = signer.sign({"k": key, "n": file_name, "i": inline, "op": "get", "at": int(time.time())})
-        return f"{settings.api_base_url}/api/files/download/{token}"
+        # Relative: the SPA and the API share an origin (Vite proxy in development, one image in production).
+        return f"/api/files/download/{token}"
 
 
 class S3Storage:

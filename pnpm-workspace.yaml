@@ -2,3 +2,5 @@ packages:
   - apps/web
   - apps/field
   - packages/*
+minimumReleaseAgeExclude:
+  - lucide-react@1.62.0
