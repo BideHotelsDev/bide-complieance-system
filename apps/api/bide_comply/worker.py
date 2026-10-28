@@ -19,6 +19,7 @@ from bide_comply.schema import (
     escalation,
     notification,
     person,
+    push_subscription,
     report_export,
     retention_policy,
     scheduled_report,
@@ -85,6 +86,8 @@ async def deliver(ctx) -> None:
                     channel_lines.append(summary or n["title"])
                     posted.add(n["escalation_id"])
                     done["channel"] = True
+                if "push" in n["channels"] and not (can_mute and "push" in muted):
+                    done["push"] = send_push(conn, n["person_id"], n["title"], n["link"])
                 if "email" in n["channels"] and n["email"] and not (can_mute and "email" in muted):
                     emailer.send(n["email"], n["title"], f"{n['title']}\n\n{n['body'] or ''}\n\n{link or ''}".strip())
                     done["email"] = True
@@ -103,6 +106,31 @@ async def deliver(ctx) -> None:
             if more:
                 text += f"\n…and {more} more."
             slack.post(settings.slack_compliance_channel, text, f"{settings.web_base_url}/todo")
+
+
+def send_push(conn, person_id, title: str, link: str | None) -> int:
+    """Web Push to every subscribed device (iOS 16.4+ needs the app installed). Gone subscriptions are removed."""
+    if not (settings.vapid_private_key and settings.vapid_public_key):
+        return 0
+    import json
+
+    from pywebpush import WebPushException, webpush
+
+    sent = 0
+    for sub in conn.execute(select(push_subscription).where(push_subscription.c.person_id == person_id)).mappings():
+        try:
+            webpush(
+                subscription_info={"endpoint": sub["endpoint"], "keys": sub["keys"]},
+                data=json.dumps({"title": title, "link": link}),
+                vapid_private_key=settings.vapid_private_key,
+                vapid_claims={"sub": settings.vapid_subject},
+                ttl=3600,
+            )
+            sent += 1
+        except WebPushException as e:
+            if e.response is not None and e.response.status_code in (404, 410):
+                conn.execute(push_subscription.delete().where(push_subscription.c.id == sub["id"]))
+    return sent
 
 
 async def monday_digest(ctx) -> None:

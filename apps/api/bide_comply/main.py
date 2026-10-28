@@ -9,9 +9,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from bide_comply import auth
+from bide_comply import auth, ratelimit
 from bide_comply.api import (
     actions,
+    admin,
     approvals,
     assessor,
     certificates,
@@ -43,6 +44,9 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["Content-Type", "X-Requested-With", "X-Bide-App"],
 )
+
+
+app.middleware("http")(ratelimit.middleware)
 
 
 @app.middleware("http")
@@ -83,7 +87,7 @@ def health() -> dict:
 for r in (auth.router, home.router, register.router, actions.router, reviews.router, gates.router, approvals.router,
           certificates.router, scorecard.router, assessor.router, field.router, files.router, people.router,
           people.groups_router, library.router, setup.router, imports.router, settings_api.router, reports.router,
-          reports.export_router):
+          reports.export_router, admin.router):
     app.include_router(r)
 
 

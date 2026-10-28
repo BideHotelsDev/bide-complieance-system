@@ -20,6 +20,7 @@ dependencies = [
     "pyotp>=2.9",
     "python-dateutil>=2.9",
     "python-multipart>=0.0.20",
+    "pywebpush>=2.5.0",
     "redis>=5.2",
     "slack-sdk>=3.36",
     "sqlalchemy>=2.0.43",
