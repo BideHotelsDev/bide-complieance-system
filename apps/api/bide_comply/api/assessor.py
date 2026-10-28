@@ -135,9 +135,9 @@ def walk(key: str, pr: Current, conn: ConnDep, group: str = "fire") -> dict:
             "to_do": len(items) - len(done),
         },
         "also_waiting": [
-            {"title": f"{s.title}", "due_on": s.due_on}
+            {"title": f"{s.title}", "due_on": s.due_on, "link": f"/signoffs?sel={s.id}"}
             for s in conn.execute(
-                select(signature_request.c.title, signature_request.c.due_on).where(
+                select(signature_request.c.id, signature_request.c.title, signature_request.c.due_on).where(
                     signature_request.c.property_id == p["id"],
                     signature_request.c.type == "fra_countersign",
                     signature_request.c.status == "open",
@@ -145,7 +145,12 @@ def walk(key: str, pr: Current, conn: ConnDep, group: str = "fire") -> dict:
             )
         ]
         + [
-            {"title": f"{a.description[:60]} ({a.ref})", "due_on": a.due_on, "priority": a.priority}
+            {
+                "title": f"{a.description[:60]} ({a.ref})",
+                "due_on": a.due_on,
+                "priority": a.priority,
+                "link": f"/actions?sel={a.ref}",
+            }
             for a in conn.execute(
                 select(action.c.ref, action.c.description, action.c.due_on, action.c.priority).where(
                     action.c.property_id == p["id"], action.c.owner_id == pr.person_id, action.c.status != "closed"

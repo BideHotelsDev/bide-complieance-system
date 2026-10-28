@@ -13,6 +13,8 @@ export type TaskCard = {
   due_at: string
   minutes: number | null
   badge: string
+  /* Asked to mark not applicable; waiting for a manager. */
+  na_pending?: boolean
 }
 
 export type Today = {
@@ -84,6 +86,8 @@ export type TaskDetail = {
   can_submit: boolean
   rejected: { comment: string } | null
   can_request_na: boolean
+  na_pending: boolean
+  geofence: { lat: number; lng: number; radius_m: number } | null
 }
 
 export type FailedField = { key: string; label: string; value: unknown; why: string; text: string }
@@ -123,6 +127,8 @@ export type Documents = {
     key: string
   }[]
   types: { key: string; name: string; renew_months: number | null }[]
+  /* Who checks an uploaded certificate (the register keeper's first name). */
+  checker: string | null
 }
 
 export type FieldMe = {
@@ -132,6 +138,8 @@ export type FieldMe = {
   streak_days: number
   trusted_until: string | null
   preferences: Record<string, unknown>
+  away: { starts_on: string; ends_on: string; cover: string | null; approved: boolean } | null
+  covering: string[]
 }
 
 export type Me = {

@@ -243,7 +243,20 @@ function Detail({ id, onDecided }: { id: string; onDecided: () => void }) {
           {a.ref && (
             <>
               <dt className="text-muted-foreground">Register item</dt>
-              <dd className="m-0 font-mono text-[12px]">{a.ref}</dd>
+              <dd className="m-0 font-mono text-[12px]">
+                {a.property_code ? (
+                  <Link
+                    to="/properties/$code"
+                    params={{ code: a.property_code }}
+                    search={{ item: a.ref }}
+                    className="text-link"
+                  >
+                    {a.ref}
+                  </Link>
+                ) : (
+                  a.ref
+                )}
+              </dd>
             </>
           )}
           {!waiting && (

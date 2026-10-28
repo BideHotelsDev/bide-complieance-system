@@ -354,7 +354,7 @@ function Row({
   right: React.ReactNode
 }) {
   return (
-    <div className="grid grid-cols-[36px_1fr_auto] items-center gap-3 border-b border-divider px-[18px] py-3.5 last:border-b-0">
+    <div className="grid grid-cols-[36px_1fr] items-center gap-x-3 gap-y-2.5 border-b border-divider px-4 py-3.5 last:border-b-0 sm:grid-cols-[36px_1fr_auto] sm:px-[18px]">
       <span aria-hidden className={cn("inline-flex size-9 items-center justify-center rounded-[10px]", ICON_BG[tone])}>
         {icon}
       </span>
@@ -362,7 +362,7 @@ function Row({
         <span className="font-semibold">{title}</span>
         <span className="block text-[12.5px] text-muted-foreground">{detail}</span>
       </span>
-      <span className="flex gap-2">{right}</span>
+      <span className="col-start-2 flex flex-wrap gap-2 sm:col-start-auto">{right}</span>
     </div>
   )
 }

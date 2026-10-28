@@ -7,8 +7,18 @@ from sqlalchemy import Connection, func, select, update
 
 from bide_comply import audit, clock
 from bide_comply.engine import actions as rules
-from bide_comply.schema import action, action_evidence, certificate, property_, register_item, role_assignment
-from bide_comply.services import notify
+from bide_comply.schema import (
+    action,
+    action_evidence,
+    certificate,
+    contractor,
+    contractor_contact,
+    person,
+    property_,
+    register_item,
+    role_assignment,
+)
+from bide_comply.services import notify, wording
 from bide_comply.services.common import names, next_ref, problem
 from bide_comply.services.register import recompute_item
 
@@ -41,6 +51,7 @@ def raise_action(
     klass: str | None = None,
     owner_id: uuid.UUID | None = None,
     owner_text: str | None = None,
+    owner_contractor_id: uuid.UUID | None = None,
     register_item_id: uuid.UUID | None = None,
     task_id: uuid.UUID | None = None,
     submission_id: uuid.UUID | None = None,
@@ -55,6 +66,10 @@ def raise_action(
     class_a_failure: bool = False,
 ) -> dict:
     priority = priority or rules.default_priority(klass)
+    if owner_contractor_id:
+        # A contractor fixes it (contractor portal); the Action shows the firm's name as its owner.
+        owner_text = contractor_name(conn, owner_contractor_id)
+        owner_id = None
     raised_on = raised_on or clock.today()
     due_on = due_on or rules.due_date(priority, raised_on, klass if class_a_failure else None)
     if owner_id is None and not owner_text and type_ != "advisory":
@@ -75,6 +90,7 @@ def raise_action(
             priority=priority,
             owner_id=owner_id,
             owner_text=owner_text,
+            owner_contractor_id=owner_contractor_id,
             raised_on=raised_on,
             due_on=due_on,
             status=status,
@@ -113,6 +129,8 @@ def raise_action(
             body=f"{pname} · {ref} · due {due_on:%-d %b}",
             link=f"/actions?sel={ref}",
         )
+    if owner_contractor_id:
+        tell_contractor(conn, owner_contractor_id, ref, description, pname, due_on)
     if class_a_failure:
         notify.escalate(
             conn,
@@ -124,10 +142,83 @@ def raise_action(
             summary=f"Class A at {pname}: {description[:160].rstrip('.')}. Action {ref} is due today.",
             dedupe_key=f"class_a:{aid}",
             link=f"/actions?sel={ref}",
+            message=wording.message(
+                conn,
+                "class_a_failure",
+                {
+                    "property": pname,
+                    "what": description[:160].rstrip("."),
+                    "action": ref,
+                    "owner": _first_name(conn, owner_id) or "the register keeper",
+                    "caller": _first_name(conn, system_owner(conn)) or "The system owner",
+                },
+            ),
         )
     if register_item_id:
         recompute_item(conn, register_item_id)
     return {"id": aid, "ref": ref, "priority": priority, "due_on": due_on, "owner_id": owner_id}
+
+
+def _first_name(conn: Connection, person_id: uuid.UUID | None) -> str | None:
+    if not person_id:
+        return None
+    n = conn.execute(select(person.c.name).where(person.c.id == person_id)).scalar()
+    return (n.split()[0] if n and not n.startswith("[") else n) or None
+
+
+def contractor_name(conn: Connection, contractor_id: uuid.UUID) -> str:
+    c = conn.execute(select(contractor.c.name, contractor.c.active).where(contractor.c.id == contractor_id)).first()
+    if not c or not c.active:
+        raise problem(422, "contractor", "Choose a contractor from the list.")
+    return c.name
+
+
+def tell_contractor(
+    conn: Connection, contractor_id: uuid.UUID, ref: str, description: str, pname: str | None, due_on: date
+) -> None:
+    """The firm's portal contacts hear about a fix assigned to them (they mark it fixed with a photo)."""
+    contacts = {
+        r.person_id
+        for r in conn.execute(
+            select(contractor_contact.c.person_id).where(contractor_contact.c.contractor_id == contractor_id)
+        )
+    }
+    if contacts:
+        notify.notify(
+            conn,
+            contacts,
+            kind="action.assigned",
+            title=f"A fix for you at {pname}: {description[:120]}",
+            body=f"{ref} · due {due_on:%-d %b}. Mark it fixed with a photo in the contractor portal.",
+            link="/contractor",
+            channels=["app", "email"],
+        )
+
+
+def assign_contractor(conn: Connection, actor: audit.Actor, a: dict, contractor_id: uuid.UUID) -> str:
+    """Give an Action to a contractor (§5.5): they see it in the portal; a site manager checks their photo."""
+    name = contractor_name(conn, contractor_id)
+    conn.execute(
+        update(action)
+        .where(action.c.id == a["id"])
+        .values(owner_contractor_id=contractor_id, owner_text=name, owner_id=None)
+    )
+    audit.record(
+        conn,
+        actor,
+        category="record",
+        action="action.assign_contractor",
+        summary=f"Assigned {a['ref']} to {name}",
+        entity_type="action",
+        entity_id=a["id"],
+        entity_ref=a["ref"],
+        property_id=a["property_id"],
+        before={"owner_id": a["owner_id"], "owner_text": a["owner_text"]},
+        after={"contractor": name},
+    )
+    pname = conn.execute(select(property_.c.name).where(property_.c.id == a["property_id"])).scalar()
+    tell_contractor(conn, contractor_id, a["ref"], a["description"], pname, a["due_on"])
+    return name
 
 
 def close(
@@ -190,6 +281,31 @@ def close(
     return {"ok": True}
 
 
+def reopen(conn: Connection, actor: audit.Actor, a: dict) -> None:
+    """Put a closed Action back to open. Its evidence and decision stay; the audit log keeps both steps."""
+    conn.execute(update(action).where(action.c.id == a["id"]).values(status="open", closed_on=None, closed_by=None))
+    audit.record(
+        conn,
+        actor,
+        category="record",
+        action="action.reopen",
+        summary=f"Reopened {a['ref']} (undo close)",
+        entity_type="action",
+        entity_id=a["id"],
+        entity_ref=a["ref"],
+        property_id=a["property_id"],
+        before={"status": "closed"},
+        after={"status": "open"},
+    )
+    if a["certificate_id"]:
+        open_left = conn.execute(
+            select(func.count()).where(action.c.certificate_id == a["certificate_id"], action.c.status != "closed")
+        ).scalar()
+        conn.execute(update(certificate).where(certificate.c.id == a["certificate_id"]).values(fail_count=open_left))
+    if a["register_item_id"]:
+        recompute_item(conn, a["register_item_id"])
+
+
 def view_row(conn: Connection, a: dict, today: date | None = None, who: dict | None = None) -> dict:
     today = today or clock.today()
     who = who if who is not None else names(conn, {a["owner_id"]})
@@ -215,6 +331,7 @@ def view_row(conn: Connection, a: dict, today: date | None = None, who: dict | N
         "owner_id": str(a["owner_id"]) if a["owner_id"] else None,
         "owner": owner or a["owner_text"] or "No owner yet",
         "owner_is_role": owner is None and bool(a["owner_text"]),
+        "owner_contractor_id": str(a["owner_contractor_id"]) if a.get("owner_contractor_id") else None,
         "raised_on": a["raised_on"],
         "due_on": a["due_on"],
         "left": rules.days_left_label(a["due_on"], today, a["raised_on"], a["status"]),

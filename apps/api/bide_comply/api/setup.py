@@ -28,7 +28,7 @@ from bide_comply.schema import (
     template,
 )
 from bide_comply.services.common import names, next_ref, problem
-from bide_comply.services.register import recompute_item, refresh_item
+from bide_comply.services.register import cancel_future, recompute_item, refresh_item
 
 router = APIRouter(prefix="/api/setup", tags=["setup"])
 
@@ -302,7 +302,17 @@ def toggle(key: str, body: ToggleIn, request: Request, pr: Current, conn: ConnDe
         property_id=p["id"],
         after={"applies": body.applies, "reason": body.reason},
     )
-    recompute_item(conn, iid)
+    item = conn.execute(select(register_item).where(register_item.c.id == iid)).mappings().one()
+    if not body.applies:
+        # Switched off: future tasks nobody has touched are cancelled; everything already done is kept (SCH-09).
+        cancel_future(conn, iid)
+        recompute_item(conn, iid)
+    elif item["state"] == "on" and not item["needs_owner"]:
+        # Back on with its people still named: its tasks come back now, not at the next scheduler run.
+        refresh_item(conn, iid)
+    else:
+        # New here, or nobody named yet: tasks start once Done by and Accountable are chosen (golden rule 2).
+        recompute_item(conn, iid)
     return {"ref": ref}
 
 

@@ -12,6 +12,8 @@ export type ThemeTokens = {
 }
 export type Theme = { version: number; tokens: ThemeTokens; branding: { appName?: string; signinMessage?: string } }
 
+import { useSyncExternalStore } from "react"
+
 const KEY = "bc-theme"
 const MODE_KEY = "bc-mode"
 
@@ -81,6 +83,26 @@ export function applyTheme(theme: Theme, opts: { preview?: boolean } = {}): void
     }
   }
   if (theme.branding?.appName) document.title = theme.branding.appName
+  branding = theme.branding ?? {}
+  listeners.forEach((l) => l())
+  // The default table density; a person's own setting (data-density-own) wins over it.
+  const root = document.documentElement
+  if (!root.dataset.densityOwn) root.dataset.density = t.density === "compact" ? "compact" : "comfortable"
+}
+
+// The app name and sign-in message from Appearance, for headers and the sign-in page.
+let branding: Theme["branding"] = {}
+const listeners = new Set<() => void>()
+
+export function useBranding(): { appName: string; signinMessage?: string } {
+  const b = useSyncExternalStore(
+    (l) => {
+      listeners.add(l)
+      return () => listeners.delete(l)
+    },
+    () => branding,
+  )
+  return { appName: b.appName?.trim() || "bide Comply", signinMessage: b.signinMessage?.trim() || undefined }
 }
 
 export function applyCachedTheme(): Theme | null {

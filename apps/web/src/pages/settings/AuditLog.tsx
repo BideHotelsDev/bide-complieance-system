@@ -3,6 +3,7 @@
  * proves nothing was edited afterwards. The nightly job checks the chain; anyone who can see the log can re-check it.
  */
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { Link } from "@tanstack/react-router"
 import { Check, ChevronDown, ChevronRight, ShieldAlert } from "lucide-react"
 import * as React from "react"
 import { Popover as PopoverPrimitive } from "radix-ui"
@@ -30,6 +31,7 @@ type Row = {
   actor_id: string | null
   what: string
   record: string
+  link: string | null
   from: string
   category: string
   action: string
@@ -280,7 +282,7 @@ export function AuditLogPage() {
                         <td className="border-b border-divider px-3.5 py-2.5 whitespace-nowrap">{r.who}</td>
                         <td className="border-b border-divider px-3.5 py-2.5">{r.what}</td>
                         <td className="border-b border-divider px-3.5 py-2.5 whitespace-nowrap">
-                          {isRef(r.record) ? <span className="mono-id">{r.record}</span> : r.record}
+                          <RecordCell row={r} />
                         </td>
                         <td className="border-b border-divider px-3.5 py-2.5 whitespace-nowrap text-ink2">{r.from}</td>
                       </tr>
@@ -443,5 +445,23 @@ function WhenButton({ value, onChange }: { value: string; onChange: (v: string) 
         </PopoverPrimitive.Content>
       </PopoverPrimitive.Portal>
     </PopoverPrimitive.Root>
+  )
+}
+
+/* The record an event concerns opens where it lives (the register row, the Action, the template, the person). */
+function RecordCell({ row: r }: { row: Row }) {
+  if (!r.link?.startsWith("/")) return isRef(r.record) ? <span className="mono-id">{r.record}</span> : <>{r.record}</>
+  const label = isRef(r.record) ? <span className="mono-id text-link">{r.record}</span> : r.record
+  const [path, query] = r.link.split("?")
+  return (
+    <Link
+      to={path}
+      search={Object.fromEntries(new URLSearchParams(query ?? ""))}
+      onClick={(e) => e.stopPropagation()}
+      className="text-link no-underline hover:underline"
+      title={r.record === "—" ? "Open the record" : `Open ${r.record}`}
+    >
+      {r.record === "—" ? "Open" : label}
+    </Link>
   )
 }

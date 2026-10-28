@@ -240,7 +240,7 @@ function CheckForm({ task }: { task: TaskDetail }) {
           <p className="m-0 px-4 pb-4 text-[15px] leading-relaxed text-ink2">{task.guidance}</p>
         </details>
       )}
-      {(task.status_note || task.rejected || !task.can_submit) && (
+      {(task.status_note || task.rejected || !task.can_submit || task.na_pending) && (
         <div className="-mt-1 flex flex-col gap-2">
           {task.status_note && (
             <Pill tone="red" className="h-auto self-start py-1 text-[13.5px]">
@@ -251,6 +251,12 @@ function CheckForm({ task }: { task: TaskDetail }) {
             <div role="note" className="rounded-xl border border-st-red/30 bg-st-red-bg px-4 py-3 text-[15px]">
               <div className="font-semibold text-st-red">Send again</div>
               <div>"{task.rejected.comment}"</div>
+            </div>
+          )}
+          {task.na_pending && task.can_submit && (
+            <div role="note" className="rounded-xl bg-st-grey-bg px-4 py-3 text-[15px] text-ink2">
+              You've asked to mark this not applicable. Until a manager agrees, it stays on your list and you can still
+              do it.
             </div>
           )}
           {!task.can_submit && (
@@ -342,6 +348,7 @@ function CheckForm({ task }: { task: TaskDetail }) {
           total={photosNeeded}
           stampPrefix={`${task.property} · ${task.ref} · ${shortName(me.data?.name ?? "")}`}
           exampleUrl={example.data?.url}
+          site={task.geofence}
           onClose={() => setCamera(null)}
           onCapture={(blob, at) => {
             add(camera.key, blob, at)

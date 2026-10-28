@@ -16,6 +16,7 @@ from bide_comply.api import (
     approvals,
     assessor,
     certificates,
+    contractor_portal,
     field,
     files,
     gates,
@@ -120,6 +121,8 @@ for r in (
     reports.router,
     reports.export_router,
     admin.router,
+    contractor_portal.router,
+    contractor_portal.staff_router,
 ):
     app.include_router(r)
 

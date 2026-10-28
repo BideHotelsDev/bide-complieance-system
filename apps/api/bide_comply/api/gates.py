@@ -410,6 +410,8 @@ def my_signoffs(pr: Current, conn: ConnDep, property: uuid.UUID | None = None) -
                     "file_name": r["file_name"],
                     "evidence_id": str(r["evidence_id"]) if r["evidence_id"] else None,
                     "preconditions": r["preconditions"],
+                    "can_sign": views.can_sign_request(pr, r["type"], p["id"]),
+                    "mine": views.counts_as_awaiting(pr, r["type"], p["id"]),
                 }
             )
         # Advisories that need the dutyholder's decision sit beside the signatures.
@@ -431,6 +433,8 @@ def my_signoffs(pr: Current, conn: ConnDep, property: uuid.UUID | None = None) -
                     "due_on": a["due_on"],
                     "status": "open",
                     "action_ref": a["ref"],
+                    "can_sign": False,  # decided on the Advisory itself, not signed here
+                    "mine": views.counts_as_awaiting(pr, "advisory", p["id"]),
                 },
             )
         insurer = conn.execute(
@@ -462,7 +466,7 @@ def my_signoffs(pr: Current, conn: ConnDep, property: uuid.UUID | None = None) -
                 if insurer
                 else None,
                 "requests": reqs,
-                "awaiting": sum(1 for r in reqs if r["status"] == "open"),
+                "awaiting": sum(1 for r in reqs if r["status"] == "open" and r["mine"]),
             }
         )
     return {"properties": out_props}

@@ -17,6 +17,7 @@ from bide_comply.jobs.queue import redis_settings
 from bide_comply.schema import (
     dutyholder_director,
     escalation,
+    leave,
     notification,
     person,
     push_subscription,
@@ -26,8 +27,8 @@ from bide_comply.schema import (
     submission,
     task,
 )
-from bide_comply.services import escalations, packs, views
-from bide_comply.services.checks import spot_check_sample
+from bide_comply.services import escalations, packs, views, wording
+from bide_comply.services.checks import due_reminders, spot_check_sample
 from bide_comply.services.register import refresh_property
 
 log = logging.getLogger("bide_comply.worker")
@@ -39,8 +40,11 @@ async def tick(ctx) -> None:
         with engine.begin() as conn:
             refresh_property(conn)
             n = escalations.run(conn)
+            reminded = due_reminders(conn)
         if n:
             log.info("escalations fired: %s", n)
+        if reminded:
+            log.info("due reminders sent: %s", reminded)
     except Exception:
         # Task generation failing is the one thing that silently breaks compliance: alert the dev team (§8).
         log.exception("scheduler tick failed")
@@ -67,16 +71,22 @@ async def deliver(ctx) -> None:
             .mappings()
             .all()
         )
+        away = on_leave_today(conn)
         for n in rows:
-            muted = set((n["preferences"] or {}).get("muted", []))
+            muted = muted_channels(n["preferences"], n["person_id"] in away)
             done: dict = {"app": True}
-            link = f"{settings.web_base_url}{n['link']}" if n["link"] else None
+            # Staff-app pages (a check to send again, the contractor portal) open in the staff app; everything else in the portal.
+            staff_app = (n["link"] or "").startswith(("/task/", "/contractor"))
+            app_base = settings.field_base_url if staff_app else settings.web_base_url
+            link = f"{app_base}{n['link']}" if n["link"] else None
             klass = n["class"]
             # Each person can mute Class B and C channels but never Class A (§7).
             can_mute = klass != "A"
             try:
                 if "slack_dm" in n["channels"] and not (can_mute and "slack" in muted):
-                    done["slack"] = slack.dm(n["slack_id"], n["email"], n["title"], link) or "logged"
+                    # Escalations carry the full wording from Messages and wording as the body; the title is its short form.
+                    text = n["body"] if n["escalation_id"] and n["body"] else n["title"]
+                    done["slack"] = slack.dm(n["slack_id"], n["email"], text, link) or "logged"
                 if "slack_channel" in n["channels"] and n["escalation_id"] and n["escalation_id"] not in posted:
                     # Collected into one channel post per run. Each line names the check and the property, never a
                     # person (SLK-01).
@@ -87,7 +97,7 @@ async def deliver(ctx) -> None:
                     posted.add(n["escalation_id"])
                     done["channel"] = True
                 if "push" in n["channels"] and not (can_mute and "push" in muted):
-                    done["push"] = send_push(conn, n["person_id"], n["title"], n["link"])
+                    done["push"] = send_push(conn, n["person_id"], n["title"], n["link"], n["body"], str(n["id"]))
                 if "email" in n["channels"] and n["email"] and not (can_mute and "email" in muted):
                     emailer.send(n["email"], n["title"], f"{n['title']}\n\n{n['body'] or ''}\n\n{link or ''}".strip())
                     done["email"] = True
@@ -108,7 +118,28 @@ async def deliver(ctx) -> None:
             slack.post(settings.slack_compliance_channel, text, f"{settings.web_base_url}/todo")
 
 
-def send_push(conn, person_id, title: str, link: str | None) -> int:
+def on_leave_today(conn) -> set:
+    t0 = clock.today()
+    return set(
+        conn.execute(
+            select(leave.c.person_id).where(leave.c.starts_on <= t0, leave.c.ends_on >= t0, leave.c.ended_at.is_(None))
+        ).scalars()
+    )
+
+
+def muted_channels(prefs: dict | None, on_leave: bool) -> set[str]:
+    """The channels a person has turned off (Class A ignores this, §7). Me › Phone notifications off stops pushes; Me ›
+    Quiet on days off holds pushes and Slack while they're on leave. The in-app inbox always gets the row."""
+    prefs = prefs or {}
+    muted = set(prefs.get("muted", []))
+    if prefs.get("push") is False:
+        muted.add("push")
+    if on_leave and prefs.get("quiet_days_off"):
+        muted |= {"push", "slack"}
+    return muted
+
+
+def send_push(conn, person_id, title: str, link: str | None, body: str | None = None, tag: str | None = None) -> int:
     """Web Push to every subscribed device (iOS 16.4+ needs the app installed). Gone subscriptions are removed."""
     if not (settings.vapid_private_key and settings.vapid_public_key):
         return 0
@@ -121,7 +152,8 @@ def send_push(conn, person_id, title: str, link: str | None) -> int:
         try:
             webpush(
                 subscription_info={"endpoint": sub["endpoint"], "keys": sub["keys"]},
-                data=json.dumps({"title": title, "link": link}),
+                # The staff app's service worker shows it and opens `link` on tap (apps/field/public/push-sw.js).
+                data=json.dumps({"title": title, "body": body, "link": link, "tag": tag}),
                 vapid_private_key=settings.vapid_private_key,
                 vapid_claims={"sub": settings.vapid_subject},
                 ttl=3600,
@@ -163,9 +195,17 @@ async def monday_digest(ctx) -> None:
                 f"{s['class_a_late']} life-safety late, {s['actions']['urgent']} urgent actions"
             )
         on_time = f"{l10['on_time_last_7']}%" if l10["on_time_last_7"] is not None else "not enough checks yet"
+        # The opening line is the "Monday digest" wording from Settings › Messages and wording (CMS-17).
         text = (
-            f"Good morning. This week: {l10['class_a_overdue']} life-safety items overdue (goal 0), {on_time} of checks "
-            f"done on time last week (goal 95%), {l10['high_over_7']} urgent actions open more than 7 days (goal 0).\n"
+            wording.text(
+                conn,
+                "monday_digest",
+                f"Good morning. This week: {l10['class_a_overdue']} life-safety items overdue (goal 0), {on_time} of "
+                f"checks done on time last week (goal 95%), {l10['high_over_7']} urgent actions open more than 7 days "
+                "(goal 0).",
+                {"class_a_overdue": l10["class_a_overdue"], "on_time": on_time, "high_over_7": l10["high_over_7"]},
+            )
+            + "\n"
             + "\n".join(lines)
         )
         slack.post(settings.slack_compliance_channel, text, f"{settings.web_base_url}/")

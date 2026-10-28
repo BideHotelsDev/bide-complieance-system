@@ -9,6 +9,7 @@ import * as React from "react"
 import { listWords } from "@/lib/format"
 import type { SubmitResult, TaskDetail } from "@/lib/types"
 
+import { AddToAction } from "./AddToAction"
 import { Page } from "./kit"
 
 export function FailedResult({ task, result }: { task: TaskDetail; result: SubmitResult }) {
@@ -17,6 +18,7 @@ export function FailedResult({ task, result }: { task: TaskDetail; result: Submi
   const what = result.failed_fields.map((f) => f.text.replace(/\.$/, ""))
   const alerted = rs?.alerted ?? []
   const heading = React.useRef<HTMLHeadingElement>(null)
+  const [adding, setAdding] = React.useState(false)
   React.useEffect(() => heading.current?.focus(), [])
   return (
     <Page>
@@ -69,13 +71,33 @@ export function FailedResult({ task, result }: { task: TaskDetail; result: Submi
         >
           Back to Today
         </Link>
-        <Link
-          to="/report"
-          className="flex h-12 items-center justify-center rounded-xl border border-border bg-surface text-[16px] font-semibold text-foreground no-underline"
-        >
-          Add a note or photo
-        </Link>
+        {result.action ? (
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            className="flex h-12 items-center justify-center rounded-xl border border-border bg-surface text-[16px] font-semibold text-foreground"
+          >
+            Add a note or photo
+          </button>
+        ) : (
+          <Link
+            to="/report"
+            className="flex h-12 items-center justify-center rounded-xl border border-border bg-surface text-[16px] font-semibold text-foreground no-underline"
+          >
+            Report something else
+          </Link>
+        )}
       </footer>
+      {result.action && (
+        <AddToAction
+          open={adding}
+          onClose={() => setAdding(false)}
+          actionRef={result.action.ref}
+          propertyId={task.property_id}
+          propertyName={task.property}
+          taskId={task.task_id}
+        />
+      )}
     </Page>
   )
 }

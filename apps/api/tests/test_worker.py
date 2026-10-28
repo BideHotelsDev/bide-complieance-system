@@ -42,8 +42,9 @@ def test_tick_and_digest_run():
 
     asyncio.run(worker.tick({}))
     asyncio.run(worker.monday_digest({}))
-    asyncio.run(worker.deliver({}))
+    # Checked before delivery: slack.sent keeps only the last 100 messages, and delivery can send more than that.
     assert any("life-safety items overdue (goal 0)" in m["text"] for m in slack.sent if m["kind"] == "channel")
+    asyncio.run(worker.deliver({}))
     # Named individual failures never go to the shared channel (SLK-01).
     assert not any("Pamela" in m["text"] for m in slack.sent if m["kind"] == "channel")
 

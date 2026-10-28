@@ -1,15 +1,15 @@
-import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
-import { VitePWA } from "vite-plugin-pwa";
+import tailwindcss from "@tailwindcss/vite"
+import react from "@vitejs/plugin-react"
+import { defineConfig } from "vite"
+import { VitePWA } from "vite-plugin-pwa"
 
 // Colours from the design tokens (packages/ui/src/styles.css): primary ink and the page background.
-const INK = "#111113";
-const BACKGROUND = "#fbfbfc";
+const INK = "#111113"
+const BACKGROUND = "#fbfbfc"
 
 // Built for /app/ (the API serves the staff app there, beside the portal); / in development.
 export default defineConfig(({ command }) => {
-  const base = command === "build" ? "/app/" : "/";
+  const base = command === "build" ? "/app/" : "/"
   return {
     base,
     plugins: [
@@ -43,6 +43,8 @@ export default defineConfig(({ command }) => {
           navigateFallback: `${base}index.html`,
           navigateFallbackDenylist: [/^\/api\//],
           maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+          // Push and notification taps (public/push-sw.js): reminders, checks sent back, documents checked.
+          importScripts: ["push-sw.js"],
         },
         devOptions: { enabled: false },
       }),
@@ -59,5 +61,5 @@ export default defineConfig(({ command }) => {
         "/api": { target: "http://127.0.0.1:8310", changeOrigin: false },
       },
     },
-  };
-});
+  }
+})

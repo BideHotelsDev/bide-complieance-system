@@ -10,11 +10,16 @@ from sqlalchemy import Connection, and_, func, or_, select
 from bide_comply import audit, clock
 from bide_comply.auth import Current, actor_for
 from bide_comply.authz import Principal
+from bide_comply.config import settings
 from bide_comply.db import ConnDep
 from bide_comply.engine import actions as action_rules
 from bide_comply.engine import frequency as freq
 from bide_comply.schema import (
+    action,
+    action_comment,
+    action_evidence,
     alarm_event,
+    approval_request,
     certificate,
     contractor,
     contractor_visit,
@@ -22,6 +27,7 @@ from bide_comply.schema import (
     escalation,
     incident,
     incident_evidence,
+    leave,
     location,
     person,
     pool_member,
@@ -36,7 +42,7 @@ from bide_comply.schema import (
     verification,
 )
 from bide_comply.services import actions as action_service
-from bide_comply.services import checks, notify
+from bide_comply.services import checks, notify, wording
 from bide_comply.services import evidence as ev_service
 from bide_comply.services.common import fmt_day, names, overdue_label, problem
 from bide_comply.services.register import refresh_item
@@ -139,6 +145,18 @@ def today(pr: Current, conn: ConnDep, property: uuid.UUID | None = None) -> dict
                 f"{fmt_day(clock.london(r['window_opens_at']).date())} · {freq.label(r['frequency'] or r['default_frequency']).lower()}"
             )
             upcoming.append(card)
+    # Checks the person has asked to mark not applicable stay on the list, saying so, until a manager answers.
+    waiting = set(
+        conn.execute(
+            select(approval_request.c.task_id).where(
+                approval_request.c.kind == "na",
+                approval_request.c.status == "waiting",
+                approval_request.c.task_id.in_([uuid.UUID(c["task_id"]) for c in overdue + todays] or [uuid.uuid4()]),
+            )
+        ).scalars()
+    )
+    for c in overdue + todays:
+        c["na_pending"] = uuid.UUID(c["task_id"]) in waiting
     streak = _streak_weeks(conn, pr.person_id)
     props = conn.execute(
         select(property_.c.id, property_.c.name)
@@ -226,6 +244,9 @@ def task_detail(task_id: uuid.UUID, pr: Current, conn: ConnDep) -> dict:
                 template.c.typical_minutes,
                 register_item.c.frequency,
                 property_.c.name.label("property"),
+                property_.c.geofence_lat,
+                property_.c.geofence_lng,
+                property_.c.geofence_radius_m,
             )
             .join(register_item, register_item.c.template_id == template.c.id)
             .join(property_, property_.c.id == register_item.c.property_id)
@@ -269,6 +290,15 @@ def task_detail(task_id: uuid.UUID, pr: Current, conn: ConnDep) -> dict:
         .order_by(verification.c.created_at.desc())
         .limit(1)
     ).first()
+    na_pending = bool(
+        conn.execute(
+            select(approval_request.c.id).where(
+                approval_request.c.task_id == task_id,
+                approval_request.c.kind == "na",
+                approval_request.c.status == "waiting",
+            )
+        ).first()
+    )
     return {
         "task_id": str(task_id),
         "ref": t["ref"],
@@ -292,7 +322,16 @@ def task_detail(task_id: uuid.UUID, pr: Current, conn: ConnDep) -> dict:
         "geofence_required": t["geofence_required"],
         "can_submit": status in ("open", "overdue"),
         "rejected": {"comment": last_rejection.comment} if last_rejection and status == "open" else None,
-        "can_request_na": True,
+        # For the camera's "On site" pill (design: AppCamera); compared on the phone, recorded only at submission.
+        "geofence": {
+            "lat": tpl["geofence_lat"],
+            "lng": tpl["geofence_lng"],
+            "radius_m": tpl["geofence_radius_m"] or settings.geofence_default_radius_m,
+        }
+        if tpl["geofence_lat"] is not None
+        else None,
+        "can_request_na": not na_pending,
+        "na_pending": na_pending,
     }
 
 
@@ -332,20 +371,24 @@ def submit(task_id: uuid.UUID, body: SubmitIn, request: Request, pr: Current, co
         a = out["action"]
         # What the person sees next (design: Problem found): who's fixing it, who has been told, and their streak.
         out["result_screen"] = {
-            "title": "Logged as Failed. Thank you for reporting it.",
+            "title": wording.text(conn, "failed_result", "Logged as Failed. Thank you for reporting it."),
             "priority_label": action_rules.PRIORITY_LABEL[a["priority"]],
             "due_label": "due today" if a["due_on"] == clock.today() else f"due {fmt_day(a['due_on'])}",
             "owner": a["owner"],
             "class_a": a["class_a"],
-            "alerted": _alerted(conn, task_id, pr.person_id),
+            "alerted": _alerted(conn, task_id, a["ref"], pr.person_id),
         }
     return out
 
 
-def _alerted(conn: Connection, task_id: uuid.UUID, me: uuid.UUID) -> list[str]:
-    """First names of the people the failed-check escalation told (the assessor by role), for the result screen."""
-    rec = conn.execute(select(escalation.c.recipients).where(escalation.c.dedupe_key == f"failed:{task_id}")).scalar()
-    ids = {uuid.UUID(x) for x in (rec or [])} - {me}
+def _alerted(conn: Connection, task_id: uuid.UUID, ref: str, me: uuid.UUID) -> list[str]:
+    """First names of the people told about a failed check, for the result screen: the failed-check escalation and, for
+    a Class A failure, the §7 Class A alert (David, Samantha and the assessor, by role)."""
+    aid = conn.execute(select(action.c.id).where(action.c.ref == ref)).scalar()
+    recs = conn.execute(
+        select(escalation.c.recipients).where(escalation.c.dedupe_key.in_((f"failed:{task_id}", f"class_a:{aid}")))
+    ).scalars()
+    ids = {uuid.UUID(x) for rec in recs for x in (rec or [])} - {me}
     if not ids:
         return []
     rows = conn.execute(select(person.c.id, person.c.name, person.c.kind).where(person.c.id.in_(ids))).all()
@@ -361,6 +404,63 @@ def _alerted(conn: Connection, task_id: uuid.UUID, me: uuid.UUID) -> list[str]:
     return named + (["the assessor"] if assessors else [])
 
 
+class ActionAddIn(BaseModel):
+    note: str | None = None
+    photos: list[uuid.UUID] = []
+
+
+@router.post("/actions/{ref}/add")
+def add_to_action(ref: str, body: ActionAddIn, request: Request, pr: Current, conn: ConnDep) -> dict:
+    """Add a note or photo to an Action raised from your own check or report (design: Problem found › Add a note or
+    photo). The photos are filed as evidence of the problem, never as proof that it's fixed."""
+    a = conn.execute(select(action).where(action.c.ref == ref.upper())).mappings().first()
+    if not a:
+        raise problem(404, "not_found", "Not found.")
+    pr.require_property(a["property_id"])
+    mine = a["raised_by"] == pr.person_id or (
+        a["submission_id"] is not None
+        and conn.execute(select(submission.c.submitter_id).where(submission.c.id == a["submission_id"])).scalar()
+        == pr.person_id
+    )
+    if not mine:
+        raise problem(403, "not_yours", "You can add to problems you reported.")
+    note = (body.note or "").strip()
+    if not note and not body.photos:
+        raise problem(422, "empty", "Add a note or a photo.")
+    ev = ev_service.stored(conn, body.photos, pr.person_id)
+    if len(ev) != len(body.photos):
+        raise problem(422, "evidence", "A photo didn't finish uploading. Take it again.")
+    if note:
+        conn.execute(
+            action_comment.insert().values(id=uuid.uuid4(), action_id=a["id"], author_id=pr.person_id, body=note)
+        )
+    for e in ev:
+        conn.execute(action_evidence.insert().values(action_id=a["id"], evidence_id=e["id"], purpose="raised"))
+    audit.record(
+        conn,
+        actor_for(request, pr),
+        category="record",
+        action="action.add",
+        summary=f"Added to {a['ref']} from the staff app",
+        entity_type="action",
+        entity_id=a["id"],
+        entity_ref=a["ref"],
+        property_id=a["property_id"],
+        after={"note": bool(note), "photos": len(ev)},
+    )
+    if a["owner_id"] and a["owner_id"] != pr.person_id:
+        notify.notify(
+            conn,
+            {a["owner_id"]},
+            kind="action.note",
+            klass=a["class"],
+            title=f"{pr.name.split()[0]} added to {a['ref']}",
+            body=note[:200] or None,
+            link=f"/actions?sel={a['ref']}",
+        )
+    return {"ok": True, "ref": a["ref"]}
+
+
 class NaIn(BaseModel):
     reason: str
     note: str
@@ -373,6 +473,16 @@ def request_na(task_id: uuid.UUID, body: NaIn, request: Request, pr: Current, co
         raise problem(404, "not_found", "Not found.")
     if not body.note.strip():
         raise problem(422, "note", "Add a note so your manager can agree.")
+    if t["status"] not in ("open", "overdue", "scheduled"):
+        raise problem(409, "closed", "This check has already been sent in or closed.")
+    if conn.execute(
+        select(approval_request.c.id).where(
+            approval_request.c.task_id == task_id,
+            approval_request.c.kind == "na",
+            approval_request.c.status == "waiting",
+        )
+    ).first():
+        raise problem(409, "waiting", "You've already asked. Your manager hasn't answered yet.")
     return checks.request_exception(
         conn, pr, actor_for(request, pr), kind="na", reason=body.reason, note=body.note, task_id=task_id
     )
@@ -552,14 +662,42 @@ def report(body: ReportIn, request: Request, pr: Current, conn: ConnDep) -> dict
             klass="A" if life else "B",
             evidence_ids=photos,
         )
-    owner = names(conn, {r["owner_id"]}).get(r["owner_id"]) if r["owner_id"] else None
+    told: set[uuid.UUID] = {r["owner_id"]} if r["owner_id"] else set()
+    if life or body.riddor:
+        # Life safety, or possibly reportable to the HSE: the system owner hears straight away as well as the Action's
+        # owner (design: "Samantha will be told straight away"). Class A, so never held overnight or muted.
+        so = action_service.system_owner(conn)
+        extra = {so} - told - {pr.person_id} if so else set()
+        if extra:
+            pname = conn.execute(select(property_.c.name).where(property_.c.id == body.property_id)).scalar()
+            notify.notify(
+                conn,
+                extra,
+                kind="report.urgent",
+                klass="A" if life else "B",
+                title=f"{'Life safety' if life else 'Possible RIDDOR'} at {pname}: {text[:120]}",
+                body=f"Reported by {pr.name} · {r['ref']}",
+                link=f"/actions?sel={r['ref']}",
+                channels=["app", "push", "slack_dm"],
+            )
+            told |= extra
+    told.discard(pr.person_id)
+    told_names = names(conn, told) if told else {}
+    first = sorted(n if n.startswith("[") else n.split()[0] for n in told_names.values())
+    owner = told_names.get(r["owner_id"]) if r["owner_id"] else None
     return {
         "kind": body.kind,
         "action": r["ref"],
         "life_safety": life,
         "owner": owner,
+        "told": first,
         "message": "Sent. Thank you for reporting it."
-        + (f" {owner} has been told straight away." if life and owner else ""),
+        + (
+            f" {' and '.join(first) if len(first) <= 2 else ', '.join(first[:-1]) + ' and ' + first[-1]}"
+            f" {'has' if len(first) == 1 else 'have'} been told straight away."
+            if (life or body.riddor) and first
+            else ""
+        ),
     }
 
 
@@ -627,6 +765,21 @@ def log_visit(body: VisitIn, request: Request, pr: Current, conn: ConnDep) -> di
     pr.require_property(body.property_id)
     pr.require("task.complete", body.property_id)
     actor = actor_for(request, pr)
+    fails = [{"text": str(f.get("text") or "").strip(), "priority": f.get("priority") or "med"} for f in body.fails]
+    if any(not f["text"] for f in fails):
+        raise problem(422, "fails", "Say what needs fixing for each one.")
+    if any(f["priority"] not in action_rules.PRIORITY_DAYS for f in fails):
+        raise problem(422, "fails", "Choose Urgent, Soon or Later for each one.")
+    if (
+        body.register_item_id
+        and conn.execute(
+            select(register_item.c.property_id).where(register_item.c.id == body.register_item_id)
+        ).scalar()
+        != body.property_id
+    ):
+        raise problem(422, "register_item", "That check isn't at this property.")
+    if body.evidence_id and not ev_service.stored(conn, [body.evidence_id], pr.person_id):
+        raise problem(422, "evidence", "The certificate didn't finish uploading. Try again.")
     cid = body.contractor_id
     if not cid:
         if not (body.new_contractor and body.new_contractor.strip()):
@@ -643,7 +796,7 @@ def log_visit(body: VisitIn, request: Request, pr: Current, conn: ConnDep) -> di
             visit_on=clock.today(),
             status="done",
             purpose=body.purpose,
-            fails_found=body.fails,
+            fails_found=fails,
             logged_by=pr.person_id,
             evidence_id=body.evidence_id,
             photo_id=body.photo_id,
@@ -683,11 +836,11 @@ def log_visit(body: VisitIn, request: Request, pr: Current, conn: ConnDep) -> di
                 evidence_id=body.evidence_id,
                 contractor_visit_id=vid,
                 filing="filed",
-                fail_count=len(body.fails),
+                fail_count=len(fails),
             )
         )
     refs = []
-    for f in body.fails:
+    for f in fails:
         r = action_service.raise_action(
             conn,
             actor,
@@ -695,7 +848,7 @@ def log_visit(body: VisitIn, request: Request, pr: Current, conn: ConnDep) -> di
             source="contractor_visit",
             source_ref=f"{cname} visit {clock.today():%-d %b}",
             description=f["text"],
-            priority=f.get("priority") or "med",
+            priority=f["priority"],
             register_item_id=body.register_item_id,
             certificate_id=cert_id,
         )
@@ -709,11 +862,23 @@ def log_visit(body: VisitIn, request: Request, pr: Current, conn: ConnDep) -> di
         entity_type="contractor_visit",
         entity_id=vid,
         property_id=body.property_id,
-        after={"purpose": body.purpose, "fails": len(body.fails)},
+        after={"purpose": body.purpose, "fails": len(fails)},
     )
+    done_task = None
     if body.register_item_id:
+        done_task = checks.complete_from_visit(
+            conn,
+            actor,
+            register_item_id=body.register_item_id,
+            logged_by=pr.person_id,
+            contractor_name=cname,
+            purpose=body.purpose,
+            evidence_id=body.evidence_id,
+            visit_id=vid,
+            fails=[f["text"] for f in fails],
+        )
         refresh_item(conn, body.register_item_id)
-    return {"id": str(vid), "actions": refs}
+    return {"id": str(vid), "actions": refs, "task_done": str(done_task) if done_task else None}
 
 
 @router.get("/history")
@@ -740,18 +905,24 @@ def history(pr: Current, conn: ConnDep) -> dict:
         .mappings()
         .all()
     )
-    rejections = (
-        {
-            r.submission_id: r
-            for r in conn.execute(
-                select(verification.c.submission_id, verification.c.comment, verification.c.verifier_id).where(
-                    verification.c.submission_id.in_([r["id"] for r in rows]), verification.c.result == "rejected"
+    checked = (
+        list(
+            conn.execute(
+                select(
+                    verification.c.submission_id,
+                    verification.c.result,
+                    verification.c.comment,
+                    verification.c.verifier_id,
                 )
+                .where(verification.c.submission_id.in_([r["id"] for r in rows]))
+                .order_by(verification.c.created_at)
             )
-        }
+        )
         if rows
-        else {}
+        else []
     )
+    rejections = {v.submission_id: v for v in checked if v.result == "rejected"}
+    approved = {v.submission_id for v in checked if v.result == "approved"}
     vnames = names(conn, {r.verifier_id for r in rejections.values()})
     send_again = []
     groups: dict[str, list] = {}
@@ -785,9 +956,17 @@ def history(pr: Current, conn: ConnDep) -> dict:
             detail += " · " + (r["failed_fields"][0].get("text") or r["failed_fields"][0]["why"]).lower()
         if "captured_offline" in r["flags"]:
             detail += " · captured offline"
-        status = {"verified": "Verified", "failed": "Failed", "passed": "Passed", "submitted": "Sent"}.get(
-            r["status"], r["status"].capitalize()
-        )
+        # Each row says what happened to that submission, not where the task is now.
+        if r["id"] in rejections:
+            status = "Sent back"
+        elif r["result"] == "failed":
+            status = "Failed"
+        elif r["id"] in approved or r["status"] == "verified":
+            status = "Verified"
+        elif r["status"] == "submitted":
+            status = "Sent"
+        else:
+            status = "Passed"
         groups.setdefault(label, []).append(
             {"id": str(r["id"]), "title": _short_name(r["name"]), "detail": detail, "status": status}
         )
@@ -845,7 +1024,19 @@ def documents(pr: Current, conn: ConnDep) -> dict:
         .where(staff_requirement_type.c.restricted.is_(False))
         .order_by(staff_requirement_type.c.name)
     ).mappings()
-    return {"all_set": all_set, "rows": out, "types": [dict(t) for t in types]}
+    keeper = conn.execute(
+        select(person.c.name)
+        .join(role_assignment, role_assignment.c.person_id == person.c.id)
+        .where(role_assignment.c.role == "register_keeper", person.c.employment_status == "active")
+        .limit(1)
+    ).scalar()
+    return {
+        "all_set": all_set,
+        "rows": out,
+        "types": [dict(t) for t in types],
+        # Who checks an uploaded certificate ("Lynne will check it").
+        "checker": (keeper if keeper.startswith("[") else keeper.split()[0]) if keeper else None,
+    }
 
 
 @router.get("/locations")
@@ -885,18 +1076,21 @@ def upload_document(body: DocUploadIn, request: Request, pr: Current, conn: Conn
     if existing:
         conn.execute(staff_requirement.update().where(staff_requirement.c.id == existing).values(**vals))
     else:
-        conn.execute(staff_requirement.insert().values(id=uuid.uuid4(), person_id=pr.person_id, type_id=tid, **vals))
+        existing = uuid.uuid4()
+        conn.execute(staff_requirement.insert().values(id=existing, person_id=pr.person_id, type_id=tid, **vals))
     keeper = (
         conn.execute(select(role_assignment.c.person_id).where(role_assignment.c.role == "register_keeper"))
         .scalars()
         .all()
     )
+    tname = conn.execute(select(staff_requirement_type.c.name).where(staff_requirement_type.c.id == tid)).scalar()
     notify.notify(
         conn,
         set(keeper),
         kind="document.uploaded",
         title=f"{pr.name} uploaded a certificate to check",
-        link="/settings/people",
+        body=tname,
+        link=f"/settings/people?sel={pr.person_id}",
     )
     audit.record(
         conn,
@@ -932,27 +1126,64 @@ def me(pr: Current, conn: ConnDep) -> dict:
             submission.c.server_time >= clock.start_of_day(month_start),
         )
     ).scalar()
-    # Consecutive days with every check on time.
-    days = 0
-    for i in range(0, 60):
-        d = t0 - timedelta(days=i)
-        late = conn.execute(
-            select(func.count()).where(
-                task.c.owner_id == pr.person_id,
-                task.c.status.in_(("overdue", "missed")),
-                task.c.due_at >= clock.start_of_day(d),
-                task.c.due_at <= clock.end_of_day(d),
+    # Consecutive days with every check on time, counted the scorecard's way (SCH-13): a check done late breaks it
+    # for whoever did it; one left overdue or missed breaks it for its owner. Reporting a fail never does.
+    since = t0 - timedelta(days=365)
+    late_days = {
+        clock.london(d).date()
+        for d in conn.execute(
+            select(task.c.due_at).where(
+                task.c.due_at >= clock.start_of_day(since),
+                task.c.due_at <= clock.now(),
+                or_(
+                    and_(task.c.owner_id == pr.person_id, task.c.status.in_(("overdue", "missed"))),
+                    and_(task.c.completed_by == pr.person_id, task.c.completed_at > task.c.due_at),
+                ),
             )
-        ).scalar()
-        if late:
-            break
+        ).scalars()
+    }
+    first_day = conn.execute(
+        select(func.min(task.c.due_at)).where(or_(task.c.owner_id == pr.person_id, task.c.completed_by == pr.person_id))
+    ).scalar()
+    start = max(since, clock.london(first_day).date()) if first_day else t0
+    days = 0
+    d = t0
+    while d >= start and d not in late_days:
         days += 1
+        d -= timedelta(days=1)
     dev = (
         conn.execute(select(device.c.trusted_until, device.c.label).where(device.c.id == pr.device_id)).first()
         if pr.device_id
         else None
     )
     p = conn.execute(select(person.c.title, person.c.preferences).where(person.c.id == pr.person_id)).one()
+    # Leave now or coming up, and who covers it (Dialogs › Cover Pamela's checks): the person sees it on their phone.
+    away = (
+        conn.execute(
+            select(leave.c.starts_on, leave.c.ends_on, leave.c.approved_by, person.c.name.label("cover"))
+            .outerjoin(person, person.c.id == leave.c.cover_id)
+            .where(leave.c.person_id == pr.person_id, leave.c.ends_on >= t0, leave.c.ended_at.is_(None))
+            .order_by(leave.c.starts_on)
+            .limit(1)
+        )
+        .mappings()
+        .first()
+    )
+    # And anyone they're covering for at the moment.
+    covering = [
+        r.name
+        for r in conn.execute(
+            select(person.c.name)
+            .join(leave, leave.c.person_id == person.c.id)
+            .where(
+                leave.c.cover_id == pr.person_id,
+                leave.c.approved_by.isnot(None),
+                leave.c.starts_on <= t0 + timedelta(days=14),
+                leave.c.ends_on >= t0,
+                leave.c.ended_at.is_(None),
+            )
+        )
+    ]
     return {
         "name": pr.name,
         "title": p.title,
@@ -960,4 +1191,13 @@ def me(pr: Current, conn: ConnDep) -> dict:
         "streak_days": days,
         "trusted_until": dev.trusted_until if dev else None,
         "preferences": p.preferences or {},
+        "away": {
+            "starts_on": away["starts_on"],
+            "ends_on": away["ends_on"],
+            "cover": away["cover"],
+            "approved": away["approved_by"] is not None,
+        }
+        if away
+        else None,
+        "covering": covering,
     }

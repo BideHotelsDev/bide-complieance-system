@@ -23,6 +23,7 @@ import { toast } from "@bide-comply/ui/components/toaster"
 
 import { fmtDate } from "@/lib/format"
 import { useMe } from "@/lib/session"
+import { useUnsavedGuard } from "@/features/settings-a/ui"
 
 type Licence = {
   id: string
@@ -119,6 +120,10 @@ export function PropertyDetailsPage() {
     },
     onError: (e) => toast(e instanceof ApiError ? e.message : "Couldn't save. Try again."),
   })
+  const dirty = isNew
+    ? Object.values(form).some((v) => v !== undefined && v !== "" && v !== null)
+    : !!q.data && JSON.stringify(form) !== JSON.stringify(q.data)
+  useUnsavedGuard(dirty && !save.isPending && !(isNew && save.isSuccess))
   if (!me) return <LoadingPage />
   if (!me.can["settings.view"]) return <NoPermission />
   if (!isNew && q.isLoading) return <LoadingPage />

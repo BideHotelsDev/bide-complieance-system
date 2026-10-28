@@ -227,6 +227,10 @@ def _plan(conn, j: dict) -> dict:
     inv_g = {v: k for k, v in gmap.items() if v}
     inv_a = {v: k for k, v in amap.items() if v}
     gate_count, to_confirm, done_no_ev, props = 0, 0, [], set()
+    actions, role_owners = 0, set()
+    known = {_norm(n) for n in conn.execute(select(person.c.name)).scalars()} | {
+        _norm(n.split()[0]) for n in conn.execute(select(person.c.name)).scalars()
+    }
     for s in j["sheets"]:
         if s["kind"] != "gate":
             continue
@@ -242,17 +246,22 @@ def _plan(conn, j: dict) -> dict:
                 to_confirm += 1
             if st == "done" and not ev:
                 done_no_ev.append(f"{s['property'] or s['name']} {ref}")
-    actions, role_owners = 0, set()
-    known = {_norm(n) for n in conn.execute(select(person.c.name)).scalars()} | {
-        _norm(n.split()[0]) for n in conn.execute(select(person.c.name)).scalars()
-    }
+            o = str(r.get(inv_g.get("owner", "")) or "").strip()
+            if o and _norm(o) not in known:
+                role_owners.add(o)
     first_ref = last_ref = None
+    have = set(conn.execute(select(action.c.ref)).scalars())
+    already = 0
     for s in j["sheets"]:
         if s["kind"] != "actions":
             continue
         for r in _rows_for(conn, j, s):
             ref = r.get(inv_a.get("ref", ""))
             if not ref:
+                continue
+            if str(ref).strip().upper() in have:
+                # Re-running the import never duplicates an Action: ones already here are left as they are.
+                already += 1
                 continue
             actions += 1
             first_ref = first_ref or ref
@@ -265,6 +274,7 @@ def _plan(conn, j: dict) -> dict:
         "gate_items": gate_count,
         "properties": sorted(props),
         "actions": actions,
+        "actions_already_here": already,
         "to_confirm": to_confirm,
         "done_without_evidence": done_no_ev,
         "role_owners": sorted(role_owners),
@@ -391,8 +401,11 @@ def run(jid: uuid.UUID, request: Request, pr: Current, conn: ConnDep) -> dict:
                 "sort": i + 1,
             }
             owner = _norm(vals["owner_text"])
+            raw_owner = str(vals["owner_text"] or "").strip()
             if owner in people:
                 vals["owner_id"] = people[owner]
+            elif raw_owner in j["owner_map"]:
+                vals["owner_id"] = uuid.UUID(j["owner_map"][raw_owner])
             if ref in existing:
                 conn.execute(update(gate_item).where(gate_item.c.id == existing[ref]).values(**vals))
                 updated_ += 1

@@ -16,8 +16,10 @@ import {
 import { Breadcrumb, EmptyState, ErrorState, LoadingRows, PageHeader, Skeleton } from "@bide-comply/ui/components/page"
 import { Pill, type Tone } from "@bide-comply/ui/components/status"
 
+import { CertificateSheet } from "../features/overview/certificate-sheet"
 import { CertificateTimeline } from "../features/overview/certificates-timeline"
 import { isRequired, UploadCertificateDialog, type CertRow } from "../features/overview/certificates-upload"
+import { EvidenceLink } from "../lib/evidence"
 import { fmtDate, fmtDay } from "../lib/format"
 import { useParams } from "../lib/params"
 import { useProperty } from "../lib/property"
@@ -91,7 +93,14 @@ export function CertificatesPage() {
         cell: ({ row: { original: c } }) => (
           <span>
             <span className="font-medium">{c.title}</span>
-            {c.file_name && <span className="block text-xs text-muted-foreground">{c.file_name}</span>}
+            {c.file_name &&
+              (c.evidence_id ? (
+                <EvidenceLink id={c.evidence_id} className="block text-xs">
+                  {c.file_name}
+                </EvidenceLink>
+              ) : (
+                <span className="block text-xs text-muted-foreground">{c.file_name}</span>
+              ))}
           </span>
         ),
       },
@@ -229,88 +238,95 @@ export function CertificatesPage() {
       />
       {d && <Summary className="-mt-1 text-ink2">{d.summary}</Summary>}
 
-      <div className="overflow-hidden rounded-xl border border-divider bg-surface">
-        {res.isError ? (
-          <ErrorState message={res.error.message} onRetry={() => void res.refetch()} />
-        ) : !d ? (
-          <LoadingRows />
-        ) : d.rows.length === 0 ? (
-          <EmptyState
-            title={d.any_filter ? "No certificates match" : "No certificates yet"}
-            action={
-              d.any_filter ? (
-                <Button
-                  variant="secondary"
-                  onClick={() =>
-                    set({ view: undefined, q: undefined, prop: undefined, kind: undefined, page: undefined })
-                  }
-                >
-                  Show all certificates
-                </Button>
-              ) : canFile ? (
-                <Button onClick={() => setDialog({ open: true, target: null })}>Upload a certificate</Button>
-              ) : null
-            }
-          >
-            {d.any_filter
-              ? view === "expired"
-                ? "Nothing has expired. Certificates show here the day after they run out."
-                : "Try another quick view or clear the filters."
-              : "Certificates appear here when they're uploaded or when a register item needs one."}
-          </EmptyState>
-        ) : (
-          <>
-            <DataTable
-              columns={columns}
-              rows={d.rows}
-              caption="Certificates"
-              onRowClick={
-                canFile
-                  ? (c) => {
-                      if (c.property_id) setDialog({ open: true, target: c })
+      <div className="flex flex-col items-start gap-4 lg:flex-row">
+        <div className="w-full min-w-0 flex-1 overflow-hidden rounded-xl border border-divider bg-surface">
+          {res.isError ? (
+            <ErrorState message={res.error.message} onRetry={() => void res.refetch()} />
+          ) : !d ? (
+            <LoadingRows />
+          ) : d.rows.length === 0 ? (
+            <EmptyState
+              title={d.any_filter ? "No certificates match" : "No certificates yet"}
+              action={
+                d.any_filter ? (
+                  <Button
+                    variant="secondary"
+                    onClick={() =>
+                      set({ view: undefined, q: undefined, prop: undefined, kind: undefined, page: undefined })
                     }
-                  : undefined
+                  >
+                    Show all certificates
+                  </Button>
+                ) : canFile ? (
+                  <Button onClick={() => setDialog({ open: true, target: null })}>Upload a certificate</Button>
+                ) : null
               }
-              mobileCard={(c) => (
-                <div className="flex flex-col gap-1.5">
-                  <div className="font-medium">{c.title}</div>
-                  <div className="text-[12.5px] text-muted-foreground">
-                    {[c.property, c.why, c.provider].filter(Boolean).join(" · ")}
+            >
+              {d.any_filter
+                ? view === "expired"
+                  ? "Nothing has expired. Certificates show here the day after they run out."
+                  : "Try another quick view or clear the filters."
+                : "Certificates appear here when they're uploaded or when a register item needs one."}
+            </EmptyState>
+          ) : (
+            <>
+              <DataTable
+                columns={params.sel ? columns.filter((c) => c.id !== "why" && c.id !== "provider") : columns}
+                rows={d.rows}
+                caption="Certificates"
+                selectedId={params.sel ?? null}
+                onRowClick={(c) => set({ sel: c.id === params.sel ? undefined : c.id })}
+                mobileCard={(c) => (
+                  <div className="flex flex-col gap-1.5">
+                    <div className="font-medium">{c.title}</div>
+                    <div className="text-[12.5px] text-muted-foreground">
+                      {[c.property, c.why, c.provider].filter(Boolean).join(" · ")}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Pill tone={TONE[c.status]}>{c.status_label}</Pill>
+                      {c.action_ref && <span className="mono-id text-muted-foreground">{c.action_ref}</span>}
+                      {canFile && c.property_id && (
+                        <span className="ml-auto text-[12.5px] font-medium text-link">
+                          {isRequired(c) ? "Upload" : "Upload new"}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Pill tone={TONE[c.status]}>{c.status_label}</Pill>
-                    {c.action_ref && <span className="mono-id text-muted-foreground">{c.action_ref}</span>}
-                    {canFile && c.property_id && (
-                      <span className="ml-auto text-[12.5px] font-medium text-link">
-                        {isRequired(c) ? "Upload" : "Upload new"}
-                      </span>
-                    )}
+                )}
+              />
+              <div className="flex flex-wrap items-center gap-3 border-t border-divider text-[12.5px] text-muted-foreground">
+                {d.total > d.page_size ? (
+                  <div className="flex-1">
+                    <Pagination
+                      page={d.page}
+                      pageSize={d.page_size}
+                      total={d.total}
+                      noun="certificates"
+                      onPage={(p) => set({ page: p > 1 ? String(p) : undefined })}
+                      onPageSize={(n) => set({ size: n === 25 ? undefined : String(n), page: undefined })}
+                    />
                   </div>
-                </div>
-              )}
-            />
-            <div className="flex flex-wrap items-center gap-3 border-t border-divider text-[12.5px] text-muted-foreground">
-              {d.total > d.page_size ? (
-                <div className="flex-1">
-                  <Pagination
-                    page={d.page}
-                    pageSize={d.page_size}
-                    total={d.total}
-                    noun="certificates"
-                    onPage={(p) => set({ page: p > 1 ? String(p) : undefined })}
-                    onPageSize={(n) => set({ size: n === 25 ? undefined : String(n), page: undefined })}
-                  />
-                </div>
-              ) : (
-                <span className="tabular px-3.5 py-2.5">
-                  {d.rows.length} of {d.total} shown
+                ) : (
+                  <span className="tabular px-3.5 py-2.5">
+                    {d.rows.length} of {d.total} shown
+                  </span>
+                )}
+                <span className="ml-auto px-3.5 py-2.5">
+                  Uploading a certificate closes its linked action only if it has no fails
                 </span>
-              )}
-              <span className="ml-auto px-3.5 py-2.5">
-                Uploading a certificate closes its linked action only if it has no fails
-              </span>
-            </div>
-          </>
+              </div>
+            </>
+          )}
+        </div>
+        {params.sel && (
+          <CertificateSheet
+            key={params.sel}
+            id={params.sel}
+            tone={TONE}
+            canFile={canFile}
+            onClose={() => set({ sel: undefined })}
+            onUpload={(c) => setDialog({ open: true, target: c })}
+          />
         )}
       </div>
 

@@ -4,6 +4,7 @@
  * footer whose main button is named after the action.
  */
 import * as React from "react"
+import { useBlocker } from "@tanstack/react-router"
 import { ApiError } from "@bide-comply/api-client"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@bide-comply/ui/components/dialog"
 import { cn } from "@bide-comply/ui/lib/utils"
@@ -11,6 +12,15 @@ import { cn } from "@bide-comply/ui/lib/utils"
 export function errMsg(e: unknown): string {
   if (e instanceof ApiError) return e.message
   return "Something went wrong. Nothing was saved. Try again."
+}
+
+/** Ask before leaving a page with changes that aren't saved yet: in-app links and closing or reloading the tab. */
+export function useUnsavedGuard(dirty: boolean, message = "You have changes that aren't saved. Leave and lose them?") {
+  useBlocker({
+    // Only leaving the page counts: filters and tabs on the same page change the URL's query, not its path.
+    shouldBlockFn: ({ current, next }) => dirty && current.pathname !== next.pathname && !window.confirm(message),
+    enableBeforeUnload: () => dirty,
+  })
 }
 
 export function ActionDialog({

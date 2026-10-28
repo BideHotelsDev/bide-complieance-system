@@ -39,6 +39,9 @@ export type CertRow = {
   status_label: string
   fail_count: number
   kind_label: string
+  evidence_id?: string | null
+  register_item_id?: string | null
+  register_ref?: string | null
 }
 
 export const isRequired = (c: CertRow) => c.status === "missing" || c.status === "due" || c.status === "partial"

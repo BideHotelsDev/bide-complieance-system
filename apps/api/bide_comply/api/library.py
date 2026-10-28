@@ -14,6 +14,7 @@ from bide_comply.engine import forms
 from bide_comply.engine import frequency as freq
 from bide_comply.schema import class_weight, domain, register_item, task, template, template_version, warning_window
 from bide_comply.services.common import fmt_date, names, problem
+from bide_comply.services.register import cancel_future, recompute_item, refresh_item, retarget_version
 
 router = APIRouter(prefix="/api/library", tags=["library"])
 
@@ -24,6 +25,8 @@ KIND_LABEL = {
     "staff": "Staff",
     "contractor_visit": "Contractor visit",
 }
+# Rule fields that change when tasks fall due: a change replans future tasks at every property using the template.
+SCHEDULE_FIELDS = ("default_frequency", "due_time", "window_hours", "late_rule", "lead_days")
 RULE_FIELDS = (
     "name",
     "domain_id",
@@ -219,7 +222,7 @@ def detail(template_id: uuid.UUID, pr: Current, conn: ConnDep) -> dict:
         ).mappings()
     ]
     draft = next((v for v in versions if v["status"] == "draft"), None)
-    live = next((v for v in versions if v["version"] == t["current_version"]), versions[-1] if versions else None)
+    live = next((v for v in versions if v["version"] == t["current_version"]), versions[0] if versions else None)
     current = draft or live
     who = names(conn, {v["published_by"] for v in versions})
     settings_ = {k: t[k] for k in RULE_FIELDS}
@@ -254,6 +257,38 @@ def detail(template_id: uuid.UUID, pr: Current, conn: ConnDep) -> dict:
     }
 
 
+def _check_rules(conn, v: dict) -> None:
+    """Plain messages for rule values the builder can't produce but a hand-made request could."""
+    if "name" in v and not str(v["name"] or "").strip():
+        raise problem(422, "name", "Give the template a name.")
+    if "kind" in v and v["kind"] not in KIND_LABEL:
+        raise problem(422, "kind", "Choose a type.")
+    if "late_rule" in v and v["late_rule"] not in ("late", "missed"):
+        raise problem(422, "late_rule", "Choose what happens when the window closes.")
+    if "verification" in v and v["verification"] not in ("none", "always", "sample"):
+        raise problem(422, "verification", "Choose how it is verified.")
+    if "sample_rate" in v and not (isinstance(v["sample_rate"], int) and 1 <= v["sample_rate"] <= 100):
+        raise problem(422, "sample_rate", "Spot-checks are 1 in 1 to 1 in 100.")
+    if (
+        "warning_days" in v
+        and v["warning_days"] is not None
+        and not (isinstance(v["warning_days"], int) and 0 <= v["warning_days"] <= 365)
+    ):
+        raise problem(422, "warning_days", "The amber window is 0 to 365 days.")
+    if "due_time" in v:
+        try:
+            clock.parse_hhmm(str(v["due_time"]))
+        except (TypeError, ValueError):
+            raise problem(422, "due_time", "Due times look like 23:59.") from None
+    if "domain_id" in v:
+        try:
+            ok = conn.execute(select(domain.c.id).where(domain.c.id == uuid.UUID(str(v["domain_id"])))).first()
+        except ValueError:
+            ok = None
+        if not ok:
+            raise problem(422, "domain", "Choose an area from the list.")
+
+
 class DraftIn(BaseModel):
     settings: dict = {}
     form: list[dict] | None = None
@@ -271,6 +306,7 @@ def save_draft(template_id: uuid.UUID, body: DraftIn, pr: Current, conn: ConnDep
         raise problem(422, "class", "Class must be A, B or C.")
     if "default_frequency" in clean:
         freq.get(clean["default_frequency"])
+    _check_rules(conn, clean)
     form = None
     if body.form is not None:
         try:
@@ -356,15 +392,25 @@ def publish(template_id: uuid.UUID, body: PublishIn, request: Request, pr: Curre
             status="published" if t["status"] == "proposed" else t["status"],
         )
     )
-    # Future tasks nobody has started pick up the new version; anything already done keeps its own.
-    conn.execute(
-        update(task)
-        .where(
-            task.c.register_item_id.in_(select(register_item.c.id).where(register_item.c.template_id == template_id)),
-            task.c.status == "scheduled",
+    # Tasks nobody has started pick up the new version (the staff app shows its form); anything already submitted
+    # keeps the form it was completed on.
+    moved = retarget_version(conn, template_id, draft["id"])
+    # The rules travel to every property using the template: a new frequency, due time or window replans the
+    # future, and a new Class, warning window or verification rule is reflected in each item's status straight away.
+    replan = any(k in vals and vals[k] != t[k] for k in SCHEDULE_FIELDS)
+    items = conn.execute(
+        select(register_item.c.id, register_item.c.frequency).where(
+            register_item.c.template_id == template_id, register_item.c.state == "on"
         )
-        .values(template_version_id=draft["id"])
-    )
+    ).all()
+    for it in items:
+        # A property's own frequency (set from its FRA, CMS-12) wins over the template default.
+        own_freq_only = it.frequency and {k for k in SCHEDULE_FIELDS if k in vals and vals[k] != t[k]} == {
+            "default_frequency"
+        }
+        if replan and not own_freq_only:
+            cancel_future(conn, it.id)
+        refresh_item(conn, it.id)
     audit.record(
         conn,
         actor_for(request, pr),
@@ -374,9 +420,9 @@ def publish(template_id: uuid.UUID, body: PublishIn, request: Request, pr: Curre
         entity_type="template",
         entity_id=template_id,
         before={"version": t["current_version"]},
-        after={"version": draft["version"], "note": body.note},
+        after={"version": draft["version"], "note": body.note, "tasks_moved": moved, "properties": len(items)},
     )
-    return {"version": draft["version"]}
+    return {"version": draft["version"], "tasks_moved": moved, "items": len(items)}
 
 
 @router.delete("/{template_id}/draft")
@@ -405,6 +451,8 @@ def create(body: NewTemplate, request: Request, pr: Current, conn: ConnDep) -> d
     if body.kind not in KIND_LABEL or body.klass not in ("A", "B", "C"):
         raise problem(422, "kind", "Choose a type and a Class.")
     freq.get(body.default_frequency)
+    if len(body.name.strip()) < 3:
+        raise problem(422, "name", "Give the template a name of at least 3 characters.")
     from bide_comply.seed.library import default_form
 
     tid = uuid.uuid4()
@@ -474,8 +522,6 @@ def archive(template_id: uuid.UUID, body: ArchiveIn, request: Request, pr: Curre
             .where(register_item.c.id == iid)
             .values(state="off", state_reason=f"Template archived: {body.reason}")
         )
-        from bide_comply.services.register import cancel_future, recompute_item
-
         cancel_future(conn, iid)
         recompute_item(conn, iid)
     audit.record(
@@ -513,6 +559,8 @@ def restore(template_id: uuid.UUID, request: Request, pr: Current, conn: ConnDep
 
 @router.get("/{template_id}/archive-check")
 def archive_check(template_id: uuid.UUID, pr: Current, conn: ConnDep) -> dict:
+    pr.require("library.edit")
+    _tpl(conn, template_id)
     past = conn.execute(
         select(func.count())
         .select_from(task.join(register_item, register_item.c.id == task.c.register_item_id))

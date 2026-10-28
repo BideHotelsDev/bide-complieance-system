@@ -99,7 +99,7 @@ export function LibraryPage() {
       id: "template",
       header: "Template",
       cell: ({ row: { original: r } }) => (
-        <div className="min-w-[300px] py-0.5 lg:min-w-[360px]">
+        <div className="min-w-[260px] py-0.5 xl:min-w-[320px]">
           <Link
             to="/settings/library/$id"
             params={{ id: r.id }}
@@ -130,7 +130,8 @@ export function LibraryPage() {
     {
       id: "how_often",
       header: "How often",
-      cell: ({ row }) => <span className="whitespace-nowrap">{row.original.frequency_label}</span>,
+      // Long notes ("Each visit, recorded weekly") wrap, so Used at stays on screen at laptop widths.
+      cell: ({ row }) => <span className="block max-w-[150px] min-w-[80px]">{row.original.frequency_label}</span>,
     },
     {
       id: "version",

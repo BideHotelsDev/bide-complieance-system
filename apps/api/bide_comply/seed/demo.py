@@ -23,6 +23,7 @@ from bide_comply.schema import (
     audit_walk_line,
     certificate,
     contractor,
+    contractor_contact,
     contractor_visit,
     device,
     dutyholder,
@@ -1465,6 +1466,36 @@ def run(conn: Connection) -> None:
             property_id=props["TM"],
             visit_on=D("2026-11-12"),
             purpose="Emergency lighting test",
+        )
+    )
+
+    # --- Contractor portal: Nova's contact signs in with the emailed link and sees only Nova's work ---------------
+    add_person(
+        "nova",
+        "Nova Fire & Security",
+        "Contractor · Nova Fire & Security",
+        kind="external",
+        roles=[("contractor", None)],
+    )
+    conn.execute(update(person).where(person.c.id == people["nova"]).values(email="jobs@nova.demo.invalid"))
+    conn.execute(contractor_contact.insert().values(id=uuid.uuid4(), contractor_id=nova, person_id=people["nova"]))
+    from bide_comply.services.common import next_ref
+
+    conn.execute(
+        action.insert().values(
+            id=uuid.uuid4(),
+            ref=next_ref(conn, props["TM"]),
+            property_id=props["TM"],
+            type="work_required",
+            source="alarm_events",
+            source_ref="Fire panel fault log",
+            description="Detector in room 7: the head reports a fault on the panel. Replace it and test it",
+            priority="high",
+            owner_text="Nova Fire & Security",
+            owner_contractor_id=nova,
+            raised_on=D("2026-10-26"),
+            due_on=D("2026-11-02"),
+            raised_by=people["sl_view"],
         )
     )
 

@@ -202,11 +202,18 @@ function Editor({ detail, refetch }: { detail: Detail; refetch: () => Promise<De
   const publish = useMutation({
     mutationFn: async (note: string) => {
       await flush()
-      return api.post<{ version: number }>(`/api/library/${detail.id}/publish`, { note: note || null })
+      return api.post<{ version: number; tasks_moved: number; items: number }>(`/api/library/${detail.id}/publish`, {
+        note: note || null,
+      })
     },
     onSuccess: async (r) => {
       setPublishing(false)
-      toast(`Published v${r.version}. Future tasks use it; past records keep their form.`)
+      toast(
+        r.items
+          ? `Published v${r.version}. ${plural(r.tasks_moved, "unstarted task")} at ${plural(r.items, "register item")} now use it; past records keep their form.`
+          : `Published v${r.version}. It applies once a property switches it on.`,
+      )
+      void qc.invalidateQueries({ queryKey: ["register"] })
       void qc.invalidateQueries({ queryKey: ["library"] })
       const d = await refetch()
       if (d) reset(d)

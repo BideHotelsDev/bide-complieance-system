@@ -1,5 +1,5 @@
 /* Staff privacy notice at first sign-in (§9.7). The wording is edited in Settings › Messages and wording. */
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Dialog as DialogPrimitive } from "radix-ui"
 
 import { api } from "@bide-comply/api-client"
@@ -10,6 +10,12 @@ export const PRIVACY_TEXT =
 
 export function PrivacyNotice() {
   const qc = useQueryClient()
+  // The published wording from Settings › Messages and wording; the built-in text until it loads.
+  const words = useQuery({
+    queryKey: ["wording"],
+    queryFn: () => api.get<Record<string, string>>("/api/settings/wording"),
+    staleTime: 5 * 60_000,
+  })
   const seen = useMutation({
     mutationFn: () => api.post("/api/me/privacy-notice"),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["me"] }),
@@ -27,7 +33,7 @@ export function PrivacyNotice() {
             What bide Comply records about you
           </DialogPrimitive.Title>
           <DialogPrimitive.Description className="mt-2 text-[14px] text-ink2">
-            {PRIVACY_TEXT}
+            {words.data?.privacy_notice || PRIVACY_TEXT}
           </DialogPrimitive.Description>
           <div className="mt-4 flex justify-end">
             <Button onClick={() => seen.mutate()} disabled={seen.isPending}>

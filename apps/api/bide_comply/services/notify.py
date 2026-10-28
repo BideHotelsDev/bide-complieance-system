@@ -227,8 +227,13 @@ def escalate(
     link: str | None = None,
     level: int = 1,
     extra: dict | None = None,
+    message: tuple[str, str | None] | None = None,
 ) -> uuid.UUID | None:
-    """Record an escalation once and tell its recipients. Returns None if it was already raised."""
+    """Record an escalation once and tell its recipients. Returns None if it was already raised.
+
+    `summary` is the channel-safe line (names the check and the property, never a person, SLK-01). `message` is the
+    wording from Settings › Messages and wording, (full, short): people get the full text by DM and email, and the
+    short one as the notification title and push."""
     r = rule(conn, trigger, property_id)
     item = None
     if register_item_id:
@@ -259,7 +264,8 @@ def escalate(
         conn,
         people,
         kind=f"escalation.{trigger}",
-        title=summary,
+        title=(message[1] or summary) if message else summary,
+        body=message[0] if message else None,
         link=link,
         klass=klass,
         channels=list(r["channels"]),

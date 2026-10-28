@@ -24,7 +24,7 @@ from bide_comply.schema import (
     setting,
     theme_version,
 )
-from bide_comply.services import notify
+from bide_comply.services import notify, wording
 from bide_comply.services.common import names, problem
 from bide_comply.services.register import get_setting
 
@@ -36,6 +36,8 @@ router = APIRouter(prefix="/api/settings", tags=["settings"])
 
 LADDER = ["amber", "red_day1", "red_7days", "class_a_failure"]
 OTHER = ["failed_check", "missed", "high_action_7days", "certificate_window", "alarm_events"]
+# Rules with an "after N days" the system owner can set; the escalation ladder reads it (services/escalations.py).
+DAY_RULES = ("red_7days", "high_action_7days")
 CHANNEL_LABEL = {
     "app": "App",
     "push": "Push",
@@ -90,6 +92,7 @@ def alert_rules(pr: Current, conn: ConnDep, property: uuid.UUID | None = None) -
                 "step": i + 1 if trig in LADDER else None,
                 "title": notify.TRIGGERS[trig],
                 "note": (r["timing"] or {}).get("note"),
+                "days": (r["timing"] or {}).get("days", 7) if trig in DAY_RULES else None,
                 "recipients": [{**x, "label": _recipient_label(conn, x)} for x in r["recipients"]],
                 "channels": [
                     {"key": c, "label": CHANNEL_LABEL.get(c, c), "on": c in r["channels"]} for c in CHANNEL_LABEL
@@ -121,6 +124,7 @@ class RuleIn(BaseModel):
     recipients: list[dict]
     channels: list[str]
     note: str | None = None
+    days: int | None = None
 
 
 class RulesIn(BaseModel):
@@ -155,6 +159,10 @@ def save_rules(body: RulesIn, request: Request, pr: Current, conn: ConnDep) -> d
             )
         ).scalar()
         timing = {**(existing or notify.DEFAULT_RULES[r.trigger]["timing"]), **({"note": r.note} if r.note else {})}
+        if r.days is not None and r.trigger in DAY_RULES:
+            if not (1 <= r.days <= 90):
+                raise problem(422, "days", "Choose between 1 and 90 days.")
+            timing["days"] = r.days
         if body.property_id is None:
             # NULLs never conflict in a unique index, so the all-properties rule is replaced rather than upserted
             # (this also clears any duplicates an earlier upsert left behind).
@@ -219,10 +227,11 @@ def test_rules(pr: Current, conn: ConnDep, example: str = "alarm_missed_villa") 
         steps.append("Every day once expired: the same, and the item turns Red")
         return {"steps": steps}
     due = clock.today()
+    after = (notify.rule(conn, "red_7days", pid).get("timing") or {}).get("days", 7)
     for trig, when in [
         ("amber", "Due day"),
         ("red_day1", "Day 1 overdue"),
-        ("red_7days" if klass != "A" else "red_7days", "Day 1 overdue (Class A)" if klass == "A" else "Day 7 overdue"),
+        ("red_7days", "Day 1 overdue (Class A)" if klass == "A" else f"Day {after} overdue"),
     ]:
         r = notify.rule(conn, trig, pid)
         who = " and ".join(_recipient_label(conn, x) for x in r["recipients"])
@@ -312,6 +321,12 @@ def content(pr: Current, conn: ConnDep) -> dict:
             if any(r["group"] == g for r in rows)
         ]
     }
+
+
+@router.get("/wording")
+def screen_wording(pr: Current, conn: ConnDep) -> dict:
+    """The published on-screen wording (privacy notice, tour, empty states) for both apps. Anyone signed in."""
+    return wording.screen_texts(conn)
 
 
 @router.get("/content/{key}")
@@ -661,6 +676,55 @@ CATEGORY_LABEL = {
 }
 
 
+REF = re.compile(r"^[A-Z]{2}-\d{3,}$")
+
+
+def record_link(r: dict) -> str | None:
+    """Where the record an audit event concerns lives in the app, so the Record cell can open it (AUD-01)."""
+    et, eid, ref, code = r["entity_type"], r["entity_id"], r["entity_ref"], r["code"]
+    if et in ("register_item", "submission") and ref and REF.match(ref):
+        return f"/properties/{ref[:2]}?item={ref}"
+    if et == "action" and ref:
+        return f"/actions?sel={ref}"
+    if et == "certificate" and ref and REF.match(ref):
+        return f"/properties/{ref[:2]}?item={ref}"
+    if et == "certificate" and code:
+        return f"/properties/{code}?tab=certificates"
+    if et == "gate_item" and code and ref:
+        return f"/gates/{code}?section={ref[0]}"
+    if et == "template" and eid:
+        return f"/settings/library/{eid}"
+    if et in ("person", "staff_requirement") and eid:
+        return f"/settings/people?sel={eid}"
+    if et in ("pool",):
+        return "/settings/people?tab=groups"
+    if et in ("contractor", "contractor_visit"):
+        return "/settings/people?tab=contractors"
+    if et == "approval" and eid:
+        return f"/approvals?sel={eid}"
+    if et == "signoff":
+        return "/signoffs"
+    if et in ("report_export", "export", "scheduled_report"):
+        return "/reports?tab=past" if et != "scheduled_report" else "/reports?tab=scheduled"
+    if et == "import" and eid:
+        return f"/settings/import?job={eid}"
+    if et in ("licence", "location") and code:
+        return f"/settings/properties/{code}"
+    if et == "property" and code:
+        return f"/settings/setup/{code}" if r["action"].startswith("register.") else f"/properties/{code}"
+    if et == "theme":
+        return "/settings/appearance"
+    if et == "content":
+        return "/settings/content"
+    if et == "setting" and r["action"].startswith("alerts."):
+        return "/settings/alerts"
+    if et == "alarm_event" and code:
+        return f"/properties/{code}?tab=alarms"
+    if code and ref and REF.match(ref):
+        return f"/properties/{code}?item={ref}"
+    return None
+
+
 @router.get("/audit")
 def audit_log(
     pr: Current,
@@ -708,6 +772,7 @@ def audit_log(
             "actor_id": str(r["actor_id"]) if r["actor_id"] else None,
             "what": r["summary"],
             "record": r["entity_ref"] or r["property"] or "—",
+            "link": record_link(r),
             "from": r["client"] or ("Nightly job" if r["actor_label"] == "Nightly job" else "—"),
             "category": r["category"],
             "action": r["action"],

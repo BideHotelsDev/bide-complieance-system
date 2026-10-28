@@ -8,7 +8,7 @@ person points.
 import math
 import random
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from sqlalchemy import Connection, func, select, update
 
@@ -20,6 +20,8 @@ from bide_comply.schema import (
     amendment,
     approval_request,
     evidence,
+    notification,
+    person,
     pool_member,
     property_,
     register_item,
@@ -359,6 +361,92 @@ def submit(
     }
 
 
+def complete_from_visit(
+    conn: Connection,
+    actor: audit.Actor,
+    *,
+    register_item_id: uuid.UUID,
+    logged_by: uuid.UUID,
+    contractor_name: str,
+    purpose: str,
+    evidence_id: uuid.UUID | None,
+    visit_id: uuid.UUID,
+    fails: list[str],
+) -> uuid.UUID | None:
+    """A contractor visit with its certificate or report counts as the linked check done (DOC-05: "Links to the
+    6-monthly fire alarm service check, so it counts as done"). The item's open occurrence is recorded with the
+    document as its evidence, so the register, History and the inspection pack all show it. Returns the task done."""
+    if evidence_id is None:
+        return None
+    t = conn.execute(
+        select(task.c.id, task.c.due_at, template.c.name, template.c.verification)
+        .join(register_item, register_item.c.id == task.c.register_item_id)
+        .join(template, template.c.id == register_item.c.template_id)
+        .where(
+            task.c.register_item_id == register_item_id,
+            task.c.status.in_(("open", "overdue"))
+            | (task.c.status == "scheduled") & (task.c.window_opens_at <= clock.now()),
+        )
+        .order_by(task.c.due_at)
+        .limit(1)
+    ).first()
+    today = clock.today()
+    conn.execute(
+        update(register_item)
+        .where(
+            register_item.c.id == register_item_id,
+            (register_item.c.last_done_on.is_(None)) | (register_item.c.last_done_on < today),
+        )
+        .values(last_done_on=today)
+    )
+    if not t:
+        return None
+    sid = uuid.uuid4()
+    failed = bool(fails)
+    conn.execute(
+        submission.insert().values(
+            id=sid,
+            task_id=t.id,
+            submitter_id=logged_by,
+            work_done_on=today,
+            server_time=clock.now(),
+            values={"contractor": contractor_name, "purpose": purpose, "contractor_visit_id": str(visit_id)},
+            result="failed" if failed else "passed",
+            failed_fields=[
+                {"key": "findings", "label": "Contractor findings", "text": f, "why": "contractor"} for f in fails
+            ],
+            flags=[],
+            file_name=file_name(t.name, contractor_name, today),
+            locked=True,
+        )
+    )
+    conn.execute(
+        submission_evidence.insert().values(submission_id=sid, evidence_id=evidence_id, field_key="certificate", sort=0)
+    )
+    needs_ver = t.verification == "always"
+    conn.execute(
+        update(task)
+        .where(task.c.id == t.id)
+        .values(
+            status="failed" if failed else "submitted" if needs_ver else "passed",
+            completed_by=logged_by,
+            completed_at=clock.now(),
+            needs_verification=needs_ver,
+        )
+    )
+    audit.record(
+        conn,
+        actor,
+        category="check",
+        action="submission.create",
+        summary=f"Recorded a check as done by a {contractor_name} visit",
+        entity_type="submission",
+        entity_id=sid,
+        after={"result": "failed" if failed else "passed", "contractor_visit": str(visit_id)},
+    )
+    return t.id
+
+
 def pick_verifier_ok(pr: Principal, sub: dict) -> None:
     not_self(pr, sub["submitter_id"], "Your own submissions route to another verifier.")
 
@@ -559,6 +647,71 @@ def request_exception(
             link="/approvals",
         )
     return {"id": str(rid)}
+
+
+def due_reminders(conn: Connection, within_minutes: int = 60) -> int:
+    """Me › "Reminder before a check is due · 1 hour before": tell whoever does a check, once, when it's due within the
+    hour and still not done. People who switched reminders off aren't told. Returns how many reminders went out."""
+    now = clock.now()
+    rows = (
+        conn.execute(
+            select(
+                task.c.id,
+                task.c.due_at,
+                register_item,
+                template.c.name.label("template_name"),
+                template.c["class"].label("klass"),
+                property_.c.name.label("property"),
+            )
+            .select_from(
+                task.join(register_item, register_item.c.id == task.c.register_item_id)
+                .join(template, template.c.id == register_item.c.template_id)
+                .join(property_, property_.c.id == register_item.c.property_id)
+            )
+            .where(
+                task.c.status == "open",
+                task.c.due_at > now,
+                task.c.due_at <= now + timedelta(minutes=within_minutes),
+                template.c.kind.in_(("check", "cleaning")),
+            )
+        )
+        .mappings()
+        .all()
+    )
+    sent = 0
+    for r in rows:
+        people = notify.resolve(conn, [{"kind": "doer"}, {"kind": "cover"}], r["property_id"], dict(r))
+        if not people:
+            continue
+        link = f"/task/{r['id']}"
+        already = set(
+            conn.execute(
+                select(notification.c.person_id).where(
+                    notification.c.kind == "task.reminder",
+                    notification.c.link == link,
+                    notification.c.person_id.in_(people),
+                )
+            ).scalars()
+        )
+        prefs = dict(
+            (r.id, r.preferences)
+            for r in conn.execute(select(person.c.id, person.c.preferences).where(person.c.id.in_(people)))
+        )
+        to = {p for p in people - already if (prefs.get(p) or {}).get("reminder", True) is not False}
+        if not to:
+            continue
+        notify.notify(
+            conn,
+            to,
+            kind="task.reminder",
+            klass=r["klass"],
+            title=f"Due at {clock.london(r['due_at']):%H:%M}: {r['template_name']}",
+            body=r["property"],
+            link=link,
+            channels=["app", "push"],
+        )
+        sent += len(to)
+    return sent
 
 
 def spot_check_sample(conn: Connection, since: datetime, rate: int = 10) -> list[uuid.UUID]:

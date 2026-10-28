@@ -20,6 +20,7 @@ function StatusPill({ status }: { status: string }) {
   if (status === "Failed") return <Pill tone="red">Failed</Pill>
   if (status === "Passed") return <Pill tone="green">Passed</Pill>
   if (status === "Sent") return <Pill tone="blue">Being checked</Pill>
+  if (status === "Sent back") return <Pill tone="amber">Sent back</Pill>
   return <Pill tone="grey">{status}</Pill>
 }
 

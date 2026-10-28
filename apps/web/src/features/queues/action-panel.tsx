@@ -4,6 +4,7 @@
  * dialog explains what proof is missing (design: Dialogs).
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { Link } from "@tanstack/react-router"
 import * as React from "react"
 import { AlertTriangle, FileText, Phone, X } from "lucide-react"
 
@@ -16,7 +17,8 @@ import { cn } from "@bide-comply/ui/lib/utils"
 
 import { fmtDate, fmtDateTime } from "@/lib/format"
 import { useMe } from "@/lib/session"
-import type { ActionDetail, Person } from "./types"
+import type { ActionDetail } from "./types"
+import { ownerBody, ownerLabel, OwnerSelect, useOwnerOptions } from "./owner-select"
 import { DropZone, Field, inputCls, QDialog, textareaCls } from "./ui"
 
 export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose: () => void; onClosed: () => void }) {
@@ -60,7 +62,21 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
         isAdv ? { decision: decision.trim(), decision_reason: reason.trim() } : {},
       ),
     onSuccess: () => {
-      toast(`${ref_} closed`)
+      // Undo instead of "Are you sure?" (design: Dialogs › small confirmations).
+      toast(`${ref_} closed`, {
+        action: {
+          label: "Undo",
+          onClick: () =>
+            void api
+              .post(`/api/actions/${ref_}/reopen`, {})
+              .then(() => {
+                toast(`${ref_} is open again`)
+                refresh()
+                void qc.invalidateQueries({ queryKey: ["nav"] })
+              })
+              .catch((e: ApiError) => toastError(e.message)),
+        },
+      })
       refresh()
       void qc.invalidateQueries({ queryKey: ["nav"] })
       onClosed()
@@ -69,6 +85,16 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
       if (e.code === "needs_evidence") setRefused(e.message)
       else toastError(e.message)
     },
+  })
+
+  const reopen = useMutation({
+    mutationFn: () => api.post(`/api/actions/${ref_}/reopen`, {}),
+    onSuccess: () => {
+      toast(`${ref_} is open again`)
+      refresh()
+      void qc.invalidateQueries({ queryKey: ["nav"] })
+    },
+    onError: (e: ApiError) => toastError(e.message),
   })
 
   const addFiles = async (files: File[]) => {
@@ -124,6 +150,9 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
             <PriorityBadge priority={a.priority} />
             <Pill tone="grey">{a.type_label}</Pill>
             {a.status === "closed" && <Pill tone="green">Closed</Pill>}
+            {a.status !== "closed" && a.contractor_fix?.status === "pending" && (
+              <Pill tone="blue">Awaiting verification</Pill>
+            )}
           </>
         ) : (
           <Skeleton className="h-5 w-40" />
@@ -171,19 +200,79 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
               </Button>
             </div>
           )}
+          {a.status !== "closed" && a.contractor_fix?.status === "pending" && (
+            <div
+              role="note"
+              className="flex flex-col gap-1.5 rounded-[10px] border border-st-blue/25 bg-st-blue-bg px-3.5 py-3 text-st-blue"
+            >
+              <span className="font-medium">
+                {a.contractor_fix.contractor} marked this fixed on {a.contractor_fix.sent_on}. It stays open until
+                someone checks their photo.
+              </span>
+              {a.contractor_fix.note && <span className="text-[13px]">"{a.contractor_fix.note}"</span>}
+              <Link
+                to="/reviews"
+                search={{ queue: "contractor", sel: a.contractor_fix.upload_id }}
+                className="self-start text-[13px] font-medium text-link"
+              >
+                Check it in Evidence review
+              </Link>
+            </div>
+          )}
+          {a.status !== "closed" && a.contractor_fix?.status === "rejected" && (
+            <p role="note" className="m-0 rounded-[10px] bg-st-amber-bg px-3.5 py-3 text-[13px] text-st-amber">
+              Fix sent back to {a.contractor_fix.contractor}: {a.contractor_fix.review_comment}
+            </p>
+          )}
           <dl className="m-0 grid grid-cols-[110px_1fr] gap-y-2 text-[14px]">
             <dt className="text-muted-foreground">Property</dt>
-            <dd className="m-0">{a.property}</dd>
+            <dd className="m-0">
+              <Link to="/properties/$code" params={{ code: a.property_code }} className="text-link">
+                {a.property}
+              </Link>
+            </dd>
             <dt className="text-muted-foreground">Source</dt>
-            <dd className="m-0">{a.source_label}</dd>
+            <dd className="m-0">
+              {a.submission_id ? (
+                <Link to="/reviews" search={{ sel: a.submission_id }} className="text-link">
+                  {a.source_label}
+                </Link>
+              ) : a.certificate_id ? (
+                <Link to="/certificates" search={{ sel: a.certificate_id }} className="text-link">
+                  {a.source_label}
+                </Link>
+              ) : (
+                a.source_label
+              )}
+            </dd>
             <dt className="text-muted-foreground">Gate ref</dt>
             <dd className="m-0 font-mono text-[12px]">
-              {a.gate_ref ?? <span className="font-sans text-muted-foreground">None</span>}
+              {a.gate_ref ? (
+                <Link
+                  to="/gates/$code"
+                  params={{ code: a.property_code }}
+                  search={{ item: a.gate_ref }}
+                  className="text-link"
+                >
+                  {a.gate_ref}
+                </Link>
+              ) : (
+                <span className="font-sans text-muted-foreground">None</span>
+              )}
             </dd>
             {a.item_ref && (
               <>
                 <dt className="text-muted-foreground">Register item</dt>
-                <dd className="m-0 font-mono text-[12px]">{a.item_ref}</dd>
+                <dd className="m-0 font-mono text-[12px]">
+                  <Link
+                    to="/properties/$code"
+                    params={{ code: a.property_code }}
+                    search={{ item: a.item_ref }}
+                    className="text-link"
+                  >
+                    {a.item_ref}
+                  </Link>
+                </dd>
               </>
             )}
             <dt className="text-muted-foreground">Owner</dt>
@@ -310,6 +399,15 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
               </div>
               <p className="m-0 text-[12px] text-muted-foreground">{a.close_hint}</p>
             </>
+          )}
+
+          {a.status === "closed" && a.can_reopen && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="outline" disabled={reopen.isPending} onClick={() => reopen.mutate()}>
+                Undo close
+              </Button>
+              <span className="text-[12px] text-muted-foreground">You closed this today, so you can undo it.</span>
+            </div>
           )}
 
           {commenting && (
@@ -443,30 +541,28 @@ function ReassignDialog({
   onDone: () => void
   onSaved: () => void
 }) {
-  const people = useQuery<{ people: Person[] }, ApiError>({
-    queryKey: ["action-owner-options"],
-    queryFn: () => api.get("/api/actions/owner-options"),
-    staleTime: 300_000,
-  })
-  const [owner, setOwner] = React.useState(a.owner_id ?? "")
+  const opts = useOwnerOptions(a.property_id)
+  const current = a.owner_contractor_id ? `c:${a.owner_contractor_id}` : a.owner_id ? `p:${a.owner_id}` : ""
+  const [owner, setOwner] = React.useState(current)
   const [due, setDue] = React.useState(a.due_on)
   const [prio, setPrio] = React.useState<string>(a.priority)
+  const ownerChanged = !!owner && owner !== current
   const save = useMutation({
     mutationFn: () =>
       api.patch(`/api/actions/${a.ref}`, {
-        owner_id: owner && owner !== a.owner_id ? owner : null,
+        ...(ownerChanged ? ownerBody(owner) : { owner_id: null, owner_contractor_id: null }),
         due_on: due !== a.due_on ? due : null,
         priority: prio !== a.priority ? prio : null,
       }),
     onSuccess: () => {
-      const name = people.data?.people.find((p) => p.id === owner)?.name
-      toast(owner !== a.owner_id && name ? `${a.ref} given to ${name}` : `${a.ref} updated`)
+      const name = ownerLabel(opts.data, owner)
+      toast(ownerChanged && name ? `${a.ref} given to ${name}` : `${a.ref} updated`)
       onSaved()
       onDone()
     },
     onError: (e: ApiError) => toastError(e.message),
   })
-  const changed = (owner && owner !== a.owner_id) || due !== a.due_on || prio !== a.priority
+  const changed = ownerChanged || due !== a.due_on || prio !== a.priority
   return (
     <QDialog
       open
@@ -485,17 +581,20 @@ function ReassignDialog({
         </>
       }
     >
-      <Field label="Who owns it?">
-        <select value={owner} onChange={(e) => setOwner(e.target.value)} className={inputCls}>
-          <option value="">{a.owner && !a.owner_id ? `${a.owner} (not a named person)` : "Choose a person"}</option>
-          {(people.data?.people ?? []).map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-              {p.sub ? ` · ${p.sub}` : ""}
-            </option>
-          ))}
-        </select>
+      <Field label="Who owns it?" hint="(a person, or a contractor)">
+        <OwnerSelect
+          value={owner}
+          onChange={setOwner}
+          options={opts.data}
+          empty={a.owner && !a.owner_id && !a.owner_contractor_id ? `${a.owner} (not a named person)` : "Choose"}
+        />
       </Field>
+      {owner.startsWith("c:") && owner !== current && (
+        <span className="text-[13px] text-muted-foreground">
+          {ownerLabel(opts.data, owner)} sees it in the contractor portal and marks it fixed with a photo. It closes
+          once someone here checks that photo in Evidence review.
+        </span>
+      )}
       <div className="grid grid-cols-2 gap-2.5">
         <Field label="Due">
           <input type="date" value={due} onChange={(e) => setDue(e.target.value)} className={inputCls} />

@@ -327,6 +327,13 @@ def heatmap(conn: Connection, pr: Principal, props: list[dict]) -> dict:
     return {"domains": [{"key": d["key"], "name": d["name"]} for d in doms], "rows": out}
 
 
+def _gate_signable(conn: Connection, property_id: uuid.UUID) -> bool:
+    """The H08 sign-off only waits for anyone once the gate is Ready to open (GATE-04); until then it's locked."""
+    stage = conn.execute(select(property_.c.stage).where(property_.c.id == property_id)).scalar()
+    gs = gate_summary(conn, property_id, stage == "trading")
+    return bool(gs and gate_rules.can_sign(gs))
+
+
 def todo(conn: Connection, pr: Principal, property_id: uuid.UUID | None = None) -> dict:
     """Everything waiting for this person: checks, actions, reviews, signatures (design: My to-do)."""
     today = clock.today()
@@ -364,6 +371,7 @@ def todo(conn: Connection, pr: Principal, property_id: uuid.UUID | None = None) 
                     "detail": f"Life-safety alert · {e['ref']} · call is due today",
                     "action_ref": e["ref"],
                     "call_due": bool(e["call_due"] and not e["call_made_at"]),
+                    "property": e["property"],
                     "class": "A",
                     "link": f"/actions?sel={e['ref']}",
                 }
@@ -389,6 +397,7 @@ def todo(conn: Connection, pr: Principal, property_id: uuid.UUID | None = None) 
                     "detail": f"Your action · {a['ref']} · {'Urgent' if a['priority'] == 'high' else 'Soon' if a['priority'] == 'med' else 'Later'} · due {fmt_day(a['due_on'])}",
                     "link": f"/actions?sel={a['ref']}",
                     "due_on": a["due_on"],
+                    "property": a["property"],
                     "class": a["class"],
                 }
             )
@@ -469,8 +478,11 @@ def todo(conn: Connection, pr: Principal, property_id: uuid.UUID | None = None) 
     sign_items = [
         s
         for s in signatures
-        if pr.can("sign.dutyholder", s["property_id"])
-        or (s["type"] == "fra_countersign" and pr.can("sign.countersign", s["property_id"]))
+        if (
+            pr.can("sign.dutyholder", s["property_id"])
+            or (s["type"] == "fra_countersign" and pr.can("sign.countersign", s["property_id"]))
+        )
+        and not (s["type"] == "gate" and not _gate_signable(conn, s["property_id"]))
     ]
 
     week_end = today + timedelta(days=(6 - today.weekday()) + 7)
@@ -595,6 +607,7 @@ def _approval_item(conn: Connection, r) -> dict:
         "detail": detail,
         "link": f"/approvals?sel={r['id']}",
         "class": r["klass"],
+        "property": r["property"],
     }
 
 
@@ -607,23 +620,71 @@ def _short(name: str | None) -> str:
     }.get(name, name.split(" (")[0])
 
 
+def can_sign_request(pr: Principal, type_: str, property_id: uuid.UUID) -> bool:
+    """Who signs what (SGN-01): the assessor countersigns the FRA; everything else is the SPV's directors."""
+    if type_ == "fra_countersign":
+        return pr.can("sign.countersign", property_id)
+    if type_ == "advisory":  # a decision recorded on the Advisory, by the dutyholder
+        return pr.can("sign.dutyholder", property_id)
+    return pr.can("sign.dutyholder", property_id)
+
+
+def counts_as_awaiting(pr: Principal, type_: str, property_id: uuid.UUID) -> bool:
+    """Admins oversee everything waiting; signers count only what they can sign themselves."""
+    return pr.is_admin or can_sign_request(pr, type_, property_id)
+
+
+def signoffs_awaiting(conn: Connection, pr: Principal, property_id: uuid.UUID | None) -> int:
+    """What the Sign-offs page counts as awaiting: open signatures that aren't locked, and the urgent Advisories
+    that need the dutyholder's decision, at each property the person may sign for (or, for admins, oversee)."""
+    n = 0
+    for p in visible_properties(conn, pr, property_id):
+        if not (pr.can("sign.dutyholder", p["id"]) or pr.is_admin or pr.can("sign.countersign", p["id"])):
+            continue
+        gs = None
+        for r in conn.execute(
+            select(signature_request.c.type).where(
+                signature_request.c.property_id == p["id"], signature_request.c.status == "open"
+            )
+        ):
+            if not counts_as_awaiting(pr, r.type, p["id"]):
+                continue
+            if r.type == "gate":
+                gs = gs or gate_summary(conn, p["id"], p["stage"] == "trading")
+                if not (gs and gate_rules.can_sign(gs)):
+                    continue
+            n += 1
+        if counts_as_awaiting(pr, "advisory", p["id"]):
+            n += conn.execute(
+                select(func.count()).where(
+                    action.c.property_id == p["id"],
+                    action.c.type == "advisory",
+                    action.c.status != "closed",
+                    action.c.priority == "high",
+                )
+            ).scalar()
+    return n
+
+
+def _contractor_uploads(conn: Connection, pr: Principal, property_id: uuid.UUID | None) -> int:
+    """Reports and fix photos from the contractor portal waiting in Evidence review."""
+    from bide_comply.services import contractor_portal
+
+    return len(contractor_portal.pending_cards(conn, pr, property_id))
+
+
 def nav_counts(conn: Connection, pr: Principal, property_id: uuid.UUID | None) -> dict:
     pfilter = (lambda col: col == property_id) if property_id else (lambda col: scope_filter(pr, col))
     t = todo(conn, pr, property_id)
     actions_open = conn.execute(
         select(func.count()).where(action.c.status != "closed", pfilter(action.c.property_id))
     ).scalar()
-    sign = conn.execute(
-        select(func.count()).where(signature_request.c.status == "open", pfilter(signature_request.c.property_id))
-    ).scalar()
-    approvals = conn.execute(
-        select(func.count()).where(approval_request.c.status == "waiting", pfilter(approval_request.c.property_id))
-    ).scalar()
     return {
         "todo": len(t["now"]),
         "actions": actions_open,
-        "reviews": t["reviews"]["pending"] + t["reviews"]["spot_check"],
-        "signoffs": len(t["signatures"]) if not pr.is_admin else sign + (approvals if pr.can("approval.decide") else 0),
+        "reviews": t["reviews"]["pending"] + t["reviews"]["spot_check"] + _contractor_uploads(conn, pr, property_id),
+        # The same number the Sign-offs page says is awaiting (design: Navigation, amber = waiting for a signature).
+        "signoffs": signoffs_awaiting(conn, pr, property_id),
     }
 
 

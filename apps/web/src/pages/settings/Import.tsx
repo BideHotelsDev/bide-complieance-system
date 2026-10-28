@@ -31,6 +31,7 @@ type Plan = {
   gate_items: number
   properties: string[]
   actions: number
+  actions_already_here?: number
   to_confirm: number
   done_without_evidence: string[]
   role_owners: string[]
@@ -550,6 +551,11 @@ function WhatWillHappen({ job: j }: { job: Job }) {
           )}
           .
         </Row>
+        {!!p.actions_already_here && (
+          <Row n={p.actions_already_here} tone="grey">
+            Actions already here from an earlier import are left as they are, so re-running never duplicates one.
+          </Row>
+        )}
         {p.to_confirm > 0 && (
           <Row n={p.to_confirm} tone="amber">
             <strong>"To confirm" items import as open.</strong> They count against Class A until evidence is filed.

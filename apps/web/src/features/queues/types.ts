@@ -25,6 +25,8 @@ export type ActionRow = {
   late: boolean
   status: "open" | "to_confirm" | "closed"
   status_label: string
+  /** A contractor marked it fixed from the portal; open until a verifier checks the photo. */
+  awaiting_verification?: boolean
   closed_on: string | null
   decision: string | null
   decision_reason: string | null
@@ -43,6 +45,8 @@ export type ActionList = {
   facets: Facet[]
   summary: string
   any_filter: boolean
+  /** Set when the list is narrowed to one person's Actions (?owner=<id>, from the Team scorecard). */
+  owner?: { id: string; name: string }
   stats: {
     by_urgency: Record<Priority, number>
     by_property: { property: string; count: number }[]
@@ -74,6 +78,20 @@ export type ActionDetail = ActionRow & {
   interim_measure: string | null
   stop_sell_decision: string | null
   call_made_at: string | null
+  submission_id: string | null
+  certificate_id: string | null
+  can_reopen: boolean
+  owner_contractor_id?: string | null
+  /** The latest fix a contractor sent from the portal; pending until a verifier checks it in Evidence review. */
+  contractor_fix?: {
+    upload_id: string
+    status: "pending" | "approved" | "rejected"
+    contractor: string
+    sent_at: string
+    sent_on: string
+    note: string | null
+    review_comment: string | null
+  } | null
   can_close: boolean
   close_label: string
   close_hint: string
@@ -89,6 +107,8 @@ export type QueueCard = {
   detail: string
   badge: string
   badge_tone: "red" | "amber" | "grey" | "blue"
+  /** A report or fix photo from the contractor portal (opens the contractor upload, not a submission). */
+  kind?: "contractor"
 }
 
 export type ReviewQueue = {
@@ -99,6 +119,9 @@ export type ReviewQueue = {
 export type ReviewDetail = {
   id: string
   ref: string
+  property_code?: string
+  /** Actions raised from this submission (a failed check, or "Needs action"). */
+  actions?: { ref: string; status: string; priority: "high" | "med" | "low" }[]
   class: "A" | "B" | "C" | null
   title: string
   status: string
@@ -159,6 +182,7 @@ export type ApprovalDetail = {
   decided_by: string | null
   decision_note: string | null
   ref: string | null
+  property_code?: string | null
   can_decide: boolean
   own: boolean
   checks: string[]
@@ -178,6 +202,10 @@ export type SignRequest = {
   evidence_id?: string | null
   preconditions?: { done: boolean; text: string }[]
   action_ref?: string
+  /** This person can sign it (SGN-01: assessor countersigns, the SPV's directors sign the rest). */
+  can_sign?: boolean
+  /** Counted as waiting for this person (admins oversee all). */
+  mine?: boolean
 }
 
 export type SignoffProperty = {

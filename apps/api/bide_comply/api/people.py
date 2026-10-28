@@ -17,6 +17,7 @@ from bide_comply.db import ConnDep
 from bide_comply.schema import (
     auth_session,
     contractor,
+    contractor_contact,
     device,
     dutyholder,
     dutyholder_director,
@@ -31,6 +32,7 @@ from bide_comply.schema import (
 )
 from bide_comply.services import notify
 from bide_comply.services.common import fmt_date, initials, problem
+from bide_comply.services.register import sync_open_tasks
 
 router = APIRouter(prefix="/api/people", tags=["people"])
 
@@ -65,6 +67,8 @@ def _requirements(conn, person_id: uuid.UUID) -> list[dict]:
                 "status": st,
                 "label": label,
                 "restricted": r["restricted"],
+                # An upload from the staff app waiting to be checked (POST .../requirements/{id}/check).
+                "evidence_id": str(r["evidence_id"]) if r["evidence_id"] and st == "pending" else None,
             }
         )
     return out
@@ -277,6 +281,19 @@ def add_role(person_id: uuid.UUID, body: RoleIn, request: Request, pr: Current, 
         raise problem(422, "role", "Unknown role.")
     if body.role == "super_admin" and not pr.has_role("super_admin"):
         raise problem(403, "forbidden", "Only a Super Admin can make someone a Super Admin.")
+    if not conn.execute(select(person.c.id).where(person.c.id == person_id)).first():
+        raise problem(404, "not_found", "Not found.")
+    dupe = conn.execute(
+        select(role_assignment.c.id).where(
+            role_assignment.c.person_id == person_id,
+            role_assignment.c.role == body.role,
+            role_assignment.c.property_id.is_(None)
+            if body.property_id is None
+            else role_assignment.c.property_id == body.property_id,
+        )
+    ).first()
+    if dupe:
+        raise problem(409, "exists", f"They already have the {ROLES[body.role]} role there.")
     conn.execute(
         role_assignment.insert().values(
             id=uuid.uuid4(), person_id=person_id, role=body.role, property_id=body.property_id
@@ -423,6 +440,9 @@ def offboard(person_id: uuid.UUID, request: Request, pr: Current, conn: ConnDep)
             flagged += 1
         vals["needs_owner"] = not (vals.get("accountable_id", it["accountable_id"]))
         conn.execute(update(register_item).where(register_item.c.id == it["id"]).values(**vals))
+        # Their unfinished tasks go with the check: to the cover, or to nobody until a new owner is named.
+        sync_open_tasks(conn, it["id"])
+    conn.execute(update(register_item).where(register_item.c.cover_id == person_id).values(cover_id=None))
     conn.execute(pool_member.delete().where(pool_member.c.person_id == person_id))
     if flagged:
         notify.notify(
@@ -536,7 +556,20 @@ def set_members(pool_id: uuid.UUID, body: PoolIn, request: Request, pr: Current,
 @groups_router.get("/contractors")
 def contractors(pr: Current, conn: ConnDep) -> dict:
     t0 = clock.today()
+    # Who already has the contractor portal (a linked outside contact with the staff-app sign-in link).
+    portal: dict = {}
+    for c in conn.execute(
+        select(
+            contractor_contact.c.contractor_id, person.c.id, person.c.name, person.c.email, person.c.employment_status
+        )
+        .join(person, person.c.id == contractor_contact.c.person_id)
+        .order_by(person.c.name)
+    ).mappings():
+        portal.setdefault(c["contractor_id"], []).append(
+            {"id": str(c["id"]), "name": c["name"], "email": c["email"], "active": c["employment_status"] == "active"}
+        )
     return {
+        "can_invite": pr.can("people.manage"),
         "rows": [
             {
                 "id": str(r["id"]),
@@ -550,11 +583,12 @@ def contractors(pr: Current, conn: ConnDep) -> dict:
                 if r["accreditation_expires"] and r["accreditation_expires"] <= t0 + timedelta(days=60)
                 else "ok",
                 "email": r["email"],
+                "portal": portal.get(r["id"], []),
             }
             for r in conn.execute(
                 select(contractor).where(contractor.c.active.is_(True)).order_by(contractor.c.name)
             ).mappings()
-        ]
+        ],
     }
 
 
@@ -604,3 +638,65 @@ def dutyholders(pr: Current, conn: ConnDep) -> dict:
             for r in rows
         ]
     }
+
+
+class RequirementCheckIn(BaseModel):
+    accept: bool
+    note: str | None = None
+
+
+@router.post("/{person_id}/requirements/{requirement_id}/check")
+def check_requirement(
+    person_id: uuid.UUID,
+    requirement_id: uuid.UUID,
+    body: RequirementCheckIn,
+    request: Request,
+    pr: Current,
+    conn: ConnDep,
+) -> dict:
+    """Accept or send back a certificate someone uploaded from the staff app (My documents › Upload a certificate)."""
+    pr.require("people.manage")
+    r = (
+        conn.execute(
+            select(staff_requirement, staff_requirement_type.c.name)
+            .join(staff_requirement_type, staff_requirement_type.c.id == staff_requirement.c.type_id)
+            .where(staff_requirement.c.id == requirement_id, staff_requirement.c.person_id == person_id)
+        )
+        .mappings()
+        .first()
+    )
+    if not r:
+        raise problem(404, "not_found", "Not found.")
+    if r["status"] != "pending":
+        raise problem(409, "not_pending", "There's nothing waiting to check.")
+    if person_id == pr.person_id:
+        raise problem(403, "own_work", "Someone else checks your own certificates.")
+    if not body.accept and not (body.note and body.note.strip()):
+        raise problem(422, "note", "Say what's wrong, so they know what to upload.")
+    first = pr.name.split()[0]
+    vals = (
+        {"status": "done", "done_on": clock.today(), "detail": f"Checked by {first}", "checked_by": pr.person_id}
+        if body.accept
+        else {"status": "missing", "detail": None}
+    )
+    conn.execute(update(staff_requirement).where(staff_requirement.c.id == requirement_id).values(**vals))
+    notify.notify(
+        conn,
+        {person_id},
+        kind="document.checked",
+        title=f"{r['name']}: {'accepted' if body.accept else 'please upload it again'}",
+        body=None if body.accept else f'{first}: "{body.note.strip()}"',
+        link="/documents",
+        channels=["app", "push"],
+    )
+    audit.record(
+        conn,
+        actor_for(request, pr),
+        category="record",
+        action="document.accept" if body.accept else "document.send_back",
+        summary=f"{'Accepted' if body.accept else 'Sent back'} an uploaded certificate ({r['name']})",
+        entity_type="staff_requirement",
+        entity_id=requirement_id,
+        after={"accept": body.accept, "note": body.note},
+    )
+    return {"ok": True, "status": vals["status"]}

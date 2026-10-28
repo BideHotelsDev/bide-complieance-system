@@ -57,6 +57,7 @@ export function ActionsPage() {
     prio: params.prio,
     source: params.source,
     gate: params.gate,
+    owner: params.owner,
     sort,
     page: board ? 1 : page,
     page_size: board ? 200 : 25,
@@ -72,6 +73,7 @@ export function ActionsPage() {
   const pick = (ref: string | null) => set({ sel: ref ?? undefined })
   const clearAll = () =>
     set({
+      owner: undefined,
       q: undefined,
       view: undefined,
       prop: undefined,
@@ -181,7 +183,9 @@ export function ActionsPage() {
         <FilterBar
           facets={(d?.facets ?? []).filter((f) => f.options.length > 0)}
           onFacet={(k, v) => set({ [k]: v.join(",") || undefined, page: undefined })}
-          anyFilter={FACET_KEYS.some((k) => params[k]) || !!params.q || (params.view ?? "all") !== "all"}
+          anyFilter={
+            FACET_KEYS.some((k) => params[k]) || !!params.q || !!params.owner || (params.view ?? "all") !== "all"
+          }
           onClearAll={clearAll}
           search={
             <SearchBox
@@ -192,6 +196,20 @@ export function ActionsPage() {
             />
           }
         >
+          {params.owner && (
+            <button
+              type="button"
+              onClick={() => set({ owner: undefined, page: undefined })}
+              aria-label={`Remove filter: owner ${d?.owner?.name ?? ""}`}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-foreground/40 bg-surface px-2.5 text-[13px] hover:bg-hover"
+            >
+              <span className="text-muted-foreground">Owner</span>
+              <span className="font-medium">{d?.owner?.name ?? "…"}</span>
+              <span aria-hidden className="text-muted-foreground">
+                ×
+              </span>
+            </button>
+          )}
           <SortMenu
             value={sort}
             label={sortLabel}
@@ -273,6 +291,7 @@ export function ActionsPage() {
 
 function StatusPill({ r }: { r: ActionRow }) {
   if (r.status === "closed") return <Pill tone="green">Closed</Pill>
+  if (r.awaiting_verification) return <Pill tone="blue">Fix to check</Pill>
   if (r.late) return <Pill tone="solid-amber">Overdue</Pill>
   return <Pill tone={r.status === "to_confirm" ? "amber" : "grey"}>{r.status_label}</Pill>
 }

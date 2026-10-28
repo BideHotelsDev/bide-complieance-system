@@ -7,10 +7,51 @@ from datetime import timedelta
 from sqlalchemy import Connection, select
 
 from bide_comply import clock
-from bide_comply.schema import action, certificate, property_, register_item, task, template
-from bide_comply.services import notify
-from bide_comply.services.common import fmt_date
+from bide_comply.schema import action, certificate, person, property_, register_item, role_assignment, task, template
+from bide_comply.services import notify, wording
+from bide_comply.services.common import fmt_date, fmt_day
 from bide_comply.services.register import get_setting
+
+
+def _days(rule: dict, default: int) -> int:
+    """The "after N days" set on the rule in Settings › Alert rules (CMS-08)."""
+    try:
+        return max(1, int((rule.get("timing") or {}).get("days", default)))
+    except (TypeError, ValueError):
+        return default
+
+
+def _first(name: str | None) -> str | None:
+    return name.split()[0].strip("[") if name and not name.startswith("[") else name
+
+
+def _site_lead(conn: Connection, property_id, cache: dict) -> str:
+    if property_id not in cache:
+        n = conn.execute(
+            select(person.c.name)
+            .join(role_assignment, role_assignment.c.person_id == person.c.id)
+            .where(role_assignment.c.role == "site_lead", role_assignment.c.property_id == property_id)
+            .order_by(person.c.name)
+            .limit(1)
+        ).scalar()
+        cache[property_id] = n or "the site lead"
+    return cache[property_id]
+
+
+def _check_values(conn: Connection, it, today, leads: dict) -> dict:
+    due = it["next_due_on"]
+    late = (today - due).days if due and due < today else 0
+    doer = conn.execute(select(person.c.name).where(person.c.id == it["done_by_person_id"])).scalar()
+    return {
+        "check": it["name"],
+        "property": it["property"],
+        "due_date": fmt_day(due) if due else "",
+        "days_overdue": f"{late} day{'' if late == 1 else 's'}" if late else "",
+        "person": _first(doer) if doer else "",
+        "site_lead": _site_lead(conn, it["property_id"], leads),
+        "class": it["klass"],
+        "typical_time": f"{it['typical_minutes']} minutes" if it["typical_minutes"] else "a few minutes",
+    }
 
 
 def run(conn: Connection) -> int:
@@ -25,7 +66,9 @@ def run(conn: Connection) -> int:
                 register_item.c.status,
                 register_item.c.next_due_on,
                 register_item.c.status_reason,
+                register_item.c.done_by_person_id,
                 template.c.name,
+                template.c.typical_minutes,
                 template.c["class"].label("klass"),
                 property_.c.name.label("property"),
             )
@@ -36,8 +79,18 @@ def run(conn: Connection) -> int:
         .mappings()
         .all()
     )
+    rules_cache: dict = {}
+    leads: dict = {}
+
+    def rule(trigger: str, property_id) -> dict:
+        if (trigger, property_id) not in rules_cache:
+            rules_cache[(trigger, property_id)] = notify.rule(conn, trigger, property_id)
+        return rules_cache[(trigger, property_id)]
+
     for it in items:
         due = it["next_due_on"]
+        if it["status"] in ("amber", "red"):
+            values = _check_values(conn, it, today, leads)
         if it["status"] == "amber":
             fired += bool(
                 notify.escalate(
@@ -49,6 +102,7 @@ def run(conn: Connection) -> int:
                     summary=f"{it['name']} at {it['property']} is due {fmt_date(due)}.",
                     dedupe_key=f"amber:{it['id']}:{due}",
                     link=f"/properties/{it['ref'][:2]}?item={it['ref']}",
+                    message=wording.message(conn, "check_due_soon", values),
                 )
             )
         if it["status"] == "red" and it["status_reason"] in (
@@ -69,9 +123,11 @@ def run(conn: Connection) -> int:
                     summary=f"{it['name']} at {it['property']} is overdue ({it['ref']}).",
                     dedupe_key=f"red1:{it['id']}:{key}",
                     link=f"/properties/{it['ref'][:2]}?item={it['ref']}",
+                    message=wording.message(conn, "check_overdue", values),
                 )
             )
-            if it["klass"] == "A" or (due and due <= today - timedelta(days=7)):
+            after = _days(rule("red_7days", it["property_id"]), 7)
+            if it["klass"] == "A" or (due and due <= today - timedelta(days=after)):
                 fired += bool(
                     notify.escalate(
                         conn,
@@ -83,10 +139,11 @@ def run(conn: Connection) -> int:
                         summary=(
                             f"Class A at {it['property']}: {it['name']} is overdue ({it['ref']})."
                             if it["klass"] == "A"
-                            else f"{it['name']} at {it['property']} has been overdue for 7 days ({it['ref']})."
+                            else f"{it['name']} at {it['property']} has been overdue for {after} days ({it['ref']})."
                         ),
                         dedupe_key=f"red7:{it['id']}:{key}",
                         link=f"/properties/{it['ref'][:2]}?item={it['ref']}",
+                        message=wording.message(conn, "check_overdue", values),
                     )
                 )
     for t in conn.execute(
@@ -128,11 +185,15 @@ def run(conn: Connection) -> int:
             action.c.property_id,
             action.c.description,
             action.c.owner_id,
+            action.c.raised_on,
             property_.c.name.label("property"),
         )
         .join(property_, property_.c.id == action.c.property_id)
-        .where(action.c.status != "closed", action.c.priority == "high", action.c.raised_on < today - timedelta(days=7))
+        .where(action.c.status != "closed", action.c.priority == "high", action.c.raised_on < today - timedelta(days=1))
     ).mappings():
+        after = _days(rule("high_action_7days", a["property_id"]), 7)
+        if a["raised_on"] >= today - timedelta(days=after):
+            continue
         fired += bool(
             notify.escalate(
                 conn,
@@ -140,7 +201,7 @@ def run(conn: Connection) -> int:
                 property_id=a["property_id"],
                 action_id=a["id"],
                 extra={"owner_id": a["owner_id"]},
-                summary=f"Urgent Action {a['ref']} at {a['property']} has been open more than 7 days.",
+                summary=f"Urgent Action {a['ref']} at {a['property']} has been open more than {after} days.",
                 dedupe_key=f"high7:{a['id']}",
                 link=f"/actions?sel={a['ref']}",
             )
@@ -152,6 +213,7 @@ def run(conn: Connection) -> int:
             certificate.c.title,
             certificate.c.expires_on,
             certificate.c.property_id,
+            certificate.c.provider_text,
             property_.c.name.label("property"),
         )
         .join(property_, property_.c.id == certificate.c.property_id)
@@ -180,6 +242,19 @@ def run(conn: Connection) -> int:
                 ),
                 dedupe_key=key,
                 link=f"/certificates?sel={c['id']}",
+                message=None
+                if left < 0
+                else wording.message(
+                    conn,
+                    "certificate_expiring",
+                    {
+                        "certificate": c["title"],
+                        "property": c["property"],
+                        "expiry_date": fmt_date(c["expires_on"], True),
+                        "days_left": f"{left} days",
+                        "contractor": c["provider_text"] or "the contractor",
+                    },
+                ),
             )
         )
     return fired

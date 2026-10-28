@@ -15,6 +15,7 @@ import { ClassBadge, Pill } from "@bide-comply/ui/components/status"
 import { toast, toastError } from "@bide-comply/ui/components/toaster"
 import { cn } from "@bide-comply/ui/lib/utils"
 
+import { AppLink } from "@/features/overview/home-shared"
 import { fmtDate, fmtDateTime } from "@/lib/format"
 import { useParams } from "@/lib/params"
 import { useMe } from "@/lib/session"
@@ -48,7 +49,7 @@ type Walk = {
   group: string
   items: Item[]
   tally: { matches: number; doesnt: number; cant_check: number; to_do: number }
-  also_waiting: { title: string; due_on: string | null; priority?: Priority }[]
+  also_waiting: { title: string; due_on: string | null; priority?: Priority; link?: string }[]
   can_finish: boolean
   sent_at: string | null
   action_owner: string | null
@@ -269,7 +270,16 @@ function WalkView({ walk, group, onGroup }: { walk: Walk; group: string; onGroup
               <ul className="m-0 flex list-none flex-col gap-3 p-0">
                 {walk.also_waiting.map((a, i) => (
                   <li key={i} className="flex items-start gap-3 text-[14px]">
-                    <span className="min-w-0 flex-1">{a.title}</span>
+                    {a.link ? (
+                      <AppLink
+                        href={a.link}
+                        className="min-w-0 flex-1 text-foreground no-underline hover:text-link hover:underline"
+                      >
+                        {a.title}
+                      </AppLink>
+                    ) : (
+                      <span className="min-w-0 flex-1">{a.title}</span>
+                    )}
                     {a.due_on && <DueBadge priority={a.priority} due={a.due_on} />}
                   </li>
                 ))}

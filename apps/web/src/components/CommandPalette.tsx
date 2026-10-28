@@ -3,7 +3,7 @@
  * first, each carrying its status so you can triage without opening it, and the scope shown. Recent items show
  * before typing.
  */
-import { useNavigate } from "@tanstack/react-router"
+import { useRouter } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
 import { Command } from "cmdk"
 import { FileText, Search } from "lucide-react"
@@ -60,7 +60,8 @@ function Highlight({ text, q }: { text: string; q: string }) {
 export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const [q, setQ] = React.useState("")
   const [debounced, setDebounced] = React.useState("")
-  const navigate = useNavigate()
+  const router = useRouter()
+  const [value, setValue] = React.useState("")
   const { propertyId } = useProperty()
   React.useEffect(() => {
     const t = setTimeout(() => setDebounced(q.trim()), 250)
@@ -76,10 +77,18 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
     remember(it)
     onOpenChange(false)
     setQ("")
-    void navigate({ to: it.link })
+    void router.navigate({ href: it.link })
   }
-  const groups =
-    debounced.length >= 2 ? (res.data?.groups ?? []) : [{ type: "recent", label: "Recent", items: recent() }]
+  const groups = React.useMemo(
+    () => (debounced.length >= 2 ? (res.data?.groups ?? []) : [{ type: "recent", label: "Recent", items: recent() }]),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- recent() is read when the palette opens or the query changes
+    [debounced, res.data, open],
+  )
+  // New results: highlight the first one, so Enter always opens something (results arrive after typing).
+  const first = groups.find((g) => g.items.length)?.items[0]
+  React.useEffect(() => {
+    setValue(first ? first.link + first.id : "")
+  }, [first])
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
@@ -89,7 +98,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
           className="fixed top-[12vh] left-1/2 z-50 w-[min(640px,calc(100vw-32px))] -translate-x-1/2 overflow-hidden rounded-xl border border-border bg-popover shadow-2xl"
         >
           <DialogPrimitive.Title className="sr-only">Search everything</DialogPrimitive.Title>
-          <Command shouldFilter={false} label="Search everything">
+          <Command shouldFilter={false} label="Search everything" value={value} onValueChange={setValue}>
             <div className="flex items-center gap-2 border-b border-divider px-3.5">
               <Search className="size-4 text-muted-foreground" />
               <Command.Input

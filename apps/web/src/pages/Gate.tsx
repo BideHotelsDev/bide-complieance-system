@@ -18,6 +18,7 @@ import { cn } from "@bide-comply/ui/lib/utils"
 import { GATE_STATUSES, GateItemDialog, saveItem } from "@/features/queues/gate-item"
 import type { GateDetail, GateItem } from "@/features/queues/types"
 import { IconBox, Legend, Progress, QDialog, Ring, StatBig, StatCard, StatTitle } from "@/features/queues/ui"
+import { EvidenceLink } from "@/lib/evidence"
 import { fmtDateTime } from "@/lib/format"
 import { useParams } from "@/lib/params"
 import { useMe } from "@/lib/session"
@@ -35,7 +36,13 @@ export function GatePage() {
   const [signing, setSigning] = React.useState(false)
   const g = res.data
   const edit = params.edit === "1" && !!g?.can_edit
-  const section = params.section ?? g?.selected_section ?? "A"
+  // ?item=<ref> (from an Action's gate ref): open that line's section and point at it.
+  const target = params.item ? g?.items.find((i) => i.ref === (params.item ?? "").toUpperCase()) : undefined
+  const section = params.section ?? target?.section ?? g?.selected_section ?? "A"
+  React.useEffect(() => {
+    if (!target) return
+    document.getElementById(`gate-${target.ref}`)?.scrollIntoView({ block: "center" })
+  }, [target])
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: ["gate", code] })
     void qc.invalidateQueries({ queryKey: ["gates"] })
@@ -284,9 +291,12 @@ export function GatePage() {
                 {items.map((i) => (
                   <tr
                     key={i.id}
+                    id={`gate-${i.ref}`}
+                    aria-current={target?.id === i.id ? "true" : undefined}
                     className={cn(
                       "border-b border-divider last:border-0",
                       g.can_edit && "cursor-pointer hover:bg-hover/50",
+                      target?.id === i.id && "bg-st-blue-bg/60 shadow-[inset_3px_0_0_var(--c-blue)]",
                     )}
                     onClick={g.can_edit ? () => setEditing(i) : undefined}
                   >
@@ -317,9 +327,19 @@ export function GatePage() {
                       {i.evidence_required ?? "—"}
                       {(i.evidence.length > 0 || i.evidence_link) && (
                         <span className="block text-[12px] text-st-green">
-                          {i.evidence.length > 0
-                            ? `${i.evidence.length} ${i.evidence.length === 1 ? "file" : "files"} filed`
-                            : `Filed: ${i.evidence_link}`}
+                          {i.evidence.length > 0 ? (
+                            <>
+                              Filed:{" "}
+                              {i.evidence.map((e, n) => (
+                                <React.Fragment key={e.id}>
+                                  {n > 0 && ", "}
+                                  <EvidenceLink id={e.id}>{e.name}</EvidenceLink>
+                                </React.Fragment>
+                              ))}
+                            </>
+                          ) : (
+                            `Filed: ${i.evidence_link}`
+                          )}
                         </span>
                       )}
                     </td>

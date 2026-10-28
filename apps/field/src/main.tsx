@@ -10,6 +10,7 @@ import { loadTheme, type Theme } from "@bide-comply/ui/lib/theme"
 
 import "./index.css"
 import { toastSent } from "./components/sync"
+import { refreshPush } from "./lib/push"
 import { onSent, startSync } from "./lib/queue"
 import { PropertyProvider } from "./lib/session"
 import { router } from "./router"
@@ -39,15 +40,23 @@ const queryClient = new QueryClient({
 
 // Checks saved on the phone send by themselves when the signal comes back.
 startSync()
-onSent(() => {
-  toastSent()
+onSent((item, res) => {
+  // A check saved offline that turns out Failed still says what happened next (design: AppResult, in short).
+  toastSent(
+    res.result === "failed" && res.action
+      ? `${item.title} sent. Logged as Failed, and ${res.action.ref} was raised to fix it.`
+      : `${item.title} sent. Thank you.`,
+  )
   void queryClient.invalidateQueries()
 })
 
 // The service worker caches the app shell so the app opens with no signal (production builds only).
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    void navigator.serviceWorker.register(appPath("/sw.js"), { scope: appPath("/") }).catch(() => undefined)
+    void navigator.serviceWorker
+      .register(appPath("/sw.js"), { scope: appPath("/") })
+      .then(() => refreshPush())
+      .catch(() => undefined)
   })
 }
 

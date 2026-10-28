@@ -13,8 +13,20 @@ from bide_comply.auth import Current, actor_for
 from bide_comply.authz import scope_filter
 from bide_comply.db import ConnDep
 from bide_comply.engine import actions as rules
-from bide_comply.schema import action, action_comment, action_evidence, escalation, evidence, person, property_
+from bide_comply.schema import (
+    action,
+    action_comment,
+    action_evidence,
+    contractor,
+    contractor_visit,
+    escalation,
+    evidence,
+    person,
+    property_,
+    register_item,
+)
 from bide_comply.services import actions as service
+from bide_comply.services import contractor_portal
 from bide_comply.services import evidence as ev_service
 from bide_comply.services.common import names, problem
 
@@ -33,11 +45,15 @@ def _rows(conn, pr, property_id: uuid.UUID | None, include_closed: bool):
     rows = [dict(r) for r in conn.execute(q).mappings()]
     who = names(conn, {r["owner_id"] for r in rows})
     today = clock.today()
+    fixes = contractor_portal.fix_status(conn, [r["id"] for r in rows if r["owner_contractor_id"]])
     out = []
     for r in rows:
         v = service.view_row(conn, r, today, who)
         v["property"] = r["property"]
         v["property_code"] = r["code"]
+        # A contractor marked it fixed from the portal: open until a site manager checks the photo.
+        fix = fixes.get(r["id"])
+        v["awaiting_verification"] = bool(fix and fix["status"] == "pending" and r["status"] != "closed")
         out.append(v)
     return out
 
@@ -53,6 +69,7 @@ def list_actions(
     prio: list[str] | None = Query(None),
     source: list[str] | None = Query(None),
     gate: list[str] | None = Query(None),
+    owner: uuid.UUID | None = None,
     property: uuid.UUID | None = None,  # noqa: A002
     sort: str = "due",
     page: int = 1,
@@ -60,6 +77,10 @@ def list_actions(
     closed: bool = False,
 ) -> dict:
     rows = _rows(conn, pr, property, closed)
+    # One person's Actions (Team scorecard › person): a filter on top of the views and facets.
+    owner_name = names(conn, {owner}).get(owner) if owner else None
+    if owner:
+        rows = [r for r in rows if r["owner_id"] == str(owner)]
     today = clock.today()
     week_end = today + timedelta(days=6 - today.weekday())
     views = [
@@ -155,6 +176,10 @@ def list_actions(
         by_prop[r["property"]] = by_prop.get(r["property"], 0) + 1
     urgent = [r for r in open_rows if r["priority"] == "high"]
     out = res.dump()
+    if owner_name:
+        out["owner"] = {"id": str(owner), "name": owner_name}
+        head, sep, tail = out["summary"].partition(". ")
+        out["summary"] = f"{head.rstrip('.')}, owned by {owner_name}." + (f" {tail}" if sep else "")
     out["stats"] = {
         "by_urgency": {
             "high": len(urgent),
@@ -172,14 +197,56 @@ def list_actions(
 
 
 @router.get("/owner-options")
-def owner_options(pr: Current, conn: ConnDep) -> dict:
-    """Named people an Action can be given to (reassign and New Action dialogs). No generic names."""
+def owner_options(pr: Current, conn: ConnDep, property: uuid.UUID | None = None) -> dict:  # noqa: A002
+    """Named people an Action can be given to (reassign and New Action dialogs). No generic names. Contractors too:
+    those who already work at the property first, then the rest of the group's list."""
     ppl = conn.execute(
         select(person.c.id, person.c.name, person.c.title)
         .where(person.c.employment_status == "active")
         .order_by(person.c.name)
     ).all()
-    return {"people": [{"id": str(x.id), "name": x.name, "sub": x.title} for x in ppl]}
+    here: set[uuid.UUID] = set()
+    if property:
+        here = {
+            r[0]
+            for r in conn.execute(
+                select(register_item.c.done_by_contractor_id).where(
+                    register_item.c.property_id == property, register_item.c.done_by_contractor_id.is_not(None)
+                )
+            )
+        } | {
+            r[0]
+            for r in conn.execute(
+                select(contractor_visit.c.contractor_id).where(contractor_visit.c.property_id == property)
+            )
+        }
+    firms = conn.execute(
+        select(contractor.c.id, contractor.c.name, contractor.c.trade, contractor.c.accreditation)
+        .where(contractor.c.active)
+        .order_by(contractor.c.name)
+    ).all()
+    contractors = sorted(
+        (
+            {
+                "id": str(c.id),
+                "name": c.name,
+                "sub": " · ".join(x for x in [c.trade, c.accreditation, "works here" if c.id in here else None] if x)
+                or None,
+                "here": c.id in here,
+            }
+            for c in firms
+        ),
+        key=lambda c: (not c["here"], c["name"]),
+    )
+    return {"people": [{"id": str(x.id), "name": x.name, "sub": x.title} for x in ppl], "contractors": contractors}
+
+
+def _match(ref: str):
+    """An Action by its ID (TV-022) or, for older links, by its database id."""
+    try:
+        return action.c.id == uuid.UUID(ref)
+    except ValueError:
+        return action.c.ref == ref.upper()
 
 
 def _get(conn, pr, ref: str) -> dict:
@@ -187,7 +254,7 @@ def _get(conn, pr, ref: str) -> dict:
         conn.execute(
             select(action, property_.c.name.label("property"), property_.c.code)
             .join(property_, property_.c.id == action.c.property_id)
-            .where(action.c.ref == ref.upper())
+            .where(_match(ref))
         )
         .mappings()
         .first()
@@ -223,6 +290,11 @@ def detail(ref: str, pr: Current, conn: ConnDep) -> dict:
         )
     ]
     v["item_ref"] = service.item_ref(conn, a["register_item_id"])
+    # Where it came from, so the panel can link back: the failed check, the certificate, the gate line.
+    v["submission_id"] = str(a["submission_id"]) if a["submission_id"] else None
+    v["certificate_id"] = str(a["certificate_id"]) if a["certificate_id"] else None
+    v["can_reopen"] = a["status"] == "closed" and a["closed_by"] == pr.person_id and a["closed_on"] == clock.today()
+    v["contractor_fix"] = contractor_portal.fix_view(contractor_portal.fix_status(conn, [a["id"]]).get(a["id"]))
     v["interim_measure"] = a["interim_measure"]
     v["stop_sell_decision"] = a["stop_sell_decision"]
     v["call_made_at"] = a["call_made_at"]
@@ -243,6 +315,7 @@ class NewAction(BaseModel):
     priority: str | None = None
     klass: str | None = None
     owner_id: uuid.UUID | None = None
+    owner_contractor_id: uuid.UUID | None = None  # a contractor fixes it, through the contractor portal
     source: str = "manual"
     source_ref: str | None = None
     gate_ref: str | None = None
@@ -270,7 +343,8 @@ def create(body: NewAction, request: Request, pr: Current, conn: ConnDep) -> dic
         gate_ref=body.gate_ref,
         priority=body.priority,
         klass=body.klass,
-        owner_id=body.owner_id,
+        owner_id=None if body.owner_contractor_id else body.owner_id,
+        owner_contractor_id=body.owner_contractor_id,
         due_on=body.due_on,
         evidence_ids=ev,
     )
@@ -299,6 +373,18 @@ def close(ref: str, body: CloseIn, request: Request, pr: Current, conn: ConnDep)
         decision_reason=body.decision_reason,
         note=body.note,
     )
+
+
+@router.post("/{ref}/reopen")
+def reopen(ref: str, request: Request, pr: Current, conn: ConnDep) -> dict:
+    """Undo a close (design: Dialogs › "Action closed · Undo"): only the person who closed it, the same day."""
+    a = _get(conn, pr, ref)
+    if a["status"] != "closed":
+        raise problem(409, "open", "This Action is already open.")
+    if a["closed_by"] != pr.person_id or a["closed_on"] != clock.today():
+        raise problem(403, "forbidden", "Only the person who closed it can undo that, on the same day.")
+    service.reopen(conn, actor_for(request, pr), a)
+    return {"ok": True}
 
 
 class EvidenceIn(BaseModel):
@@ -348,6 +434,7 @@ def comment(ref: str, body: CommentIn, pr: Current, conn: ConnDep) -> dict:
 
 class ReassignIn(BaseModel):
     owner_id: uuid.UUID | None = None
+    owner_contractor_id: uuid.UUID | None = None
     due_on: date | None = None
     priority: str | None = None
     interim_measure: str | None = None
@@ -358,9 +445,15 @@ def reassign(ref: str, body: ReassignIn, request: Request, pr: Current, conn: Co
     a = _get(conn, pr, ref)
     if not (pr.can("action.manage", a["property_id"]) or pr.can("assign", a["property_id"])):
         raise problem(403, "forbidden", "You can't reassign Actions here.")
-    vals = {k: v for k, v in body.model_dump().items() if v is not None}
+    if body.owner_id and body.owner_contractor_id:
+        raise problem(422, "owner", "Choose a person or a contractor, not both.")
+    if body.owner_contractor_id:
+        service.assign_contractor(conn, actor_for(request, pr), a, body.owner_contractor_id)
+        a = _get(conn, pr, ref)
+    vals = {k: v for k, v in body.model_dump(exclude={"owner_contractor_id"}).items() if v is not None}
     if body.owner_id:
         vals["owner_text"] = None
+        vals["owner_contractor_id"] = None
     if "priority" in vals and vals["priority"] not in rules.PRIORITY_DAYS:
         raise problem(422, "priority", "Unknown priority.")
     if not vals:

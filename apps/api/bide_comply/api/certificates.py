@@ -18,6 +18,7 @@ from bide_comply.schema import (
     evidence,
     person,
     property_,
+    register_item,
     staff_requirement,
     staff_requirement_type,
 )
@@ -44,6 +45,50 @@ def _status(c: dict, today: date) -> tuple[str, str]:
     return "valid", "Valid"
 
 
+def _query(pr):
+    return (
+        select(
+            certificate,
+            property_.c.name.label("property"),
+            property_.c.code,
+            action.c.ref.label("action_ref"),
+            evidence.c.file_name,
+            register_item.c.ref.label("register_ref"),
+        )
+        .outerjoin(property_, property_.c.id == certificate.c.property_id)
+        .outerjoin(action, action.c.id == certificate.c.linked_action_id)
+        .outerjoin(evidence, evidence.c.id == certificate.c.evidence_id)
+        .outerjoin(register_item, register_item.c.id == certificate.c.register_item_id)
+        .where(certificate.c.person_id.is_(None), scope_filter(pr, certificate.c.property_id))
+    )
+
+
+def _row(c: dict, today: date) -> dict:
+    st, label = _status(c, today)
+    return {
+        "id": str(c["id"]),
+        "title": c["title"],
+        "property": c["property"],
+        "property_code": c["code"],
+        "property_id": str(c["property_id"]) if c["property_id"] else None,
+        "why": c["why_needed"],
+        "provider": c["provider_text"] or c["issuer"],
+        "issuer": c["issuer"],
+        "issued_on": c["issued_on"],
+        "expires_on": c["expires_on"],
+        "action_ref": c["action_ref"],
+        "file_name": c["file_name"],
+        "evidence_id": str(c["evidence_id"]) if c["evidence_id"] else None,
+        "status": st,
+        "status_label": label,
+        "type": c["type"],
+        "fail_count": c["fail_count"],
+        "register_item_id": str(c["register_item_id"]) if c["register_item_id"] else None,
+        "register_ref": c["register_ref"],
+        "kind_label": "Required" if c["filing"] != "filed" else "On file",
+    }
+
+
 @router.get("")
 def list_certificates(
     pr: Current,
@@ -57,52 +102,10 @@ def list_certificates(
     page_size: int = 25,
 ) -> dict:  # noqa: A002
     today = clock.today()
-    qy = (
-        select(
-            certificate,
-            property_.c.name.label("property"),
-            property_.c.code,
-            action.c.ref.label("action_ref"),
-            evidence.c.file_name,
-        )
-        .outerjoin(property_, property_.c.id == certificate.c.property_id)
-        .outerjoin(action, action.c.id == certificate.c.linked_action_id)
-        .outerjoin(evidence, evidence.c.id == certificate.c.evidence_id)
-        .where(
-            certificate.c.superseded_by.is_(None),
-            certificate.c.person_id.is_(None),
-            scope_filter(pr, certificate.c.property_id),
-        )
-    )
+    qy = _query(pr).where(certificate.c.superseded_by.is_(None))
     if property:
         qy = qy.where(certificate.c.property_id == property)
-    rows = []
-    for c in conn.execute(qy).mappings():
-        c = dict(c)
-        st, label = _status(c, today)
-        rows.append(
-            {
-                "id": str(c["id"]),
-                "title": c["title"],
-                "property": c["property"],
-                "property_code": c["code"],
-                "property_id": str(c["property_id"]) if c["property_id"] else None,
-                "why": c["why_needed"],
-                "provider": c["provider_text"] or c["issuer"],
-                "issuer": c["issuer"],
-                "issued_on": c["issued_on"],
-                "expires_on": c["expires_on"],
-                "action_ref": c["action_ref"],
-                "file_name": c["file_name"],
-                "evidence_id": str(c["evidence_id"]) if c["evidence_id"] else None,
-                "status": st,
-                "status_label": label,
-                "type": c["type"],
-                "fail_count": c["fail_count"],
-                "register_item_id": str(c["register_item_id"]) if c["register_item_id"] else None,
-                "kind_label": "Required" if c["filing"] != "filed" else "On file",
-            }
-        )
+    rows = [_row(dict(c), today) for c in conn.execute(qy).mappings()]
     views = [
         listing.View("all", "All", lambda r: True),
         listing.View(
@@ -300,3 +303,30 @@ def staff_certificates(pr: Current, conn: ConnDep) -> dict:
             for r in rows
         ]
     }
+
+
+@router.get("/{certificate_id}")
+def certificate_detail(certificate_id: uuid.UUID, pr: Current, conn: ConnDep) -> dict:
+    """One certificate (opened from search, reminders or the list): its file, register item, fails and history."""
+    c = conn.execute(_query(pr).where(certificate.c.id == certificate_id)).mappings().first()
+    if not c:
+        raise problem(404, "not_found", "Not found.")
+    today = clock.today()
+    out = _row(dict(c), today)
+    out["superseded_by"] = str(c["superseded_by"]) if c["superseded_by"] else None
+    out["fails"] = [
+        {"ref": a.ref, "description": a.description, "status": a.status, "priority": a.priority, "due_on": a.due_on}
+        for a in conn.execute(
+            select(action.c.ref, action.c.description, action.c.status, action.c.priority, action.c.due_on)
+            .where(action.c.certificate_id == certificate_id)
+            .order_by(action.c.ref)
+        )
+    ]
+    # Earlier versions this one replaced, newest first.
+    history = []
+    prev = conn.execute(_query(pr).where(certificate.c.superseded_by == certificate_id)).mappings().first()
+    while prev and len(history) < 10:
+        history.append(_row(dict(prev), today))
+        prev = conn.execute(_query(pr).where(certificate.c.superseded_by == prev["id"])).mappings().first()
+    out["history"] = history
+    return out

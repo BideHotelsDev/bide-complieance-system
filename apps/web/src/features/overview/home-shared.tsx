@@ -95,6 +95,7 @@ export type TodoItem = {
   call_due?: boolean
   due_on?: string
   class: string | null
+  property?: string | null
 }
 
 export type Overview = {
@@ -135,6 +136,7 @@ export type Overview = {
 export type MobileHome = {
   first_name: string
   needs: TodoItem[]
+  total?: number
   signatures?: { id: string; title: string; property: string; due_on: string | null }[]
   properties: PropertySummary[]
 }

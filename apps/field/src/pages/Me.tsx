@@ -5,14 +5,15 @@ import { appPath } from "@/lib/base"
  */
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { api } from "@bide-comply/api-client"
-import { Check } from "lucide-react"
+import { CalendarDays, Check, Users } from "lucide-react"
 import * as React from "react"
 
 import { Card, SectionLabel, TabBar, Toggle } from "@/components/kit"
 import { Sheet } from "@/components/Sheet"
 import { OfflineBanner } from "@/components/sync"
 import { cachedGet, clearCache } from "@/lib/cache"
-import { fmtDate } from "@/lib/format"
+import { fmtDate, fmtDay, listWords } from "@/lib/format"
+import { disablePush, enablePush, pushState, type PushState } from "@/lib/push"
 import { clearQueue, useQueue } from "@/lib/queue"
 import { useMe } from "@/lib/session"
 import type { FieldMe } from "@/lib/types"
@@ -54,12 +55,20 @@ export function MePage() {
   const [confirm, setConfirm] = React.useState(false)
   const [leaving, setLeaving] = React.useState(false)
   const all = { push: true, reminder: true, quiet_days_off: false, ...(fm.data?.preferences ?? {}), ...prefs }
+  const [device, setDevice] = React.useState<PushState | null>(null)
+  const wantPush = fm.data ? fm.data.preferences.push !== false : null
+  React.useEffect(() => {
+    if (wantPush === null) return
+    // Already allowed on this phone but not subscribed (a new install, or signed in again): subscribe quietly.
+    void pushState().then((s) =>
+      wantPush && s === "off" && Notification.permission === "granted" ? enablePush().then(setDevice) : setDevice(s),
+    )
+  }, [wantPush])
 
   const setPref = (k: string, v: boolean) => {
     setPrefs((p) => ({ ...p, [k]: v }))
-    if (k === "push" && v && "Notification" in window && Notification.permission === "default") {
-      void Notification.requestPermission()
-    }
+    // This phone follows the setting: subscribe on (asking permission from this tap), unsubscribe off.
+    if (k === "push") void (v ? enablePush() : disablePush().then(() => "off" as const)).then(setDevice)
     void api.post("/api/me/preferences", { [k]: v }).then(
       () => qc.invalidateQueries({ queryKey: ["field-me"] }),
       () => setPrefs((p) => ({ ...p, [k]: !v })),
@@ -68,6 +77,7 @@ export function MePage() {
 
   const signOut = async () => {
     setLeaving(true)
+    await disablePush().catch(() => undefined)
     await api.post("/api/auth/logout").catch(() => undefined)
     await wipePhone()
     qc.clear()
@@ -115,10 +125,24 @@ export function MePage() {
             </span>
           </Card>
         )}
+        {fm.data?.away && <AwayCard away={fm.data.away} />}
+        {fm.data && fm.data.covering.length > 0 && (
+          <Card className="flex items-start gap-3 px-4 py-3.5 text-[15px]">
+            <Users aria-hidden className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
+            <span>
+              You're covering <strong>{listWords(fm.data.covering)}</strong>'s checks. They're on your Today list.
+            </span>
+          </Card>
+        )}
 
         <SectionLabel>Notifications</SectionLabel>
         <Card className="divide-y divide-divider">
-          <Toggle label="Phone notifications" checked={Boolean(all.push)} onChange={(v) => setPref("push", v)} />
+          <Toggle
+            label="Phone notifications"
+            hint={all.push ? deviceHint(device) : undefined}
+            checked={Boolean(all.push)}
+            onChange={(v) => setPref("push", v)}
+          />
           <Toggle
             label="Reminder before a check is due"
             hint="1 hour before"
@@ -131,6 +155,15 @@ export function MePage() {
             onChange={(v) => setPref("quiet_days_off", v)}
           />
         </Card>
+        {Boolean(all.push) && device === "off" && (
+          <button
+            type="button"
+            onClick={() => void enablePush().then(setDevice)}
+            className="min-h-12 self-start px-1 text-[15px] font-medium text-link"
+          >
+            Allow notifications on this phone
+          </button>
+        )}
         <p className="m-0 px-1 text-[13.5px] text-muted-foreground">Life-safety alerts always come through.</p>
 
         <SectionLabel>This phone</SectionLabel>
@@ -189,6 +222,38 @@ export function MePage() {
         }
       />
     </div>
+  )
+}
+
+/* Why this phone won't buzz although the setting is on. Everything still reaches the in-app inbox. */
+function deviceHint(s: PushState | null): string | undefined {
+  switch (s) {
+    case "denied":
+      return "Blocked in this phone's settings. Allow notifications for bide Comply to get them."
+    case "unsupported":
+      return "This phone can't show them yet. Add bide Comply to your Home Screen first."
+    case "no-key":
+      return "Not switched on for bide Hotels yet. You'll still see everything in the app."
+    default:
+      return undefined
+  }
+}
+
+function AwayCard({ away }: { away: NonNullable<FieldMe["away"]> }) {
+  const now = new Date().toISOString().slice(0, 10)
+  const on = away.starts_on <= now
+  return (
+    <Card className="flex items-start gap-3 px-4 py-3.5 text-[15px]">
+      <CalendarDays aria-hidden className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
+      <span>
+        <strong>
+          {on ? "On leave" : "Leave"} {fmtDay(away.starts_on)} – {fmtDay(away.ends_on)}.
+        </strong>{" "}
+        {away.cover
+          ? `${away.cover} ${on ? "is covering" : "covers"} your checks${away.approved ? "" : " once a manager agrees"}. They come back to you automatically.`
+          : "Nobody is covering your checks yet. Your site lead has been asked."}
+      </span>
+    </Card>
   )
 }
 

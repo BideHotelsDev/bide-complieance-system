@@ -925,11 +925,13 @@ type Contractor = {
   accreditation_expires: string | null
   accreditation_status: "ok" | "expiring" | "expired"
   email: string | null
+  portal?: { id: string; name: string; email: string | null; active: boolean }[]
 }
 
 function ContractorsTab({ canManage }: { canManage: boolean }) {
   const q = useQuery({ queryKey: ["contractors"], queryFn: () => api.get<{ rows: Contractor[] }>("/api/contractors") })
   const [adding, setAdding] = React.useState(false)
+  const [inviting, setInviting] = React.useState<Contractor | null>(null)
   if (q.error) return <ErrorState message={errMsg(q.error)} onRetry={() => void q.refetch()} />
   if (!q.data) return <LoadingRows rows={4} />
   return (
@@ -954,11 +956,16 @@ function ContractorsTab({ canManage }: { canManage: boolean }) {
           <table className="w-full border-collapse text-[13.5px]">
             <thead>
               <tr className="text-left text-xs text-muted-foreground">
-                {["Contractor", "Trade", "Accreditation", "Email"].map((h) => (
+                {["Contractor", "Trade", "Accreditation", "Email", "Portal access"].map((h) => (
                   <th key={h} className="h-[34px] bg-background px-4 font-medium">
                     {h}
                   </th>
                 ))}
+                {canManage && (
+                  <th className="h-[34px] bg-background px-4">
+                    <span className="sr-only">Actions</span>
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -990,6 +997,28 @@ function ContractorsTab({ canManage }: { canManage: boolean }) {
                     )}
                   </td>
                   <td className="px-4 text-ink2">{c.email ?? "—"}</td>
+                  <td className="px-4 py-2">
+                    {c.portal && c.portal.length > 0 ? (
+                      <ul className="m-0 flex list-none flex-col gap-0.5 p-0">
+                        {c.portal.map((x) => (
+                          <li key={x.id} className="text-[13px]">
+                            {x.name}
+                            <span className="text-muted-foreground"> · {x.email}</span>
+                            {!x.active && <span className="text-muted-foreground"> (access ended)</span>}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <span className="text-muted-foreground">No one yet</span>
+                    )}
+                  </td>
+                  {canManage && (
+                    <td className="px-4 text-right whitespace-nowrap">
+                      <Button variant="outline" size="sm" onClick={() => setInviting(c)}>
+                        Send portal link
+                      </Button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -997,7 +1026,75 @@ function ContractorsTab({ canManage }: { canManage: boolean }) {
         )}
       </div>
       {adding && <ContractorDialog onClose={() => setAdding(false)} />}
+      {inviting && <PortalInviteDialog contractor={inviting} onClose={() => setInviting(null)} />}
     </>
+  )
+}
+
+/* The contractor portal: the staff app, signed in with a 7-day email link, showing only this contractor's visits. */
+function PortalInviteDialog({ contractor: c, onClose }: { contractor: Contractor; onClose: () => void }) {
+  const qc = useQueryClient()
+  const [email, setEmail] = React.useState(c.portal?.[0]?.email ?? c.email ?? "")
+  const [name, setName] = React.useState("")
+  const [error, setError] = React.useState<string | null>(null)
+  const m = useMutation({
+    mutationFn: () =>
+      api.post("/api/contractor-portal/invite", {
+        contractor_id: c.id,
+        email: email.trim(),
+        name: name.trim() || null,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["contractors"] })
+      toast(`Sent ${c.name} a portal link at ${email.trim()}. It works for 7 days.`)
+      onClose()
+    },
+    onError: (e) => setError(errMsg(e)),
+  })
+  const ok = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())
+  return (
+    <ActionDialog
+      open
+      onOpenChange={(o) => !o && onClose()}
+      busy={m.isPending}
+      title="Send portal link"
+      subtitle={`${c.name} can see their own visits and send reports and fix photos. Nothing counts until a site manager checks it.`}
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button disabled={!ok || m.isPending} onClick={() => m.mutate()}>
+            {m.isPending ? "Sending…" : "Send portal link"}
+          </Button>
+        </>
+      }
+    >
+      <form
+        className="flex flex-col gap-3"
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (ok) m.mutate()
+        }}
+      >
+        <Labeled label="Contact's email" htmlFor="pi-email" error={error}>
+          <TextInput
+            id="pi-email"
+            type="email"
+            autoFocus
+            value={email}
+            aria-invalid={!!error || undefined}
+            onChange={(e) => {
+              setEmail(e.target.value)
+              setError(null)
+            }}
+          />
+        </Labeled>
+        <Labeled label="Contact's name (optional)" htmlFor="pi-name">
+          <TextInput id="pi-name" value={name} placeholder={c.name} onChange={(e) => setName(e.target.value)} />
+        </Labeled>
+      </form>
+    </ActionDialog>
   )
 }
 

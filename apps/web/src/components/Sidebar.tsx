@@ -27,6 +27,7 @@ import * as React from "react"
 
 import { api } from "@bide-comply/api-client"
 import { Avatar, Mark } from "@bide-comply/ui/components/page"
+import { useBranding } from "@bide-comply/ui/lib/theme"
 import { cn } from "@bide-comply/ui/lib/utils"
 
 import { useProperty } from "@/lib/property"
@@ -62,10 +63,13 @@ export function Sidebar({
   onSearch,
   collapsed,
   onToggle,
+  inSheet = false,
 }: {
   onSearch: () => void
   collapsed: boolean
   onToggle: () => void
+  /** Shown in the phone menu sheet: fills the sheet, and the sheet's own close button replaces collapse. */
+  inSheet?: boolean
 }) {
   const me = useMe().data
   const { propertyId } = useProperty()
@@ -228,18 +232,26 @@ export function Sidebar({
     <nav
       aria-label="Main"
       className={cn(
-        "sticky top-0 flex h-screen shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-divider bg-sidebar py-3.5",
-        collapsed ? "w-16 items-center px-2.5" : "w-[264px] px-3",
+        "flex shrink-0 flex-col gap-0.5 overflow-y-auto bg-sidebar py-3.5",
+        inSheet ? "h-full w-full" : "sticky top-0 h-screen border-r border-divider",
+        collapsed ? "w-16 items-center px-2.5" : inSheet ? "px-3" : "w-[264px] px-3",
       )}
     >
       <div className={cn("flex items-center gap-2 pb-3", collapsed ? "justify-center" : "px-1")}>
         <Mark size={collapsed ? 28 : 24} />
-        {!collapsed && <span className="text-[15px] font-semibold">bide Comply</span>}
+        {!collapsed && (
+          <span className="text-[15px] font-semibold">
+            <AppName />
+          </span>
+        )}
         <button
           type="button"
           onClick={onToggle}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className={cn("rounded-md p-1 text-muted-foreground hover:bg-hover", collapsed ? "hidden" : "ml-auto")}
+          className={cn(
+            "rounded-md p-1 text-muted-foreground hover:bg-hover",
+            collapsed || inSheet ? "hidden" : "ml-auto",
+          )}
         >
           <PanelLeftClose className="size-4" />
         </button>
@@ -375,4 +387,8 @@ export function Sidebar({
       </Link>
     </nav>
   )
+}
+
+function AppName() {
+  return <>{useBranding().appName}</>
 }

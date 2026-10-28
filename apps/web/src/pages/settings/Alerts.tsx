@@ -13,6 +13,7 @@ import { Switch } from "@bide-comply/ui/components/switch"
 import { toast } from "@bide-comply/ui/components/toaster"
 import { cn } from "@bide-comply/ui/lib/utils"
 
+import { useUnsavedGuard } from "../../features/settings-a/ui"
 import { errText, NativeSelect, Panel, ToggleChip } from "../../features/settings-b/ui"
 import { useMe } from "../../lib/session"
 
@@ -23,6 +24,7 @@ type Rule = {
   step: number | null
   title: string
   note: string | null
+  days: number | null
   recipients: Recipient[]
   channels: Channel[]
   mutable: boolean
@@ -99,6 +101,7 @@ export function AlertsPage() {
           recipients: r.recipients.map(({ label: _label, ...rest }) => rest),
           channels: r.channels.filter((c) => c.on).map((c) => c.key),
           note: r.note,
+          days: r.days ?? undefined,
         })),
         quiet_hours: quiet,
       })
@@ -109,6 +112,8 @@ export function AlertsPage() {
     },
     onError: (e) => toast.error(errText(e)),
   })
+
+  useUnsavedGuard(changed && !save.isPending, "Your alert rule changes aren't saved. Leave and lose them?")
 
   if (me.data && !me.data.can["settings.view"]) return <NoPermission />
 
@@ -316,20 +321,40 @@ function RuleCard({
   )
 }
 
-function RuleTitle({ rule }: { rule: Rule }) {
+const DAY_CHOICES = [1, 2, 3, 5, 7, 10, 14, 21, 28]
+
+function RuleTitle({ rule, canEdit, onDays }: { rule: Rule; canEdit: boolean; onDays: (days: number) => void }) {
   if (rule.class_a) return <>{`${rule.title}: ${CLASS_A_WHAT}`}</>
-  if (rule.trigger === "red_7days") {
+  if (rule.days != null) {
+    // "Still overdue after [7 days]": the number is the rule's own setting, and the ladder uses it.
     const [a, b] = rule.title.split("7 days")
-    if (b !== undefined)
+    if (b !== undefined) {
+      const choices = DAY_CHOICES.includes(rule.days) ? DAY_CHOICES : [...DAY_CHOICES, rule.days].sort((x, y) => x - y)
       return (
         <>
           {a}
-          <span className="mx-0.5 inline-flex h-7 items-center rounded-md border border-border px-2 align-middle font-medium">
-            7 days
-          </span>
+          {canEdit ? (
+            <select
+              aria-label="After how many days"
+              value={rule.days}
+              onChange={(e) => onDays(Number(e.target.value))}
+              className="mx-0.5 h-7 rounded-md border border-border bg-surface px-1.5 align-middle text-[14px] font-medium focus:outline-2 focus:outline-focus"
+            >
+              {choices.map((n) => (
+                <option key={n} value={n}>
+                  {n} {n === 1 ? "day" : "days"}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className="mx-0.5 inline-flex h-7 items-center rounded-md border border-border px-2 align-middle font-medium">
+              {rule.days} {rule.days === 1 ? "day" : "days"}
+            </span>
+          )}
           {b}
         </>
       )
+    }
   }
   return <>{rule.title}</>
 }
@@ -351,7 +376,7 @@ function RuleBody({
     <div className="flex flex-col gap-2.5">
       <div>
         <h3 className="m-0 flex flex-wrap items-center gap-x-1 text-[14px] leading-7 font-semibold">
-          <RuleTitle rule={rule} />
+          <RuleTitle rule={rule} canEdit={canEdit} onDays={(days) => onChange((r) => ({ ...r, days }))} />
           {propertyScoped && rule.own_rule && (
             <span className="ml-1.5 inline-flex h-5 items-center rounded-full bg-st-blue-bg px-2 text-[11.5px] font-medium text-st-blue">
               This property's own rule

@@ -5,7 +5,13 @@
  * on phones. Density (Comfortable 48px / Compact 36px) is remembered per user by the caller.
  */
 import * as React from "react"
-import { flexRender, getCoreRowModel, useReactTable, type ColumnDef, type RowSelectionState } from "@tanstack/react-table"
+import {
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  type ColumnDef,
+  type RowSelectionState,
+} from "@tanstack/react-table"
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight } from "lucide-react"
 
 import { cn } from "../lib/utils"
@@ -14,7 +20,13 @@ export type { ColumnDef }
 
 export type SortState = { id: string; desc: boolean } | null
 
-type Meta = { align?: "right" | "left"; sortable?: boolean; className?: string; headerClassName?: string; mono?: boolean }
+type Meta = {
+  align?: "right" | "left"
+  sortable?: boolean
+  className?: string
+  headerClassName?: string
+  mono?: boolean
+}
 
 export function DataTable<T extends { id: string }>({
   columns,
@@ -27,7 +39,7 @@ export function DataTable<T extends { id: string }>({
   selection,
   onSelectionChange,
   bulkBar,
-  density = "comfortable",
+  density,
   groups,
   caption,
   empty,
@@ -64,7 +76,9 @@ export function DataTable<T extends { id: string }>({
     onRowSelectionChange: (u) => setSel(typeof u === "function" ? u(sel) : u),
   })
   const selectedIds = Object.keys(sel).filter((k) => sel[k])
-  const rowH = density === "compact" ? "h-9" : "h-12"
+  // A table that doesn't set its density follows the person's choice, then the theme's default (CMS-13).
+  const d = density ?? (typeof document !== "undefined" ? document.documentElement.dataset.density : undefined)
+  const rowH = d === "compact" ? "h-9" : "h-12"
   const byId = new Map(table.getRowModel().rows.map((r) => [r.id, r]))
   const renderRow = (id: string) => {
     const r = byId.get(id)

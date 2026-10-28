@@ -79,19 +79,23 @@ export function ContractorVisitPage() {
     if (!propertyId || !purpose) return
     setSaving(true)
     try {
-      const res = await api.post<{ id: string; actions: string[] }>("/api/field/contractor-visits", {
-        contractor_id: adding ? null : who,
-        new_contractor: adding ? newName.trim() : null,
-        property_id: propertyId,
-        purpose,
-        register_item_id: chosen?.register_item_id ?? null,
-        evidence_id: uploaded?.id ?? null,
-        fails: anyWrong === "yes" ? realFixes.map((f) => ({ text: f.text.trim(), priority: f.priority })) : [],
-      })
+      const res = await api.post<{ id: string; actions: string[]; task_done: string | null }>(
+        "/api/field/contractor-visits",
+        {
+          contractor_id: adding ? null : who,
+          new_contractor: adding ? newName.trim() : null,
+          property_id: propertyId,
+          purpose,
+          register_item_id: chosen?.register_item_id ?? null,
+          evidence_id: uploaded?.id ?? null,
+          fails: anyWrong === "yes" ? realFixes.map((f) => ({ text: f.text.trim(), priority: f.priority })) : [],
+        },
+      )
+      const done = res.task_done ? " The check counts as done." : ""
       toastSent(
         res.actions.length
-          ? `Visit saved. ${res.actions.length} Action${res.actions.length === 1 ? "" : "s"} raised.`
-          : "Visit saved. Thank you.",
+          ? `Visit saved.${done} ${res.actions.length} Action${res.actions.length === 1 ? "" : "s"} raised.`
+          : `Visit saved.${done} Thank you.`,
       )
       void qc.invalidateQueries()
       void navigate({ to: "/" })

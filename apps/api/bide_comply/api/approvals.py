@@ -46,6 +46,7 @@ def _rows(conn, pr, status: str | None = "waiting"):
         select(
             approval_request,
             property_.c.name.label("property"),
+            property_.c.code.label("property_code"),
             register_item.c.ref,
             template.c.name.label("template"),
             template.c["class"].label("klass"),
@@ -132,6 +133,7 @@ def detail(approval_id: uuid.UUID, pr: Current, conn: ConnDep) -> dict:
         "decided_by": who.get(r["decided_by"]),
         "decision_note": r["decision_note"],
         "ref": r["ref"],
+        "property_code": r["property_code"],
         "can_decide": pr.can("approval.decide", r["property_id"])
         and r["requested_by"] != pr.person_id
         and r["status"] == "waiting",

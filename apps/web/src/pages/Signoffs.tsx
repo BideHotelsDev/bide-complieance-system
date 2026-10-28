@@ -151,7 +151,13 @@ export function SignoffsPage() {
       </main>
 
       {sel && (
-        <SignPanel key={sel.r.id} r={sel.r} p={sel.p} canSign={canSign} onSigned={() => set({ sel: undefined })} />
+        <SignPanel
+          key={sel.r.id}
+          r={sel.r}
+          p={sel.p}
+          canSign={canSign && sel.r.can_sign !== false}
+          onSigned={() => set({ sel: undefined })}
+        />
       )}
     </div>
   )

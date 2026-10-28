@@ -3,6 +3,7 @@
  * compete in the monthly league, not individuals. Shared on the Friday all-team call.
  */
 import { useQuery } from "@tanstack/react-query"
+import { Link } from "@tanstack/react-router"
 import { ShieldCheck } from "lucide-react"
 
 import { api, ApiError } from "@bide-comply/api-client"
@@ -307,7 +308,14 @@ function People({
                   <td className="px-3">
                     <span className="flex items-center gap-2.5">
                       <Avatar initials={r.initials} className="size-[26px] text-[11px]" />
-                      <span className="whitespace-nowrap">{r.name}</span>
+                      <Link
+                        to="/actions"
+                        search={{ owner: r.id }}
+                        className="whitespace-nowrap text-foreground no-underline hover:text-link hover:underline"
+                        title={`Open Actions owned by ${r.name}`}
+                      >
+                        {r.name}
+                      </Link>
                     </span>
                   </td>
                   <td className="px-3 whitespace-nowrap">{r.property}</td>

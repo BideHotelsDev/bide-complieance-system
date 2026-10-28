@@ -1,5 +1,5 @@
 /* New Action (design: Actions to fix › New Action). Priority sets the due date unless one is given. */
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation } from "@tanstack/react-query"
 import * as React from "react"
 
 import { api, type ApiError } from "@bide-comply/api-client"
@@ -7,7 +7,7 @@ import { Button } from "@bide-comply/ui/components/button"
 import { toast, toastError } from "@bide-comply/ui/components/toaster"
 
 import { useMe } from "@/lib/session"
-import type { Person } from "./types"
+import { ownerBody, OwnerSelect, useOwnerOptions } from "./owner-select"
 import { Field, inputCls, QDialog, textareaCls } from "./ui"
 
 export function NewActionDialog({
@@ -24,12 +24,6 @@ export function NewActionDialog({
   const me = useMe()
   const props = me.data?.properties
   const firstId = props?.[0]?.id ?? ""
-  const people = useQuery<{ people: Person[] }, ApiError>({
-    queryKey: ["action-owner-options"],
-    queryFn: () => api.get("/api/actions/owner-options"),
-    staleTime: 300_000,
-    enabled: open,
-  })
   const blank = React.useCallback(
     () => ({
       property_id: defaultPropertyId ?? firstId,
@@ -50,6 +44,7 @@ export function NewActionDialog({
     (k: keyof ReturnType<typeof blank>) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
       setF((x) => ({ ...x, [k]: e.target.value }))
+  const opts = useOwnerOptions(f.property_id || null, open)
   const create = useMutation({
     mutationFn: () =>
       api.post<{ ref: string; id: string }>("/api/actions", {
@@ -57,7 +52,7 @@ export function NewActionDialog({
         description: f.description.trim(),
         type: f.type,
         priority: f.priority,
-        owner_id: f.owner_id || null,
+        ...ownerBody(f.owner_id),
         gate_ref: f.gate_ref.trim().toUpperCase() || null,
         due_on: f.due_on || null,
         source: "manual",
@@ -123,16 +118,13 @@ export function NewActionDialog({
           </select>
         </Field>
       </div>
-      <Field label="Owner" hint="(a named person)">
-        <select value={f.owner_id} onChange={up("owner_id")} className={inputCls}>
-          <option value="">Decide later</option>
-          {(people.data?.people ?? []).map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-              {p.sub ? ` · ${p.sub}` : ""}
-            </option>
-          ))}
-        </select>
+      <Field label="Owner" hint="(a named person, or a contractor)">
+        <OwnerSelect
+          value={f.owner_id}
+          onChange={(v) => setF((x) => ({ ...x, owner_id: v }))}
+          options={opts.data}
+          empty="Decide later"
+        />
       </Field>
       <div className="grid grid-cols-2 gap-2.5">
         <Field label="Gate ref" hint="(optional)">

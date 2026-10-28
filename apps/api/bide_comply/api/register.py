@@ -35,7 +35,7 @@ from bide_comply.services import actions as action_service
 from bide_comply.services import checks
 from bide_comply.services import evidence as ev_service
 from bide_comply.services.common import check_named, fmt_date, names, problem
-from bide_comply.services.register import cancel_future, refresh_item
+from bide_comply.services.register import cancel_future, refresh_item, sync_open_tasks
 
 router = APIRouter(prefix="/api", tags=["register"])
 
@@ -591,6 +591,9 @@ def assign(ref: str, body: AssignIn, request: Request, pr: Current, conn: ConnDe
     )
     if "frequency" in vals or "done_by_kind" in vals:
         cancel_future(conn, r["id"])
+    # Unfinished tasks follow the new people: the staff app, My to-do and the alerts all read the task's owner.
+    if any(k.startswith("done_by") or k in ("accountable_id", "cover_id") for k in vals):
+        sync_open_tasks(conn, r["id"])
     refresh_item(conn, r["id"])
     return {"ok": True}
 

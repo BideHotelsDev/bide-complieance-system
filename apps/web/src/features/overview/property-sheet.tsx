@@ -11,6 +11,7 @@ import { Callout, Dl, ErrorState, LoadingRows, SideSheet } from "@bide-comply/ui
 import { Pill, PriorityBadge } from "@bide-comply/ui/components/status"
 import { cn } from "@bide-comply/ui/lib/utils"
 
+import { EvidenceLink } from "@/lib/evidence"
 import { fmtDate } from "@/lib/format"
 import { CertificateDialog, RaiseActionDialog, ReassignDialog, RequestDialog } from "./property-dialogs"
 import type { RegisterDetail } from "./property-types"
@@ -91,11 +92,7 @@ export function RegisterSheet({ refId, onClose }: { refId: string; onClose: () =
                   ? `The ${fmtDate(d.certificates[0].issued_on)} report includes a fail. `
                   : ""}
                 This item cannot go Green until{" "}
-                <Link
-                  to="/actions"
-                  search={{ sel: d.actions.find((a) => a.ref === d.blocked?.action_ref)?.id ?? d.blocked.action_ref }}
-                  className="font-medium text-link underline"
-                >
+                <Link to="/actions" search={{ sel: d.blocked.action_ref }} className="font-medium text-link underline">
                   {d.blocked.action_ref}
                 </Link>{" "}
                 is closed with evidence.
@@ -140,7 +137,20 @@ export function RegisterSheet({ refId, onClose }: { refId: string; onClose: () =
                         {e.kind === "pdf" ? "PDF" : "IMG"}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate font-medium">{e.name ?? "Check record"}</span>
+                        {e.kind === "submission" ? (
+                          <Link
+                            to="/reviews"
+                            search={{ sel: e.id }}
+                            className="block truncate font-medium text-link"
+                            title="Open the check record with its photos"
+                          >
+                            {e.name ?? "Check record"}
+                          </Link>
+                        ) : (
+                          <EvidenceLink id={e.id} className="block max-w-full truncate font-medium">
+                            {e.name ?? "File"}
+                          </EvidenceLink>
+                        )}
                         <span className="block text-xs text-muted-foreground">{e.detail}</span>
                       </span>
                     </li>
@@ -158,7 +168,7 @@ export function RegisterSheet({ refId, onClose }: { refId: string; onClose: () =
                     <li key={a.id}>
                       <Link
                         to="/actions"
-                        search={{ sel: a.id }}
+                        search={{ sel: a.ref }}
                         className="grid grid-cols-[60px_1fr_auto] items-center gap-2 rounded-lg border border-divider p-2.5 text-foreground no-underline hover:bg-hover/50"
                       >
                         <span className="mono-id text-muted-foreground">{a.ref}</span>

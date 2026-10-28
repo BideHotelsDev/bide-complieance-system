@@ -173,16 +173,11 @@ function TaskLink({ card, overdue }: { card: TaskCard; overdue?: boolean }) {
           <span className="text-[16.5px] leading-snug font-semibold">{card.title}</span>
         </div>
         <div className="mt-1 text-[14px] text-muted-foreground">{card.subtitle}</div>
-        {overdue ? (
-          <Pill tone="red" className="mt-1.5">
-            {card.badge}
-          </Pill>
-        ) : (
-          !dueToday && (
-            <Pill tone="grey" className="mt-1.5">
-              {card.badge}
-            </Pill>
-          )
+        {(overdue || !dueToday || card.na_pending) && (
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {overdue ? <Pill tone="red">{card.badge}</Pill> : !dueToday && <Pill tone="grey">{card.badge}</Pill>}
+            {card.na_pending && <Pill tone="grey">Asked to mark not applicable</Pill>}
+          </div>
         )}
       </div>
       <ChevronRight aria-hidden className="size-5 shrink-0 text-muted-foreground" />

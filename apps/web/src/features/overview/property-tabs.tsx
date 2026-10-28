@@ -124,7 +124,7 @@ export function ActionsTab({ property }: { property: PropertyDetail }) {
       <TableCard
         q={q}
         columns={columns}
-        onRowClick={(r) => void navigate({ to: "/actions", search: { sel: r.id } })}
+        onRowClick={(r) => void navigate({ to: "/actions", search: { sel: r.ref } })}
         empty={<EmptyState title="Nothing open here">No Actions to fix at {property.name} in this view.</EmptyState>}
         footer={
           <div className="border-t border-divider px-3 py-2 text-xs">

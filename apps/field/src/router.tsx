@@ -1,5 +1,5 @@
 import { basepath } from "@/lib/base"
-import { createRootRoute, createRoute, createRouter, Navigate, Outlet } from "@tanstack/react-router"
+import { createRootRoute, createRoute, createRouter, Navigate, Outlet, useLocation } from "@tanstack/react-router"
 
 import { ErrorBox, Page } from "./components/kit"
 import { ContractorPortalPage } from "./pages/ContractorPortal"
@@ -16,6 +16,7 @@ import { useMe } from "./lib/session"
 /* Everything except sign-in needs a person. Offline, the last known person (cached) keeps the app usable. */
 function Authed() {
   const me = useMe()
+  const path = useLocation({ select: (l) => l.pathname })
   if (me.isPending) return <Page />
   if (me.error?.status === 401) return <Navigate to="/signin" />
   if (me.error)
@@ -24,6 +25,9 @@ function Authed() {
         <ErrorBox message={me.error.message} onRetry={() => void me.refetch()} />
       </Page>
     )
+  // Contractors (magic link, no staff role) only have the contractor portal.
+  if (me.data.roles.length > 0 && me.data.roles.every((r) => r === "contractor") && path !== "/contractor")
+    return <Navigate to="/contractor" />
   return <Outlet />
 }
 
@@ -39,8 +43,8 @@ const routes = [
     path: "/signin/totp-setup",
     component: () => <CodePage stage="totp-setup" />,
   }),
-  createRoute({ getParentRoute: () => root, path: "/contractor", component: ContractorPortalPage }),
   authed.addChildren([
+    createRoute({ getParentRoute: () => authed, path: "/contractor", component: ContractorPortalPage }),
     createRoute({ getParentRoute: () => authed, path: "/", component: TodayPage }),
     createRoute({ getParentRoute: () => authed, path: "/task/$taskId", component: TaskPage }),
     createRoute({ getParentRoute: () => authed, path: "/report", component: ReportPage }),

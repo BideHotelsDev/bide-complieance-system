@@ -4,10 +4,11 @@
  * records who, where and when). Where a live camera isn't available (desktop, some webviews) the phone's own camera
  * is opened through a capture input instead, which is still a camera capture.
  */
-import { X, Zap, ZapOff } from "lucide-react"
+import { MapPin, X, Zap, ZapOff } from "lucide-react"
 import * as React from "react"
 
 import { fmtStamp } from "@/lib/format"
+import { onSite } from "@/lib/geo"
 
 type Props = {
   title: string
@@ -17,11 +18,17 @@ type Props = {
   /* "<property> · <ref> · <P. Mathers>"; the date and time are added live. */
   stampPrefix: string
   exampleUrl?: string | null
+  /* The property's geofence, for the "On site" pill. */
+  site?: { lat: number; lng: number; radius_m: number } | null
   onClose: () => void
   onCapture: (blob: Blob, capturedAt: string) => void
 }
 
-export function Camera({ title, hint, index, total, stampPrefix, exampleUrl, onClose, onCapture }: Props) {
+export function Camera({ title, hint, index, total, stampPrefix, exampleUrl, site, onClose, onCapture }: Props) {
+  const [here, setHere] = React.useState<boolean | null>(null)
+  React.useEffect(() => {
+    if (site) void onSite(site).then(setHere)
+  }, [site])
   const [now, setNow] = React.useState(() => new Date())
   React.useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 15_000)
@@ -140,7 +147,16 @@ export function Camera({ title, hint, index, total, stampPrefix, exampleUrl, onC
         <span className="rounded-full bg-white/10 px-3 py-1.5 text-[14px] font-semibold">
           Photo {index} of {total}
         </span>
-        <span className="size-12" />
+        {here === null ? (
+          <span className="size-12" />
+        ) : (
+          <span
+            className={`flex h-9 items-center gap-1.5 rounded-full px-3 text-[14px] font-semibold ${here ? "bg-st-green" : "bg-st-amber"}`}
+          >
+            <MapPin aria-hidden className="size-4" />
+            {here ? "On site" : "Away from site"}
+          </span>
+        )}
       </div>
       <div className="px-6 pt-3 text-center">
         <h2 className="m-0 text-[18px] font-semibold">{title}</h2>

@@ -10,14 +10,16 @@ import * as React from "react"
 import { api, ApiError } from "@bide-comply/api-client"
 import { Button } from "@bide-comply/ui/components/button"
 import { Mark } from "@bide-comply/ui/components/page"
+import { useBranding } from "@bide-comply/ui/lib/theme"
 
 function Frame({ children }: { children: React.ReactNode }) {
+  const { appName } = useBranding()
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-[400px] rounded-xl border border-divider bg-surface p-6 shadow-sm">
         <div className="mb-5 flex items-center gap-2">
           <Mark size={26} />
-          <span className="text-[15px] font-semibold">bide Comply</span>
+          <span className="text-[15px] font-semibold">{appName}</span>
         </div>
         {children}
       </div>
@@ -28,6 +30,7 @@ function Frame({ children }: { children: React.ReactNode }) {
 export function SignInPage() {
   const search = useSearch({ strict: false }) as { next?: string; error?: string; reason?: string }
   const navigate = useNavigate()
+  const { signinMessage } = useBranding()
   const [email, setEmail] = React.useState("")
   const [sent, setSent] = React.useState(false)
   const dev = useQuery({
@@ -58,7 +61,7 @@ export function SignInPage() {
       ) : (
         <>
           <h1 className="m-0 text-[18px] font-semibold">Sign in</h1>
-          <p className="mt-1 text-[13.5px] text-muted-foreground">Use your bide Google account.</p>
+          <p className="mt-1 text-[13.5px] text-muted-foreground">{signinMessage ?? "Use your bide Google account."}</p>
         </>
       )}
       {search.error && (

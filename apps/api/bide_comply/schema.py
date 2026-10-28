@@ -872,6 +872,40 @@ contractor_visit = Table(
     created(),
 )
 
+# Contractor portal (§5.5, P2). A contact is an external person who signs in with a magic link for one contractor.
+contractor_contact = Table(
+    "contractor_contact",
+    metadata,
+    pk(),
+    fk("contractor_id", "contractor", nullable=False, ondelete="CASCADE"),
+    fk("person_id", "person", nullable=False, ondelete="CASCADE"),
+    created(),
+    UniqueConstraint("person_id"),
+)
+
+# What a contractor sends from the portal: a visit report or a fix photo. Nothing counts until a site manager checks
+# it in Evidence review (approved: the visit is done / the Action closes; rejected: sent back with a comment).
+contractor_upload = Table(
+    "contractor_upload",
+    metadata,
+    pk(),
+    fk("contractor_id", "contractor", nullable=False),
+    fk("person_id", "person", nullable=False),
+    fk("property_id", "property", nullable=False),
+    Column("kind", String(10), nullable=False),  # report | fix
+    fk("contractor_visit_id", "contractor_visit"),
+    fk("action_id", "action"),
+    Column("evidence_ids", JSONB, nullable=False, server_default="[]"),
+    Column("note", Text, nullable=True),
+    Column("status", String(10), nullable=False, server_default="pending"),  # pending | approved | rejected
+    fk("reviewed_by", "person"),
+    Column("reviewed_at", DateTime(timezone=True), nullable=True),
+    Column("review_comment", Text, nullable=True),
+    fk("certificate_id", "certificate"),
+    created(),
+)
+Index("ix_contractor_upload_status", contractor_upload.c.status, contractor_upload.c.property_id)
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Escalation, notifications, settings
 # ---------------------------------------------------------------------------------------------------------------------

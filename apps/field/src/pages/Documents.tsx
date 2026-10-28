@@ -91,7 +91,7 @@ export function DocumentsPage() {
           <Card className="px-4 py-3.5">
             <div className="text-[16px] font-semibold">Did a new course?</div>
             <p className="m-0 mt-1 mb-3 text-[15px] text-muted-foreground">
-              Upload the certificate and Lynne will check it.
+              Upload the certificate and {q.data.checker ?? "the register keeper"} will check it.
             </p>
             <SecondaryButton onClick={() => setOpen(true)}>Upload a certificate</SecondaryButton>
           </Card>

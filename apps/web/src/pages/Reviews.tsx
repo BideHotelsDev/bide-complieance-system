@@ -4,6 +4,7 @@
  * after that are amendments with a reason (design: Dialogs › Add a correction). Your own submissions never appear.
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { Link } from "@tanstack/react-router"
 import * as React from "react"
 import { Check, ChevronLeft, ChevronRight, EyeOff, Inbox, Lock } from "lucide-react"
 
@@ -14,6 +15,7 @@ import { ClassBadge, FlagBadge, Pill, type Tone } from "@bide-comply/ui/componen
 import { toast, toastError } from "@bide-comply/ui/components/toaster"
 import { cn } from "@bide-comply/ui/lib/utils"
 
+import { ContractorUpload } from "@/features/queues/contractor-upload"
 import type { QueueCard, ReviewDetail, ReviewQueue } from "@/features/queues/types"
 import { Field, inputCls, isTyping, LineTabs, Note, QDialog, Radio, rowCls, textareaCls } from "@/features/queues/ui"
 import { fmtDateTime } from "@/lib/format"
@@ -52,7 +54,8 @@ export function ReviewsPage() {
     )
 
   const go = (id: string | null) => set({ sel: id ?? undefined })
-  const eligible = rows.filter((r) => r.badge !== "Failed")
+  const fromContractors = queue === "contractor" || rows[idx]?.kind === "contractor"
+  const eligible = rows.filter((r) => r.badge !== "Failed" && r.kind !== "contractor")
 
   return (
     <div className="flex flex-col gap-4 lg:-my-6 lg:-ml-7 lg:min-h-screen lg:flex-row lg:items-stretch lg:gap-0">
@@ -94,7 +97,9 @@ export function ReviewsPage() {
                 ? "Every submitted check has been reviewed. New ones arrive here as staff send them."
                 : queue === "spot_check"
                   ? "No spot-checks picked this week."
-                  : "No back-filed paper records waiting."}
+                  : queue === "contractor"
+                    ? "Nothing from contractors waiting. Reports and fix photos arrive here from the contractor portal."
+                    : "No back-filed paper records waiting."}
             </EmptyState>
           ) : (
             rows.map((r) => <QueueRow key={r.id} r={r} on={r.id === sel} onPick={() => go(r.id)} />)
@@ -114,7 +119,20 @@ export function ReviewsPage() {
       </section>
 
       <main className="flex min-w-0 flex-1 flex-col gap-4 lg:px-7 lg:pt-5 lg:pb-7">
-        {sel ? (
+        {sel && fromContractors ? (
+          <ContractorUpload
+            key={sel}
+            id={sel}
+            onDecided={(label) => {
+              const next = rows[idx + 1] ?? rows[idx - 1] ?? null
+              const done = sel
+              void qc.invalidateQueries({ queryKey: ["reviews"] })
+              void qc.invalidateQueries({ queryKey: ["nav"] })
+              go(next && next.id !== done ? next.id : null)
+              toast(label, { action: { label: "Show it", onClick: () => go(done) } })
+            }}
+          />
+        ) : sel ? (
           <Submission
             key={sel}
             id={sel}
@@ -284,7 +302,19 @@ function Submission({
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <ClassBadge klass={s.class} />
-            <span className="mono-id text-[12px]">{s.ref}</span>
+            {s.property_code ? (
+              <Link
+                to="/properties/$code"
+                params={{ code: s.property_code }}
+                search={{ item: s.ref }}
+                className="mono-id text-[12px] hover:text-link"
+                title="Open this check on the register"
+              >
+                {s.ref}
+              </Link>
+            ) : (
+              <span className="mono-id text-[12px]">{s.ref}</span>
+            )}
             <Pill tone={st.tone}>{st.label}</Pill>
             <Pill tone="grey">{s.verification_rule}</Pill>
             {s.flags.map((f) => (
@@ -293,6 +323,20 @@ function Submission({
           </div>
           <h2 className="m-0 mt-1.5 text-[18px] font-semibold">{s.title}</h2>
           <p className="m-0 mt-0.5 text-muted-foreground">{s.subtitle}</p>
+          {(s.actions?.length ?? 0) > 0 && (
+            <p className="m-0 mt-1 text-[13px]">
+              {s.actions!.length === 1 ? "Action raised from this check: " : "Actions raised from this check: "}
+              {s.actions!.map((a, n) => (
+                <React.Fragment key={a.ref}>
+                  {n > 0 && ", "}
+                  <Link to="/actions" search={{ sel: a.ref }} className="font-mono text-[12px] text-link">
+                    {a.ref}
+                  </Link>
+                  {a.status === "closed" && <span className="text-muted-foreground"> (closed)</span>}
+                </React.Fragment>
+              ))}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {pos && (

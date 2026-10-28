@@ -13,6 +13,7 @@ from bide_comply.authz import scope_filter
 from bide_comply.db import ConnDep
 from bide_comply.engine import frequency as freq
 from bide_comply.schema import (
+    action,
     amendment,
     approval_request,
     device,
@@ -29,6 +30,7 @@ from bide_comply.schema import (
     verification,
 )
 from bide_comply.services import checks
+from bide_comply.services import contractor_portal as contractor_uploads
 from bide_comply.services import evidence as ev_service
 from bide_comply.services.common import fmt_date, fmt_day, problem
 
@@ -133,14 +135,20 @@ def queue(pr: Current, conn: ConnDep, queue: str = "needs_review", property: uui
             ),
         }
 
-    return {
-        "queues": [
-            {"key": "needs_review", "label": "Needs review", "count": len(needs)},
-            {"key": "spot_check", "label": "Spot-check", "count": len(spot)},
-            {"key": "back_filed", "label": "Back-filed", "count": len(back)},
-        ],
-        "rows": [card(r) for r in pick],
-    }
+    # Reports and fix photos sent from the contractor portal wait in Needs review too (kind "contractor"); the
+    # notification links to them as queue=contractor.
+    from_contractors = contractor_uploads.pending_cards(conn, pr, property)
+    queues = [
+        {"key": "needs_review", "label": "Needs review", "count": len(needs) + len(from_contractors)},
+        {"key": "spot_check", "label": "Spot-check", "count": len(spot)},
+        {"key": "back_filed", "label": "Back-filed", "count": len(back)},
+    ]
+    if queue == "contractor":
+        return {"queues": queues, "rows": from_contractors}
+    rows = [card(r) for r in pick]
+    if queue not in ("spot_check", "back_filed"):
+        rows += from_contractors
+    return {"queues": queues, "rows": rows}
 
 
 @router.get("/{submission_id}")
@@ -158,6 +166,7 @@ def detail(submission_id: uuid.UUID, pr: Current, conn: ConnDep) -> dict:
                 register_item.c.frequency,
                 register_item.c.done_by_pool_id,
                 property_.c.name.label("property"),
+                property_.c.code.label("property_code"),
             )
             .join(register_item, register_item.c.template_id == template.c.id)
             .join(property_, property_.c.id == register_item.c.property_id)
@@ -287,6 +296,16 @@ def detail(submission_id: uuid.UUID, pr: Current, conn: ConnDep) -> dict:
         "own": s["submitter_id"] == pr.person_id,
         "can_amend": pr.can("submission.amend"),
         "task_id": str(t["id"]),
+        "property_code": tpl["property_code"],
+        # Actions raised from this submission (a failed check, or "Needs action"), so the review links to the fix.
+        "actions": [
+            {"ref": a.ref, "status": a.status, "priority": a.priority}
+            for a in conn.execute(
+                select(action.c.ref, action.c.status, action.c.priority)
+                .where((action.c.submission_id == submission_id) | (action.c.task_id == t["id"]))
+                .order_by(action.c.ref)
+            )
+        ],
     }
 
 

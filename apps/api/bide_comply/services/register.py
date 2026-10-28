@@ -129,32 +129,80 @@ def generate_tasks(conn: Connection, item_id: uuid.UUID, today: date | None = No
         ).first()
         if open_:
             return 0
-    existing = set(conn.execute(select(task.c.period_key).where(task.c.register_item_id == item_id)).scalars())
+    existing = {
+        r.period_key: r
+        for r in conn.execute(
+            select(task.c.id, task.c.period_key, task.c.status).where(task.c.register_item_id == item_id)
+        )
+    }
     now = clock.now()
     added = 0
     for o in occs:
-        if o.period_key in existing:
+        prev = existing.get(o.period_key)
+        # A cancelled period comes back only while it is still ahead: periods that fell inside a pause or while the
+        # check was off stay cancelled.
+        if prev is not None and (prev.status != "cancelled" or o.due_at <= now):
             continue
         status = schedule.time_status("scheduled", now, o.window_opens_at, o.due_at, o.window_closes_at, plan.late_rule)
-        conn.execute(
-            task.insert().values(
-                id=uuid.uuid4(),
-                register_item_id=item_id,
-                template_version_id=ver_id,
-                period_key=o.period_key,
-                due_at=o.due_at,
-                window_opens_at=o.window_opens_at,
-                window_closes_at=o.window_closes_at,
-                status=status,
-                owner_id=_owner_now(conn, item, clock.london(o.due_at).date()),
-                doer_kind=item["done_by_kind"],
-                doer_id=item["done_by_person_id"] or item["done_by_pool_id"] or item["done_by_contractor_id"],
-                needs_verification=tpl["verification"] == "always",
-                spot_check=tpl["verification"] == "sample" and random.randrange(max(tpl["sample_rate"], 1)) == 0,
-            )
+        vals = dict(
+            template_version_id=ver_id,
+            due_at=o.due_at,
+            window_opens_at=o.window_opens_at,
+            window_closes_at=o.window_closes_at,
+            status=status,
+            owner_id=_owner_now(conn, item, clock.london(o.due_at).date()),
+            doer_kind=item["done_by_kind"],
+            doer_id=item["done_by_person_id"] or item["done_by_pool_id"] or item["done_by_contractor_id"],
+            needs_verification=tpl["verification"] == "always",
+            spot_check=tpl["verification"] == "sample" and random.randrange(max(tpl["sample_rate"], 1)) == 0,
         )
+        if prev is not None:
+            # The period was cancelled when the plan changed (or the check was switched off). One task per period,
+            # so the occurrence the new plan wants takes that row back rather than being lost.
+            conn.execute(update(task).where(task.c.id == prev.id).values(**vals, escalation_level=0))
+        else:
+            conn.execute(
+                task.insert().values(id=uuid.uuid4(), register_item_id=item_id, period_key=o.period_key, **vals)
+            )
         added += 1
     return added
+
+
+def sync_open_tasks(conn: Connection, item_id: uuid.UUID) -> int:
+    """After a change of who does a check or who is accountable, unfinished tasks follow the register row: the owner
+    (or their approved cover) and the doer are taken from the item again. Finished tasks keep who did them."""
+    item = dict(conn.execute(select(register_item).where(register_item.c.id == item_id)).mappings().one())
+    n = 0
+    for t in conn.execute(
+        select(task.c.id, task.c.due_at).where(task.c.register_item_id == item_id, task.c.status.in_(ACTIVE_TASK))
+    ).all():
+        conn.execute(
+            update(task)
+            .where(task.c.id == t.id)
+            .values(
+                owner_id=_owner_now(conn, item, clock.london(t.due_at).date()),
+                doer_kind=item["done_by_kind"],
+                doer_id=item["done_by_person_id"] or item["done_by_pool_id"] or item["done_by_contractor_id"],
+            )
+        )
+        n += 1
+    return n
+
+
+def retarget_version(conn: Connection, template_id: uuid.UUID, version_id: uuid.UUID) -> int:
+    """A newly published template version applies to every task nobody has started: scheduled, open or overdue tasks
+    with no submission. Anything already submitted keeps the version it was completed on (§3 Versioning)."""
+    started = select(submission.c.task_id).where(submission.c.task_id.isnot(None))
+    res = conn.execute(
+        update(task)
+        .where(
+            task.c.register_item_id.in_(select(register_item.c.id).where(register_item.c.template_id == template_id)),
+            task.c.status.in_(ACTIVE_TASK),
+            task.c.id.notin_(started),
+        )
+        .values(template_version_id=version_id)
+    )
+    return res.rowcount or 0
 
 
 def cancel_future(conn: Connection, item_id: uuid.UUID) -> None:
