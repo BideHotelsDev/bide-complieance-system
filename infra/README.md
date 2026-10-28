@@ -8,7 +8,9 @@ One image (the repo-root `Dockerfile`), two services:
 | worker | `worker` | The Arq worker: scheduler every 5 minutes, delivery every minute, Monday 08:30 digest, nightly audit-chain check and retention. |
 
 Both need Postgres 16 and Redis in a UK or EU region (PRD §8 Hosting), and an S3-compatible bucket for evidence with
-versioning on. Copy `env.production.example` into the services' variables.
+versioning on (on Railway, a Railway bucket). Files go through the API by default; `S3_DIRECT_URLS=true` switches to
+presigned bucket URLs, which needs CORS on the bucket and the bucket origin in the CSP. Copy `env.production.example`
+into the services' variables.
 
 Before go-live (PRD §9, §13):
 

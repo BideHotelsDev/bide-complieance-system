@@ -53,6 +53,8 @@ class Settings(BaseSettings):
     s3_endpoint_url: str = ""
     s3_access_key_id: str = ""
     s3_secret_access_key: str = ""
+    # Presigned bucket URLs in the browser instead of going through the API (needs bucket CORS and a CSP change).
+    s3_direct_urls: bool = False
     signed_url_seconds: int = 300
     max_image_bytes: int = 15 * 1024 * 1024
     max_pdf_bytes: int = 25 * 1024 * 1024

@@ -53,7 +53,7 @@ def create_upload(body: SlotIn, pr: Current, conn: ConnDep) -> dict:
 
 @router.put("/files/upload/{token}")
 async def local_upload(token: str, request: Request) -> dict:
-    """The development storage backend's stand-in for an S3 presigned PUT."""
+    """Uploads through the API: the local backend, and the S3 backend unless S3_DIRECT_URLS is on."""
     try:
         d = signer.load(token, settings.signed_url_seconds)
     except PermissionError:
@@ -66,7 +66,7 @@ async def local_upload(token: str, request: Request) -> dict:
     if request.headers.get("content-type", "").split(";")[0] != d["t"]:
         raise problem(415, "type", "Wrong file type for this upload.")
     try:
-        storage.put(d["k"], data, d["t"])
+        storage.put_once(d["k"], data, d["t"])
     except FileExistsError:
         raise problem(409, "exists", "This upload has already been used.") from None
     return {"ok": True}

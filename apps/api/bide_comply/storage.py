@@ -1,8 +1,10 @@
 """Evidence storage: originals are kept unaltered with a SHA-256; display copies are re-encoded, stripped of metadata
 and stamped (EXE-03, §9.4).
 
-Uploads use short-lived signed URLs. With the S3 backend the browser PUTs straight to the private bucket; with the
-local backend (development) it PUTs to the API, which writes under storage_dir.
+Uploads use short-lived signed URLs. By default the browser PUTs to the API and downloads from it, which then writes
+to storage_dir (local backend) or the private bucket (S3), so the page never talks to another origin. With
+S3_DIRECT_URLS the browser uses presigned bucket URLs instead; that needs CORS on the bucket and the bucket origin in
+the CSP.
 """
 
 import hashlib
@@ -65,7 +67,24 @@ class _Signer:
 signer = _Signer()
 
 
-class LocalStorage:
+class _ApiUrls:
+    """Signed links to the API's own upload and download routes."""
+
+    def upload_url(self, key: str, content_type: str, max_bytes: int) -> dict:
+        token = signer.sign({"k": key, "t": content_type, "m": max_bytes, "op": "put"})
+        return {
+            "method": "PUT",
+            "url": f"/api/files/upload/{token}",
+            "headers": {"Content-Type": content_type},
+        }
+
+    def download_url(self, key: str, file_name: str, inline: bool = True) -> str:
+        token = signer.sign({"k": key, "n": file_name, "i": inline, "op": "get", "at": int(time.time())})
+        # Relative: the SPA and the API share an origin (Vite proxy in development, one image in production).
+        return f"/api/files/download/{token}"
+
+
+class LocalStorage(_ApiUrls):
     def __init__(self, root: Path) -> None:
         self.root = root.resolve()
         self.root.mkdir(parents=True, exist_ok=True)
@@ -83,6 +102,8 @@ class LocalStorage:
             raise FileExistsError(key)  # originals are write-once
         p.write_bytes(data)
 
+    put_once = put
+
     def get(self, key: str) -> bytes:
         return self._path(key).read_bytes()
 
@@ -92,21 +113,8 @@ class LocalStorage:
     def delete(self, key: str) -> None:
         self._path(key).unlink(missing_ok=True)
 
-    def upload_url(self, key: str, content_type: str, max_bytes: int) -> dict:
-        token = signer.sign({"k": key, "t": content_type, "m": max_bytes, "op": "put"})
-        return {
-            "method": "PUT",
-            "url": f"/api/files/upload/{token}",
-            "headers": {"Content-Type": content_type},
-        }
 
-    def download_url(self, key: str, file_name: str, inline: bool = True) -> str:
-        token = signer.sign({"k": key, "n": file_name, "i": inline, "op": "get", "at": int(time.time())})
-        # Relative: the SPA and the API share an origin (Vite proxy in development, one image in production).
-        return f"/api/files/download/{token}"
-
-
-class S3Storage:
+class S3Storage(_ApiUrls):
     def __init__(self) -> None:
         import boto3
 
@@ -135,7 +143,14 @@ class S3Storage:
     def delete(self, key: str) -> None:
         self.client.delete_object(Bucket=self.bucket, Key=key)
 
+    def put_once(self, key: str, data: bytes, content_type: str) -> None:
+        if self.exists(key):
+            raise FileExistsError(key)  # originals are write-once
+        self.put(key, data, content_type)
+
     def upload_url(self, key: str, content_type: str, max_bytes: int) -> dict:
+        if not settings.s3_direct_urls:
+            return super().upload_url(key, content_type, max_bytes)
         # Size and type are locked into the presigned POST policy; it expires in 5 minutes.
         post = self.client.generate_presigned_post(
             self.bucket,
@@ -147,6 +162,8 @@ class S3Storage:
         return {"method": "POST", "url": post["url"], "fields": post["fields"]}
 
     def download_url(self, key: str, file_name: str, inline: bool = True) -> str:
+        if not settings.s3_direct_urls:
+            return super().download_url(key, file_name, inline)
         disposition = f'{"inline" if inline else "attachment"}; filename="{file_name}"'
         return self.client.generate_presigned_url(
             "get_object",
