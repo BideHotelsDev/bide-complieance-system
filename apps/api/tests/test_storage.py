@@ -64,10 +64,15 @@ def test_s3_originals_are_write_once(s3):
         s3.put_once("k", b"y", "image/jpeg")
 
 
-def test_s3_reads_start_again_when_the_connection_drops(s3):
-    s3.client = DroppyBucket(drops=2)
+def test_s3_reads_start_again_when_the_connection_drops(s3, monkeypatch):
+    bucket = DroppyBucket(drops=2)
+    s3.client = bucket
+    fresh = []
+    # Each retry gets a new client (a fresh connection pool); here, the same fake bucket.
+    monkeypatch.setattr(S3Storage, "_new_client", staticmethod(lambda: fresh.append(1) or bucket))
     s3.put("k", b"photo", "image/jpeg")
     assert s3.get("k") == b"photo"
+    assert len(fresh) == 2
     s3.client.drops = S3Storage.READ_ATTEMPTS
     with pytest.raises(ResponseStreamingError):
         s3.get("k")

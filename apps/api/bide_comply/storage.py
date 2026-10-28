@@ -115,22 +115,27 @@ class LocalStorage(_ApiUrls):
 
 
 class S3Storage(_ApiUrls):
-    # A read can lose its connection part-way (seen on Railway buckets); boto's retries only cover the request, so
-    # get() starts the read again.
+    # Railway's bucket closes idle keep-alive connections; a read on one gets the headers and then nothing
+    # (IncompleteRead, 0 bytes). boto's retries only cover the request, and a plain retry picks up another stale
+    # connection from the pool, so get() starts again on a new client with a fresh pool.
     READ_ATTEMPTS = 3
 
     def __init__(self) -> None:
+        self.bucket = settings.s3_bucket
+        self.client = self._new_client()
+
+    @staticmethod
+    def _new_client():
         import boto3
         from botocore.config import Config
 
-        self.bucket = settings.s3_bucket
-        self.client = boto3.client(
+        return boto3.client(
             "s3",
             region_name=settings.s3_region,
             endpoint_url=settings.s3_endpoint_url or None,
             aws_access_key_id=settings.s3_access_key_id or None,
             aws_secret_access_key=settings.s3_secret_access_key or None,
-            config=Config(retries={"max_attempts": 5, "mode": "standard"}),
+            config=Config(retries={"max_attempts": 5, "mode": "standard"}, tcp_keepalive=True),
         )
 
     def put(self, key: str, data: bytes, content_type: str) -> None:
@@ -146,6 +151,7 @@ class S3Storage(_ApiUrls):
                 if attempt == self.READ_ATTEMPTS:
                     raise
                 time.sleep(0.2 * attempt)
+                self.client = self._new_client()
         raise AssertionError("unreachable")
 
     def exists(self, key: str) -> bool:

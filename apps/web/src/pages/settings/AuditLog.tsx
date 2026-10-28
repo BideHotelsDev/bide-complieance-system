@@ -229,7 +229,7 @@ export function AuditLogPage() {
           </EmptyState>
         ) : (
           <div className="overflow-x-auto">
-            <table className={cn("w-full border-collapse text-[13.5px]", q.isFetching && "opacity-70")}>
+            <table className={cn("w-full min-w-[640px] border-collapse text-[13.5px]", q.isFetching && "opacity-70")}>
               <thead>
                 <tr className="text-left text-[12.5px] text-muted-foreground">
                   <th className="h-[38px] w-12 border-b border-divider px-3.5 font-medium">

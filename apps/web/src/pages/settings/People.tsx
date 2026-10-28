@@ -133,7 +133,11 @@ export function PeoplePage() {
             )
           }
         />
-        <div role="tablist" aria-label="People and roles" className="flex gap-6 overflow-x-auto border-b border-divider">
+        <div
+          role="tablist"
+          aria-label="People and roles"
+          className="flex gap-6 overflow-x-auto border-b border-divider"
+        >
           {TABS.map((t) => (
             <button
               key={t.key}
