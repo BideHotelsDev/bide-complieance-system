@@ -27,6 +27,7 @@ import { ContentPage } from "./pages/settings/Content"
 import { ImportPage } from "./pages/settings/Import"
 import { LibraryPage } from "./pages/settings/Library"
 import { PeoplePage } from "./pages/settings/People"
+import { PropertyDetailsPage, PropertyListAdmin } from "./pages/settings/PropertyDetails"
 import { SetupPage } from "./pages/settings/Setup"
 import { TemplateEditorPage } from "./pages/settings/TemplateEditor"
 import { SignoffsPage } from "./pages/Signoffs"
@@ -69,6 +70,8 @@ const routeTree = root.addChildren([
     r("/settings/setup", SetupPage),
     r("/settings/setup/$code", SetupPage),
     r("/settings/people", PeoplePage),
+    r("/settings/properties", PropertyListAdmin),
+    r("/settings/properties/$code", PropertyDetailsPage),
     r("/settings/alerts", AlertsPage),
     r("/settings/content", ContentPage),
     r("/settings/import", ImportPage),

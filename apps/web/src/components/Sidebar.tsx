@@ -49,6 +49,7 @@ type Item = {
 export const SETTINGS_ITEMS = [
   { to: "/settings/library", label: "Compliance library", tip: "All checks and the questions staff answer" },
   { to: "/settings/setup", label: "Property setup", tip: "Choose which checks apply and who does them" },
+  { to: "/settings/properties", label: "Property details", tip: "Features, geofence, licences and locations" },
   { to: "/settings/people", label: "People and roles", tip: "Who can do what, and where" },
   { to: "/settings/alerts", label: "Alert rules", tip: "Who gets told, and when, if something slips" },
   { to: "/settings/content", label: "Messages and wording", tip: "Edit reminders, alerts and on-screen words" },
