@@ -16,9 +16,9 @@ from bide_comply import clock
 from bide_comply.config import settings
 from bide_comply.schema import evidence, person, property_, register_item, task
 from bide_comply.services.common import problem
-from bide_comply.storage import DOC_TYPES, IMAGE_TYPES, LOGO_TYPES, display_copy, sha256, sniff, storage
+from bide_comply.storage import DOC_TYPES, IMAGE_TYPES, LOGO_TYPES, SHEET_TYPES, display_copy, sha256, sniff, storage
 
-ALLOWED = {**IMAGE_TYPES, **DOC_TYPES}
+ALLOWED = {**IMAGE_TYPES, **DOC_TYPES, **SHEET_TYPES}
 
 
 def create_slot(
@@ -47,7 +47,13 @@ def create_slot(
     eid = uuid.uuid4()
     now = clock.now()
     key = f"orig/{now:%Y/%m}/{eid}.{allowed[content_type]}"
-    kind = "pdf" if content_type in DOC_TYPES else ("photo" if captured_with == "camera" else "image")
+    kind = (
+        "pdf"
+        if content_type in DOC_TYPES
+        else "doc"
+        if content_type in SHEET_TYPES
+        else ("photo" if captured_with == "camera" else "image")
+    )
     conn.execute(
         evidence.insert().values(
             id=eid,
@@ -105,6 +111,12 @@ def complete(
     if data is None:
         data = storage.get(ev["storage_key"])
     real = sniff(data)
+    if real is None and ev["content_type"] == "text/csv" and b"\x00" not in data[:4096]:
+        try:
+            data.decode("utf-8-sig")
+            real = "text/csv"  # plain text has no magic bytes; a CSV is accepted when it reads as UTF-8 text
+        except UnicodeDecodeError:
+            pass
     if real != ev["content_type"] and not (real == "image/svg+xml" and ev["content_type"] == "image/svg+xml"):
         storage.delete(ev["storage_key"])
         raise problem(415, "type", "That file isn't what it says it is. Upload a photo or a PDF.")

@@ -17,6 +17,8 @@ from bide_comply.config import settings
 
 IMAGE_TYPES = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/heic": "heic"}
 DOC_TYPES = {"application/pdf": "pdf"}
+# Spreadsheets are accepted for Settings › Import only (CMS-06), never as evidence of a check.
+SHEET_TYPES = {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx", "text/csv": "csv"}
 LOGO_TYPES = {"image/png": "png", "image/webp": "webp", "image/svg+xml": "svg"}
 
 
@@ -36,7 +38,9 @@ def sniff(data: bytes) -> str | None:
     if head.startswith(b"<svg") or (head.startswith(b"<?xml") and b"<svg" in head):
         return "image/svg+xml"
     if data[:4] == b"PK\x03\x04":
-        return "application/zip"  # xlsx and other office files
+        if b"xl/workbook" in data:
+            return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        return "application/zip"  # other office files
     return None
 
 

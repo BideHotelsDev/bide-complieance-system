@@ -230,7 +230,7 @@ def get_job(jid: uuid.UUID, pr: Current, conn: ConnDep) -> dict:
             "detected": "BH-CMP-002 gate" if gate_sheet else "spreadsheet",
             "gate_mapping": [{"column": h, "example": (gate_sheet["example"] if gate_sheet else {}).get(h), "field": v,
                               "matched": v is not None} for h, v in j["mapping"].get("gate", {}).items()],
-            "fields": fields, "plan": _plan(conn, j), "result": j["result"],
+            "fields": fields, "plan": _plan(conn, j), "result": j["result"], "owner_map": j["owner_map"],
             "status_mapping": [{"from": "Done", "to": "Done if evidence"}, {"from": "In progress", "to": "In progress"},
                                {"from": "Not started", "to": "Not started"}, {"from": "To confirm", "to": "To confirm"},
                                {"from": "N/A", "to": "N/A reason from Notes"}]}

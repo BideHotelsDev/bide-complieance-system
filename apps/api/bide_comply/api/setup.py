@@ -145,6 +145,14 @@ def setup(
                     if pend
                     else None,
                     "state": it["state"],
+                    # Ids so the pickers can show what is chosen (a tick, not just a colour).
+                    "done_by_id": str(it[f"done_by_{k}_id"])
+                    if k in ("person", "pool", "contractor") and it[f"done_by_{k}_id"]
+                    else None,
+                    "accountable_id": str(it["accountable_id"]) if it["accountable_id"] else None,
+                    "cover_id": str(it["cover_id"]) if it["cover_id"] else None,
+                    "verifier_id": str(it["verifier_id"]) if it["verifier_id"] else None,
+                    "verifier_mode": it["verifier_mode"] or t["verification"],
                 }
             )
         else:

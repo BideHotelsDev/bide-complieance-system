@@ -158,9 +158,8 @@ def list_templates(
             )
             + " only"
         )
-    out["summary"] = (
-        f"Showing {res.total} of {len(rows) if sel_area in ('proposed', 'archived') else len(live)} templates: {', '.join(parts)}."
-    )
+    of = len(pool) if sel_area in ("proposed", "archived") else len(live)
+    out["summary"] = f"Showing {res.total} of {of} templates: {', '.join(parts)}."
     out["areas"] = areas
     return out
 
@@ -490,6 +489,26 @@ def archive(template_id: uuid.UUID, body: ArchiveIn, request: Request, pr: Curre
         after={"reason": body.reason},
     )
     return {"past_records": past}
+
+
+@router.post("/{template_id}/restore")
+def restore(template_id: uuid.UUID, request: Request, pr: Current, conn: ConnDep) -> dict:
+    """Bring an archived template back. Properties switch it back on in Property setup; nothing restarts by itself."""
+    pr.require("library.edit")
+    t = _tpl(conn, template_id)
+    if t["status"] != "archived":
+        raise problem(409, "not_archived", "This template isn't archived.")
+    conn.execute(update(template).where(template.c.id == template_id).values(status="published", archive_reason=None))
+    audit.record(
+        conn,
+        actor_for(request, pr),
+        category="settings",
+        action="template.restore",
+        summary=f"Brought back “{t['name']}”",
+        entity_type="template",
+        entity_id=template_id,
+    )
+    return {"ok": True}
 
 
 @router.get("/{template_id}/archive-check")

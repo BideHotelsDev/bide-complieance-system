@@ -239,6 +239,15 @@ def person_detail(person_id: uuid.UUID, pr: Current, conn: ConnDep) -> dict:
             (register_item.c.accountable_id == person_id) | (register_item.c.done_by_person_id == person_id)
         )
     ).scalar()
+    # Checks done by a group this person is in: covered too when they are away.
+    via_groups = conn.execute(
+        select(func.count()).where(
+            register_item.c.state == "on",
+            register_item.c.done_by_pool_id.in_(
+                select(pool_member.c.pool_id).where(pool_member.c.person_id == person_id)
+            ),
+        )
+    ).scalar()
     return {
         "id": str(p["id"]),
         "name": p["name"],
@@ -250,6 +259,7 @@ def person_detail(person_id: uuid.UUID, pr: Current, conn: ConnDep) -> dict:
         "requirements": reqs,
         "devices": devs,
         "items_named": items,
+        "items_via_groups": via_groups,
         "can_manage": pr.can("people.manage"),
         "first_name": p["name"].split()[0].strip("["),
     }
