@@ -17,5 +17,6 @@ until alembic upgrade head; do
     echo "database not ready; retrying in 2s ($tries/30)" >&2
     sleep 2
 done
-python -m bide_comply.seed
+# SEED_DEMO=true (staging) also loads the demo properties and people; it skips itself once they exist.
+python -m bide_comply.seed ${SEED_DEMO:+--demo}
 exec uvicorn bide_comply.main:app --host 0.0.0.0 --port "${PORT:-8000}" --proxy-headers --forwarded-allow-ips '*'
