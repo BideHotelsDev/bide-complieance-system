@@ -44,14 +44,18 @@ def answers(form: list[dict], fail: bool = False) -> dict:
 class TestRoutineCheck:
     def test_no_evidence_not_done(self, login):
         t = open_task(login, name_part="Escape routes")
-        r = login(PAM, "field").post(f"/api/field/tasks/{t['task_id']}/submit", json={"values": answers(t["form"]), "photos": {}})
+        r = login(PAM, "field").post(
+            f"/api/field/tasks/{t['task_id']}/submit", json={"values": answers(t["form"]), "photos": {}}
+        )
         assert r.status_code == 422 and "photo" in r.json()["message"].lower()
 
     def test_gallery_photo_rejected_for_a_camera_field(self, login):
         pam = login(PAM, "field")
-        t = open_task(login, name_part="Escape routes")
+        open_task(login, name_part="Escape routes")
         data = b"\xff\xd8\xff" + b"0" * 200
-        slot = pam.post("/api/uploads", json={"content_type": "image/jpeg", "size": len(data), "captured_with": "upload"}).json()
+        slot = pam.post(
+            "/api/uploads", json={"content_type": "image/jpeg", "size": len(data), "captured_with": "upload"}
+        ).json()
         assert slot["evidence_id"]
         # The bytes aren't a real image, so completion fails the content check before it can even be used.
         pam.put(slot["upload"]["url"], content=data, headers={"Content-Type": "image/jpeg"})
@@ -61,8 +65,10 @@ class TestRoutineCheck:
         t = open_task(login, name_part="Escape routes")
         photo_key = next(f["key"] for f in t["form"] if f["type"] == "photo")
         ev = upload_photo(pam, task_id=t["task_id"])
-        r = pam.post(f"/api/field/tasks/{t['task_id']}/submit",
-                     json={"values": answers(t["form"]), "photos": {photo_key: [ev]}, "lat": 58.5936, "lng": -3.5221})
+        r = pam.post(
+            f"/api/field/tasks/{t['task_id']}/submit",
+            json={"values": answers(t["form"]), "photos": {photo_key: [ev]}, "lat": 58.5936, "lng": -3.5221},
+        )
         assert r.status_code == 200, r.text
         assert r.json()["result"] == "passed"
         again = pam.post(f"/api/field/tasks/{t['task_id']}/submit", json={"values": {}, "photos": {}})
@@ -73,8 +79,10 @@ class TestRoutineCheck:
         t = open_task(login, name_part="Fire door walk")
         photo_key = next(f["key"] for f in t["form"] if f["type"] == "photo")
         ev = upload_photo(pam, task_id=t["task_id"])
-        r = pam.post(f"/api/field/tasks/{t['task_id']}/submit",
-                     json={"values": answers(t["form"]), "photos": {photo_key: [ev]}, "lat": 51.5, "lng": -0.12})
+        r = pam.post(
+            f"/api/field/tasks/{t['task_id']}/submit",
+            json={"values": answers(t["form"]), "photos": {photo_key: [ev]}, "lat": 51.5, "lng": -0.12},
+        )
         assert r.status_code == 200, r.text
         assert "outside_geofence" in r.json()["flags"] and r.json()["status"] == "submitted"
 
@@ -110,8 +118,10 @@ class TestSomethingFails:
         d = login(DAVID)
         adv = d.get("/api/actions", params={"view": "adv"}).json()["rows"][0]
         assert d.post(f"/api/actions/{adv['ref']}/close", json={"decision": "999 first at night"}).status_code == 422
-        r = d.post(f"/api/actions/{adv['ref']}/close",
-                   json={"decision": "999 first at night", "decision_reason": "Recorded in FRA section 4.2"})
+        r = d.post(
+            f"/api/actions/{adv['ref']}/close",
+            json={"decision": "999 first at night", "decision_reason": "Recorded in FRA section 4.2"},
+        )
         assert r.status_code == 200
 
     def test_rejection_reopens_the_task(self, login):
@@ -153,8 +163,14 @@ class TestOpeningGate:
     def test_done_without_evidence_stays_to_confirm(self, login):
         sam = login(SAM)
         g = sam.get("/api/gates/TV").json()
-        item = next(i for i in g["items"] if i["status"] in ("not_started", "in_progress") and not i["evidence_link"]
-                    and not i["evidence"] and i["ref"] != "H08")
+        item = next(
+            i
+            for i in g["items"]
+            if i["status"] in ("not_started", "in_progress")
+            and not i["evidence_link"]
+            and not i["evidence"]
+            and i["ref"] != "H08"
+        )
         r = sam.patch(f"/api/gate-items/{item['id']}", json={"status": "done"})
         assert r.json()["status"] == "to_confirm"
 

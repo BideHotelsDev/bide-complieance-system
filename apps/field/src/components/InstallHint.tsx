@@ -46,13 +46,16 @@ export function InstallHint() {
     }
   }
   return (
-    <aside aria-label="Add to Home Screen" className="relative mt-2 rounded-xl border border-divider bg-surface px-4 py-3.5 pr-12">
+    <aside
+      aria-label="Add to Home Screen"
+      className="relative mt-2 rounded-xl border border-divider bg-surface px-4 py-3.5 pr-12"
+    >
       <div className="text-[15px] font-semibold">Add bide Comply to your Home Screen</div>
       <p className="m-0 mt-1 text-[14px] text-muted-foreground">
         {ios ? (
           <>
-            Tap <Share aria-label="Share" className="inline size-4 align-[-3px]" />, then Add to Home Screen. Check reminders
-            only reach an iPhone once the app is there.
+            Tap <Share aria-label="Share" className="inline size-4 align-[-3px]" />, then Add to Home Screen. Check
+            reminders only reach an iPhone once the app is there.
           </>
         ) : (
           "It opens like an app, works with no signal, and can remind you before a check is due."

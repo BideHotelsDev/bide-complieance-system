@@ -104,8 +104,8 @@ export function RaiseActionDialog({
         <DialogHeader>
           <DialogTitle>Raise an Action</DialogTitle>
           <DialogDescription>
-            {item ? `At ${propertyName}, from ${item.ref} ${item.check}.` : `At ${propertyName}.`} It goes on the Actions to
-            fix list straight away.
+            {item ? `At ${propertyName}, from ${item.ref} ${item.check}.` : `At ${propertyName}.`} It goes on the
+            Actions to fix list straight away.
           </DialogDescription>
         </DialogHeader>
         <form
@@ -250,7 +250,13 @@ export function ReassignDialog({
           }}
         >
           <Field id="rs-doer" label="Done by" hint="Type to search people, pools and contractors.">
-            <Input id="rs-doer" list="rs-doer-list" value={doer} onChange={(e) => setDoer(e.target.value)} autoComplete="off" />
+            <Input
+              id="rs-doer"
+              list="rs-doer-list"
+              value={doer}
+              onChange={(e) => setDoer(e.target.value)}
+              autoComplete="off"
+            />
             <datalist id="rs-doer-list">
               {choices.map((c) => (
                 <option key={`${c.kind}-${c.o.id}`} value={c.o.name}>
@@ -261,7 +267,12 @@ export function ReassignDialog({
             </datalist>
           </Field>
           <Field id="rs-acc" label="Accountable" hint="Only people can be accountable, not pools.">
-            <select id="rs-acc" className={selectCls} value={accountable} onChange={(e) => setAccountable(e.target.value)}>
+            <select
+              id="rs-acc"
+              className={selectCls}
+              value={accountable}
+              onChange={(e) => setAccountable(e.target.value)}
+            >
               <option value="">Choose a person</option>
               {opts.data?.people.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -339,7 +350,11 @@ export function CertificateDialog({
     },
     onSuccess: () => {
       const n = fails.split("\n").filter((t) => t.trim()).length
-      toast(n ? `Certificate filed for ${item.ref} · ${n} Action${n === 1 ? "" : "s"} raised from the fails` : `Certificate filed for ${item.ref}`)
+      toast(
+        n
+          ? `Certificate filed for ${item.ref} · ${n} Action${n === 1 ? "" : "s"} raised from the fails`
+          : `Certificate filed for ${item.ref}`,
+      )
       void qc.invalidateQueries({ queryKey: ["property"] })
       void qc.invalidateQueries({ queryKey: ["certificates"] })
       onOpenChange(false)
@@ -382,7 +397,12 @@ export function CertificateDialog({
             </Field>
           </div>
           <Field id="cd-issuer" label="Issued by">
-            <Input id="cd-issuer" value={issuer} onChange={(e) => setIssuer(e.target.value)} placeholder="Contractor or engineer" />
+            <Input
+              id="cd-issuer"
+              value={issuer}
+              onChange={(e) => setIssuer(e.target.value)}
+              placeholder="Contractor or engineer"
+            />
           </Field>
           <Field
             id="cd-fails"

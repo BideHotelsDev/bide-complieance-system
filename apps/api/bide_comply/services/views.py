@@ -293,7 +293,10 @@ def weekly_actions(conn: Connection, pr: Principal, property_id: uuid.UUID | Non
         if r.closed_on and r.closed_on >= start:
             closed[clock.monday_of(r.closed_on)] = closed.get(clock.monday_of(r.closed_on), 0) + 1
     labels = week_labels(list(opened))
-    return [{"week": wk, "label": lb, "opened": opened[wk], "closed": closed[wk]} for wk, lb in zip(opened, labels, strict=True)]
+    return [
+        {"week": wk, "label": lb, "opened": opened[wk], "closed": closed[wk]}
+        for wk, lb in zip(opened, labels, strict=True)
+    ]
 
 
 def heatmap(conn: Connection, pr: Principal, props: list[dict]) -> dict:

@@ -11,7 +11,17 @@ import { cn } from "@bide-comply/ui/lib/utils"
 import { Check, FileText, X } from "lucide-react"
 import * as React from "react"
 
-import { Choice, ErrorBox, FieldLabel, FlowScreen, Loading, PrimaryButton, SelectBox, Spinner, TextInput } from "@/components/kit"
+import {
+  Choice,
+  ErrorBox,
+  FieldLabel,
+  FlowScreen,
+  Loading,
+  PrimaryButton,
+  SelectBox,
+  Spinner,
+  TextInput,
+} from "@/components/kit"
 import { toastCouldntSave, toastSent } from "@/components/sync"
 import { fmtSize } from "@/lib/format"
 import { useMe, useProperty } from "@/lib/session"
@@ -161,7 +171,9 @@ export function ContractorVisitPage() {
                   onClick={() => setPurpose(p.label)}
                   className={cn(
                     "h-11 rounded-full border px-4 text-[15px] font-medium",
-                    purpose === p.label ? "border-primary bg-primary text-primary-foreground" : "border-border bg-surface",
+                    purpose === p.label
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-surface",
                   )}
                 >
                   {p.label}
@@ -279,7 +291,9 @@ export function ContractorVisitPage() {
                     <TextInput
                       aria-label={`Fix ${i + 1}: what needs fixing`}
                       value={f.text}
-                      onChange={(e) => setFixes((all) => all.map((x, j) => (j === i ? { ...x, text: e.target.value } : x)))}
+                      onChange={(e) =>
+                        setFixes((all) => all.map((x, j) => (j === i ? { ...x, text: e.target.value } : x)))
+                      }
                       placeholder="Detector in room 7 faulty. Replace."
                     />
                   </div>

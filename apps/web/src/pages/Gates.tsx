@@ -29,7 +29,12 @@ export function GatesPage() {
         id: "property",
         header: "Property",
         cell: ({ row: { original: r } }) => (
-          <Link to="/gates/$code" params={{ code: r.code }} className="text-foreground no-underline hover:underline" onClick={(e) => e.stopPropagation()}>
+          <Link
+            to="/gates/$code"
+            params={{ code: r.code }}
+            className="text-foreground no-underline hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
             <span className="font-medium">{r.property}</span> <span className="mono-id">{r.code}</span>
           </Link>
         ),
@@ -52,11 +57,23 @@ export function GatesPage() {
         header: "Life-safety open",
         meta: { align: "right" },
         cell: ({ row: { original: r } }) => (
-          <span className={cn("font-semibold", r.class_a_open ? "text-st-red" : "text-muted-foreground")}>{r.class_a_open}</span>
+          <span className={cn("font-semibold", r.class_a_open ? "text-st-red" : "text-muted-foreground")}>
+            {r.class_a_open}
+          </span>
         ),
       },
-      { id: "to_confirm", header: "To confirm", meta: { align: "right" }, cell: ({ row: { original: r } }) => r.to_confirm },
-      { id: "actions", header: "Actions open", meta: { align: "right" }, cell: ({ row: { original: r } }) => r.actions_open },
+      {
+        id: "to_confirm",
+        header: "To confirm",
+        meta: { align: "right" },
+        cell: ({ row: { original: r } }) => r.to_confirm,
+      },
+      {
+        id: "actions",
+        header: "Actions open",
+        meta: { align: "right" },
+        cell: ({ row: { original: r } }) => r.actions_open,
+      },
       {
         id: "stage",
         header: "Stage",

@@ -18,22 +18,46 @@ const TOUR_KEY = "bc-tour"
 /* Same words as the sidebar and the Navigation design's "Plain-language names" table */
 const PLACES: { key: keyof ReturnType<typeof navFor>; to: string; label: string; line: string }[] = [
   { key: "home", to: "/", label: "Home", line: "See where every property stands in ten seconds" },
-  { key: "todo", to: "/todo", label: "My to-do", line: "Everything waiting for you: checks, actions, reviews, signatures" },
-  { key: "properties", to: "/properties", label: "Properties", line: "Pick a property to see its checks, fixes and certificates" },
+  {
+    key: "todo",
+    to: "/todo",
+    label: "My to-do",
+    line: "Everything waiting for you: checks, actions, reviews, signatures",
+  },
+  {
+    key: "properties",
+    to: "/properties",
+    label: "Properties",
+    line: "Pick a property to see its checks, fixes and certificates",
+  },
   { key: "actions", to: "/actions", label: "Actions to fix", line: "Problems found and who is fixing them" },
   { key: "reviews", to: "/reviews", label: "Evidence review", line: "Check the photos and certificates staff sent in" },
   { key: "gates", to: "/gates", label: "Opening checklists", line: "Everything that must be done before guests stay" },
   { key: "signoffs", to: "/signoffs", label: "Sign-offs", line: "Things waiting for a signature or an approval" },
   { key: "scorecard", to: "/scorecard", label: "Team scorecard", line: "Weekly goals and the site league" },
   { key: "reports", to: "/reports", label: "Reports and packs", line: "Make a pack for an inspector or insurer" },
-  { key: "settings", to: "/settings", label: "Settings", line: "Property setup, alert rules, people, wording and appearance" },
+  {
+    key: "settings",
+    to: "/settings",
+    label: "Settings",
+    line: "Property setup, alert rules, people, wording and appearance",
+  },
 ]
 
 const RULES: { title: string; body: string }[] = [
   { title: "No evidence, not done.", body: "A tick without a photo, scan or certificate is not accepted." },
-  { title: "One name per item.", body: "Every item has a named accountable person. “Housekeeping” or “TBC” is rejected." },
-  { title: "File it the same day.", body: "Evidence is captured at the time of the work and named automatically “What - Who - Date”." },
-  { title: "Fails are reported, not hidden.", body: "A failed check creates an Action straight away and never costs the person points." },
+  {
+    title: "One name per item.",
+    body: "Every item has a named accountable person. “Housekeeping” or “TBC” is rejected.",
+  },
+  {
+    title: "File it the same day.",
+    body: "Evidence is captured at the time of the work and named automatically “What - Who - Date”.",
+  },
+  {
+    title: "Fails are reported, not hidden.",
+    body: "A failed check creates an Action straight away and never costs the person points.",
+  },
   { title: "One live version.", body: "Records are edited in place with full history; nothing is copied." },
 ]
 
@@ -110,10 +134,18 @@ export function HelpPage() {
         ))}
       </nav>
 
-      <Section id="where" n={1} title="Where things are" sub="The menu uses everyday words. Hover over any item in the sidebar for the same line.">
+      <Section
+        id="where"
+        n={1}
+        title="Where things are"
+        sub="The menu uses everyday words. Hover over any item in the sidebar for the same line."
+      >
         <ul className="m-0 list-none p-0">
           {places.map((p) => (
-            <li key={p.to} className="grid grid-cols-1 gap-x-6 gap-y-0.5 border-b border-divider px-4 py-3 last:border-b-0 sm:grid-cols-[200px_1fr]">
+            <li
+              key={p.to}
+              className="grid grid-cols-1 gap-x-6 gap-y-0.5 border-b border-divider px-4 py-3 last:border-b-0 sm:grid-cols-[200px_1fr]"
+            >
               <Link to={p.to} className="font-semibold text-foreground no-underline hover:underline">
                 {p.label}
               </Link>
@@ -124,20 +156,30 @@ export function HelpPage() {
             <span className="flex items-center gap-2 font-semibold">
               <Search className="size-4 text-muted-foreground" aria-hidden />
               Search anything
-              <kbd className="rounded border border-border bg-surface px-1.5 text-[11px] font-normal text-muted-foreground">⌘K</kbd>
+              <kbd className="rounded border border-border bg-surface px-1.5 text-[11px] font-normal text-muted-foreground">
+                ⌘K
+              </kbd>
             </span>
-            <span className="text-muted-foreground">Find a property, check, Action or person from anywhere. Ctrl+K on Windows.</span>
+            <span className="text-muted-foreground">
+              Find a property, check, Action or person from anywhere. Ctrl+K on Windows.
+            </span>
           </li>
           <li className="grid grid-cols-1 gap-x-6 gap-y-0.5 px-4 py-3 sm:grid-cols-[200px_1fr]">
             <span className="font-semibold">Property switcher</span>
             <span className="text-muted-foreground">
-              At the top of the sidebar. Pick a property and every page follows it, so you never filter by property twice.
+              At the top of the sidebar. Pick a property and every page follows it, so you never filter by property
+              twice.
             </span>
           </li>
         </ul>
       </Section>
 
-      <Section id="colours" n={2} title="What the colours mean" sub="Colour is never the only signal: every badge carries its word.">
+      <Section
+        id="colours"
+        n={2}
+        title="What the colours mean"
+        sub="Colour is never the only signal: every badge carries its word."
+      >
         <div className="grid gap-px overflow-hidden bg-divider md:grid-cols-3">
           <Legend title="Status of a check">
             <LegendRow badge={<RagBadge status="green" />} text="In date" />
@@ -146,7 +188,10 @@ export function HelpPage() {
             <LegendRow badge={<RagBadge status="grey" />} text="N/A, switched off for this property" />
           </Legend>
           <Legend title="Class of an item">
-            <LegendRow badge={<ClassBadge klass="A" />} text="Class A · Life safety. Overdue turns the whole property red." />
+            <LegendRow
+              badge={<ClassBadge klass="A" />}
+              text="Class A · Life safety. Overdue turns the whole property red."
+            />
             <LegendRow badge={<ClassBadge klass="B" />} text="Class B · Statutory. The law requires it." />
             <LegendRow badge={<ClassBadge klass="C" />} text="Class C · bide standard. Our own good practice." />
           </Legend>
@@ -169,7 +214,12 @@ export function HelpPage() {
         </div>
       </Section>
 
-      <Section id="rules" n={3} title="The five golden rules" sub="From the compliance policy (BH-CMP-001). The system enforces them, so you don't have to remember.">
+      <Section
+        id="rules"
+        n={3}
+        title="The five golden rules"
+        sub="From the compliance policy (BH-CMP-001). The system enforces them, so you don't have to remember."
+      >
         <ol className="m-0 list-none p-0">
           {RULES.map((r, i) => (
             <li key={r.title} className="flex gap-4 border-b border-divider px-4 py-3.5 last:border-b-0">
@@ -177,7 +227,8 @@ export function HelpPage() {
                 {i + 1}
               </span>
               <span>
-                <strong className="font-semibold">{r.title}</strong> <span className="text-muted-foreground">{r.body}</span>
+                <strong className="font-semibold">{r.title}</strong>{" "}
+                <span className="text-muted-foreground">{r.body}</span>
               </span>
             </li>
           ))}
@@ -202,14 +253,26 @@ export function HelpPage() {
                         !s.tone && "border-border bg-surface",
                       )}
                     >
-                      <span className={cn("text-[11px] font-semibold tracking-[0.06em] uppercase", s.tone === "result" ? "opacity-80" : "text-muted-foreground")}>
+                      <span
+                        className={cn(
+                          "text-[11px] font-semibold tracking-[0.06em] uppercase",
+                          s.tone === "result" ? "opacity-80" : "text-muted-foreground",
+                        )}
+                      >
                         {s.who}
                       </span>
                       <span className="mt-1.5 font-semibold">{s.title}</span>
-                      <span className={cn("mt-1 text-[13px]", s.tone === "result" ? "opacity-80" : "text-muted-foreground")}>{s.body}</span>
+                      <span
+                        className={cn("mt-1 text-[13px]", s.tone === "result" ? "opacity-80" : "text-muted-foreground")}
+                      >
+                        {s.body}
+                      </span>
                     </div>
                     {j < f.steps.length - 1 && (
-                      <ArrowRight aria-hidden className="absolute top-1/2 -right-[13px] z-10 hidden size-4 -translate-y-1/2 text-subtle lg:block" />
+                      <ArrowRight
+                        aria-hidden
+                        className="absolute top-1/2 -right-[13px] z-10 hidden size-4 -translate-y-1/2 text-subtle lg:block"
+                      />
                     )}
                   </li>
                 ))}
@@ -230,7 +293,19 @@ export function HelpPage() {
   )
 }
 
-function Section({ id, n, title, sub, children }: { id: string; n: number; title: string; sub: string; children: React.ReactNode }) {
+function Section({
+  id,
+  n,
+  title,
+  sub,
+  children,
+}: {
+  id: string
+  n: number
+  title: string
+  sub: string
+  children: React.ReactNode
+}) {
   return (
     <Card id={id} aria-labelledby={`${id}-h`} className="scroll-mt-4">
       <div className="border-b border-divider px-4 py-3">

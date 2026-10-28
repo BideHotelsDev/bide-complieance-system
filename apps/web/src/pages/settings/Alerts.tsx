@@ -51,7 +51,10 @@ const ROLE_RECIPIENTS: Recipient[] = [
   { kind: "accountable", label: "The accountable person" },
 ]
 const CLASS_A_WHAT = "alarm or ARC down, no keyholder cover, escape route blocked, FRA missing"
-const TIMES = Array.from({ length: 48 }, (_, i) => `${String(Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "30" : "00"}`)
+const TIMES = Array.from(
+  { length: 48 },
+  (_, i) => `${String(Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "30" : "00"}`,
+)
 
 const sameRecipient = (a: Recipient, b: Recipient) =>
   a.kind === b.kind && (a.role ?? null) === (b.role ?? null) && (a.id ?? null) === (b.id ?? null)
@@ -362,7 +365,9 @@ function RuleBody({
         canEdit={canEdit}
         onRemove={(x) => onChange((r) => ({ ...r, recipients: r.recipients.filter((y) => !sameRecipient(x, y)) }))}
         onAdd={(x) =>
-          onChange((r) => (r.recipients.some((y) => sameRecipient(x, y)) ? r : { ...r, recipients: [...r.recipients, x] }))
+          onChange((r) =>
+            r.recipients.some((y) => sameRecipient(x, y)) ? r : { ...r, recipients: [...r.recipients, x] },
+          )
         }
       />
       <div role="group" aria-label="Channels" className="flex flex-wrap gap-1.5">
@@ -481,7 +486,9 @@ function AddRecipient({ existing, onAdd }: { existing: Recipient[]; onAdd: (r: R
           className="mb-1 h-8 w-full rounded-md border border-border bg-surface px-2.5 text-[13px] outline-none focus:outline-2 focus:outline-focus"
         />
         <div className="max-h-72 overflow-y-auto">
-          {roles.length > 0 && <div className="px-2 pt-1.5 pb-1 text-xs font-medium text-muted-foreground">By role</div>}
+          {roles.length > 0 && (
+            <div className="px-2 pt-1.5 pb-1 text-xs font-medium text-muted-foreground">By role</div>
+          )}
           {roles.map((r) => (
             <button
               key={r.kind}

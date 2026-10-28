@@ -47,7 +47,7 @@ onSent(() => {
 // The service worker caches the app shell so the app opens with no signal (production builds only).
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    void navigator.serviceWorker.register("/sw.js").catch(() => undefined)
+    void navigator.serviceWorker.register(appPath("/sw.js"), { scope: appPath("/") }).catch(() => undefined)
   })
 }
 

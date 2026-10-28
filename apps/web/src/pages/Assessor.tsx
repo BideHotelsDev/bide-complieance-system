@@ -74,12 +74,16 @@ export function AssessorPage() {
     retry: (n, e) => e.status >= 500 && n < 2,
   })
   if (!me) return null
-  if (!me.can["assessor.walk"] && !me.is_admin) return <NoPermission message="Audit walks are recorded by the competent assessor." />
+  if (!me.can["assessor.walk"] && !me.is_admin)
+    return <NoPermission message="Audit walks are recorded by the competent assessor." />
   if (q.isPending) return <LoadingPage />
   if (q.error)
     return (
       <div className="flex flex-col gap-4">
-        <PageHeader title="Quarterly audit walk" subtitle="Walk the building and compare it with what the register says." />
+        <PageHeader
+          title="Quarterly audit walk"
+          subtitle="Walk the building and compare it with what the register says."
+        />
         <PropertyPicker current={code} />
         {q.error.status >= 500 || q.error.status === 0 ? (
           <Card>
@@ -87,7 +91,8 @@ export function AssessorPage() {
           </Card>
         ) : (
           <p className="m-0 text-[13px] text-muted-foreground">
-            {code ? `There's no audit walk you can open for “${code}”. ` : ""}Choose a property above to start or carry on its walk.
+            {code ? `There's no audit walk you can open for “${code}”. ` : ""}Choose a property above to start or carry
+            on its walk.
           </p>
         )}
       </div>
@@ -99,10 +104,19 @@ export function AssessorPage() {
 function PropertyPicker({ current, compact = false }: { current?: string; compact?: boolean }) {
   const me = useMe().data
   const props = me?.properties ?? []
-  if (props.length === 0) return compact ? null : <EmptyState title="No properties yet">Ask Samantha (system owner) to add you to a property.</EmptyState>
+  if (props.length === 0)
+    return compact ? null : (
+      <EmptyState title="No properties yet">Ask Samantha (system owner) to add you to a property.</EmptyState>
+    )
   if (compact && props.length < 2) return null
   return (
-    <nav aria-label="Your properties" className={cn("flex flex-wrap items-center gap-2", !compact && "rounded-[10px] border border-divider bg-surface p-4")}>
+    <nav
+      aria-label="Your properties"
+      className={cn(
+        "flex flex-wrap items-center gap-2",
+        !compact && "rounded-[10px] border border-divider bg-surface p-4",
+      )}
+    >
       <span className="mr-1 text-[13px] text-muted-foreground">{compact ? "Walks:" : "Your properties"}</span>
       {props.map((p) => {
         const on = p.code.toLowerCase() === current?.toLowerCase()
@@ -115,7 +129,9 @@ function PropertyPicker({ current, compact = false }: { current?: string; compac
             aria-current={on ? "page" : undefined}
             className={cn(
               "inline-flex h-8 items-center gap-2 rounded-full border px-3 text-[13px] font-medium no-underline",
-              on ? "border-foreground bg-primary text-primary-foreground" : "border-border bg-surface text-foreground hover:bg-hover",
+              on
+                ? "border-foreground bg-primary text-primary-foreground"
+                : "border-border bg-surface text-foreground hover:bg-hover",
             )}
           >
             {p.name}
@@ -172,7 +188,9 @@ function WalkView({ walk, group, onGroup }: { walk: Walk; group: string; onGroup
                 onClick={() => onGroup(g.key)}
                 className={cn(
                   "inline-flex h-10 items-center gap-2 rounded-full border px-4 text-[14px] font-medium",
-                  g.key === group ? "border-foreground bg-primary text-primary-foreground" : "border-border bg-surface hover:bg-hover",
+                  g.key === group
+                    ? "border-foreground bg-primary text-primary-foreground"
+                    : "border-border bg-surface hover:bg-hover",
                 )}
               >
                 {g.label}
@@ -188,7 +206,10 @@ function WalkView({ walk, group, onGroup }: { walk: Walk; group: string; onGroup
             ))}
           </div>
 
-          <section aria-label="Register items to check" className="overflow-hidden rounded-[10px] border border-divider bg-surface">
+          <section
+            aria-label="Register items to check"
+            className="overflow-hidden rounded-[10px] border border-divider bg-surface"
+          >
             <div className="hidden grid-cols-[44px_minmax(0,1fr)_244px_190px] gap-x-4 items-center border-b border-divider bg-background px-4 py-2.5 text-[13px] font-medium text-muted-foreground lg:grid">
               <span />
               <span>The register says</span>
@@ -200,7 +221,9 @@ function WalkView({ walk, group, onGroup }: { walk: Walk; group: string; onGroup
                 No life-safety or statutory items in this area are live at {walk.property}.
               </EmptyState>
             ) : (
-              walk.items.map((it) => <Row key={it.register_item_id} item={it} walk={walk} disabled={sent} onSaved={refresh} />)
+              walk.items.map((it) => (
+                <Row key={it.register_item_id} item={it} walk={walk} disabled={sent} onSaved={refresh} />
+              ))
             )}
           </section>
         </div>
@@ -212,7 +235,9 @@ function WalkView({ walk, group, onGroup }: { walk: Walk; group: string; onGroup
               <dt>Matches the register</dt>
               <dd className="tabular m-0 text-right font-semibold">{walk.tally.matches}</dd>
               <dt>Doesn't match</dt>
-              <dd className={cn("tabular m-0 text-right font-semibold", walk.tally.doesnt > 0 && "text-st-red")}>{walk.tally.doesnt}</dd>
+              <dd className={cn("tabular m-0 text-right font-semibold", walk.tally.doesnt > 0 && "text-st-red")}>
+                {walk.tally.doesnt}
+              </dd>
               <dt>Couldn't check</dt>
               <dd className="tabular m-0 text-right font-semibold">{walk.tally.cant_check}</dd>
               <dt>Still to do</dt>
@@ -294,7 +319,10 @@ function Row({ item, walk, disabled, onSaved }: { item: Item; walk: Walk; disabl
       onSaved()
     } catch (e) {
       setSaving("idle")
-      toastError(e instanceof ApiError ? e.message : "Couldn't save that answer. Try again.", () => void save(latest.current))
+      toastError(
+        e instanceof ApiError ? e.message : "Couldn't save that answer. Try again.",
+        () => void save(latest.current),
+      )
     }
   }
   // Save straight away for taps; wait for a pause in typing for the finding.
@@ -343,7 +371,11 @@ function Row({ item, walk, disabled, onSaved }: { item: Item; walk: Walk; disabl
           </span>
         </span>
         <span className="col-start-2 lg:col-start-auto">
-          <span role="group" aria-label={`Does ${item.check} match the register?`} className="inline-flex overflow-hidden rounded-lg border border-border">
+          <span
+            role="group"
+            aria-label={`Does ${item.check} match the register?`}
+            className="inline-flex overflow-hidden rounded-lg border border-border"
+          >
             {(
               [
                 ["matches", "Matches"],
@@ -358,7 +390,12 @@ function Row({ item, walk, disabled, onSaved }: { item: Item; walk: Walk; disabl
                   type="button"
                   aria-pressed={on}
                   disabled={disabled}
-                  onClick={() => change({ verdict: on ? null : v, priority: v === "doesnt" && !line.priority ? "high" : line.priority })}
+                  onClick={() =>
+                    change({
+                      verdict: on ? null : v,
+                      priority: v === "doesnt" && !line.priority ? "high" : line.priority,
+                    })
+                  }
                   className={cn(
                     "h-11 min-w-[72px] border-r border-border px-3 text-[13.5px] leading-tight font-medium last:border-r-0 disabled:cursor-not-allowed",
                     on && v === "matches" && "bg-st-green-bg text-st-green",
@@ -388,7 +425,11 @@ function Row({ item, walk, disabled, onSaved }: { item: Item; walk: Walk; disabl
             <span className="text-muted-foreground">Not checked yet</span>
           )}
           <span aria-live="polite" className="ml-auto text-xs text-muted-foreground">
-            {saving === "saving" ? "Saving" : saving === "saved" ? <Check className="size-3.5 text-st-green" aria-label="Saved" /> : null}
+            {saving === "saving" ? (
+              "Saving"
+            ) : saving === "saved" ? (
+              <Check className="size-3.5 text-st-green" aria-label="Saved" />
+            ) : null}
           </span>
         </span>
       </div>
@@ -420,7 +461,11 @@ function Row({ item, walk, disabled, onSaved }: { item: Item; walk: Walk; disabl
               <span id={`prio-${item.register_item_id}`} className="text-[13px] font-medium">
                 Priority
               </span>
-              <span role="radiogroup" aria-labelledby={`prio-${item.register_item_id}`} className="inline-flex overflow-hidden rounded-lg border border-border bg-surface">
+              <span
+                role="radiogroup"
+                aria-labelledby={`prio-${item.register_item_id}`}
+                className="inline-flex overflow-hidden rounded-lg border border-border bg-surface"
+              >
                 {PRIORITY.map((p) => {
                   const on = (line.priority ?? "high") === p.value
                   return (
@@ -433,7 +478,11 @@ function Row({ item, walk, disabled, onSaved }: { item: Item; walk: Walk; disabl
                       onClick={() => change({ priority: p.value })}
                       className={cn(
                         "h-11 border-r border-border px-4 text-[13.5px] font-medium last:border-r-0",
-                        on ? (p.value === "high" ? "bg-st-red-bg text-st-red" : "bg-hover text-foreground") : "hover:bg-hover",
+                        on
+                          ? p.value === "high"
+                            ? "bg-st-red-bg text-st-red"
+                            : "bg-hover text-foreground"
+                          : "hover:bg-hover",
                       )}
                     >
                       {p.label}
@@ -447,7 +496,14 @@ function Row({ item, walk, disabled, onSaved }: { item: Item; walk: Walk; disabl
               <span className="text-[13px] font-medium">Photos</span>
               <span className="flex flex-wrap items-center gap-2">
                 {photos.map((ph) => (
-                  <a key={ph.id} href={ph.url} target="_blank" rel="noreferrer" className="block size-11 overflow-hidden rounded-md border border-border bg-hover" title={ph.file_name}>
+                  <a
+                    key={ph.id}
+                    href={ph.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block size-11 overflow-hidden rounded-md border border-border bg-hover"
+                    title={ph.file_name}
+                  >
                     <img src={ph.thumb_url ?? ph.url} alt={ph.file_name} className="size-full object-cover" />
                   </a>
                 ))}
@@ -462,7 +518,12 @@ function Row({ item, walk, disabled, onSaved }: { item: Item; walk: Walk; disabl
                   aria-hidden
                   onChange={(e) => void onFiles(e.target.files)}
                 />
-                <Button variant="outline" className="h-11" disabled={disabled || uploading} onClick={() => fileRef.current?.click()}>
+                <Button
+                  variant="outline"
+                  className="h-11"
+                  disabled={disabled || uploading}
+                  onClick={() => fileRef.current?.click()}
+                >
                   {uploading ? <Loader2 className="animate-spin" aria-hidden /> : <Camera aria-hidden />}
                   {uploading ? "Uploading" : "Photo"}
                 </Button>

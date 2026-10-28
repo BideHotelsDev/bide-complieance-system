@@ -55,7 +55,10 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
 
   const close = useMutation({
     mutationFn: () =>
-      api.post(`/api/actions/${ref_}/close`, isAdv ? { decision: decision.trim(), decision_reason: reason.trim() } : {}),
+      api.post(
+        `/api/actions/${ref_}/close`,
+        isAdv ? { decision: decision.trim(), decision_reason: reason.trim() } : {},
+      ),
     onSuccess: () => {
       toast(`${ref_} closed`)
       refresh()
@@ -125,7 +128,12 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
         ) : (
           <Skeleton className="h-5 w-40" />
         )}
-        <button type="button" aria-label="Close panel" onClick={onClose} className="ml-auto rounded-md p-1.5 hover:bg-hover">
+        <button
+          type="button"
+          aria-label="Close panel"
+          onClick={onClose}
+          className="ml-auto rounded-md p-1.5 hover:bg-hover"
+        >
           <X className="size-4" />
         </button>
       </div>
@@ -144,12 +152,21 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
         <div className="flex flex-col gap-4 p-[18px]">
           <h2 className="m-0 text-[16px] leading-[1.35] font-semibold">{a.description}</h2>
           {a.call_due && !a.call_made_at && (
-            <div role="alert" className="flex flex-col gap-2 rounded-[10px] border border-st-red/25 bg-st-red-bg px-3.5 py-3 text-st-red">
+            <div
+              role="alert"
+              className="flex flex-col gap-2 rounded-[10px] border border-st-red/25 bg-st-red-bg px-3.5 py-3 text-st-red"
+            >
               <span className="flex items-start gap-2 font-medium">
                 <Phone aria-hidden className="mt-0.5 size-4 shrink-0" />
                 Life-safety failure: phone the person responsible now, then record that you called.
               </span>
-              <Button size="sm" variant="outline" className="self-start" disabled={callMade.isPending} onClick={() => callMade.mutate()}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="self-start"
+                disabled={callMade.isPending}
+                onClick={() => callMade.mutate()}
+              >
                 I've made the call
               </Button>
             </div>
@@ -160,7 +177,9 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
             <dt className="text-muted-foreground">Source</dt>
             <dd className="m-0">{a.source_label}</dd>
             <dt className="text-muted-foreground">Gate ref</dt>
-            <dd className="m-0 font-mono text-[12px]">{a.gate_ref ?? <span className="font-sans text-muted-foreground">None</span>}</dd>
+            <dd className="m-0 font-mono text-[12px]">
+              {a.gate_ref ?? <span className="font-sans text-muted-foreground">None</span>}
+            </dd>
             {a.item_ref && (
               <>
                 <dt className="text-muted-foreground">Register item</dt>
@@ -227,7 +246,10 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
               {closing.length > 0 && (
                 <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
                   {closing.map((e) => (
-                    <li key={e.id} className="flex items-center gap-2 rounded-md border border-divider px-2.5 py-1.5 text-[13px]">
+                    <li
+                      key={e.id}
+                      className="flex items-center gap-2 rounded-md border border-divider px-2.5 py-1.5 text-[13px]"
+                    >
                       {e.thumb_url ? (
                         <img src={e.thumb_url} alt="" className="size-8 shrink-0 rounded object-cover" />
                       ) : (
@@ -412,7 +434,15 @@ function CantCloseDialog({
   )
 }
 
-function ReassignDialog({ action: a, onDone, onSaved }: { action: ActionDetail; onDone: () => void; onSaved: () => void }) {
+function ReassignDialog({
+  action: a,
+  onDone,
+  onSaved,
+}: {
+  action: ActionDetail
+  onDone: () => void
+  onSaved: () => void
+}) {
   const people = useQuery<{ people: Person[] }, ApiError>({
     queryKey: ["action-owner-options"],
     queryFn: () => api.get("/api/actions/owner-options"),

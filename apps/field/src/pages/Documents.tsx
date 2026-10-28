@@ -9,7 +9,17 @@ import { toastError } from "@bide-comply/ui/components/toaster"
 import { Check, CircleAlert } from "lucide-react"
 import * as React from "react"
 
-import { Card, ErrorBox, FieldLabel, Loading, SecondaryButton, SelectBox, Spinner, TabScreen, TextInput } from "@/components/kit"
+import {
+  Card,
+  ErrorBox,
+  FieldLabel,
+  Loading,
+  SecondaryButton,
+  SelectBox,
+  Spinner,
+  TabScreen,
+  TextInput,
+} from "@/components/kit"
 import { Sheet } from "@/components/Sheet"
 import { toastCouldntSave, toastSent } from "@/components/sync"
 import type { Documents } from "@/lib/types"
@@ -36,7 +46,11 @@ export function DocumentsPage() {
         <Loading label="Loading your documents" />
       ) : q.error ? (
         <ErrorBox
-          message={(q.error as ApiError).status === 0 ? "Your documents aren't kept on this phone. Open this page when you have signal." : q.error.message}
+          message={
+            (q.error as ApiError).status === 0
+              ? "Your documents aren't kept on this phone. Open this page when you have signal."
+              : q.error.message
+          }
           onRetry={() => void q.refetch()}
         />
       ) : (
@@ -76,7 +90,9 @@ export function DocumentsPage() {
           )}
           <Card className="px-4 py-3.5">
             <div className="text-[16px] font-semibold">Did a new course?</div>
-            <p className="m-0 mt-1 mb-3 text-[15px] text-muted-foreground">Upload the certificate and Lynne will check it.</p>
+            <p className="m-0 mt-1 mb-3 text-[15px] text-muted-foreground">
+              Upload the certificate and Lynne will check it.
+            </p>
             <SecondaryButton onClick={() => setOpen(true)}>Upload a certificate</SecondaryButton>
           </Card>
           <UploadSheet open={open} onClose={() => setOpen(false)} types={q.data.types} />
@@ -119,7 +135,11 @@ function UploadSheet({ open, onClose, types }: { open: boolean; onClose: () => v
       description="A photo or PDF of the certificate. It's kept securely and only the people who check it can see it."
       footer={
         <>
-          <button type="button" onClick={onClose} className="h-12 flex-1 rounded-xl border border-border bg-surface text-[16px] font-semibold">
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-12 flex-1 rounded-xl border border-border bg-surface text-[16px] font-semibold"
+          >
             Cancel
           </button>
           <button
@@ -136,7 +156,12 @@ function UploadSheet({ open, onClose, types }: { open: boolean; onClose: () => v
     >
       <div>
         <FieldLabel htmlFor="doc-type">Which course or check?</FieldLabel>
-        <SelectBox id="doc-type" value={type} onChange={setType} options={types.map((t) => ({ value: t.key, label: t.name }))} />
+        <SelectBox
+          id="doc-type"
+          value={type}
+          onChange={setType}
+          options={types.map((t) => ({ value: t.key, label: t.name }))}
+        />
       </div>
       <div>
         <FieldLabel htmlFor="doc-file">Certificate</FieldLabel>

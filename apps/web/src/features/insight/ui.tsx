@@ -9,7 +9,17 @@ import { cn } from "@bide-comply/ui/lib/utils"
 export const fieldCls =
   "h-9 w-full rounded-md border border-border bg-surface px-3 text-[13.5px] text-foreground outline-none focus-visible:border-focus focus-visible:ring-2 focus-visible:ring-focus/30"
 
-export function Field({ label, htmlFor, children, className }: { label: string; htmlFor: string; children: React.ReactNode; className?: string }) {
+export function Field({
+  label,
+  htmlFor,
+  children,
+  className,
+}: {
+  label: string
+  htmlFor: string
+  children: React.ReactNode
+  className?: string
+}) {
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       <label htmlFor={htmlFor} className="text-[13px] font-medium">
@@ -43,7 +53,9 @@ export function TabBar<T extends string>({
           onClick={() => onChange(o.value)}
           className={cn(
             "-mb-px h-9 border-b-2 text-[14px] font-medium",
-            value === o.value ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
+            value === o.value
+              ? "border-foreground text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground",
           )}
         >
           {o.label}

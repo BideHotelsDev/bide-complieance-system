@@ -102,10 +102,18 @@ export function UploadCertificateDialog({
     setBusy(true)
     try {
       const up = await upload(file, { captured_with: "upload", property_id: pid, file_name: file.name })
-      const dates = { evidence_id: up.id, issued_on: issued, expires_on: expires || null, issuer: issuer.trim() || null }
+      const dates = {
+        evidence_id: up.id,
+        issued_on: issued,
+        expires_on: expires || null,
+        issuer: issuer.trim() || null,
+      }
       let closed = false
       if (fileAgainstRequired && chosen) {
-        const r = await api.post<{ ok: boolean; linked_action: string | null }>(`/api/certificates/${chosen.id}/file`, dates)
+        const r = await api.post<{ ok: boolean; linked_action: string | null }>(
+          `/api/certificates/${chosen.id}/file`,
+          dates,
+        )
         closed = !!r.linked_action && chosen.fail_count === 0
       } else {
         await api.post("/api/certificates", {
@@ -161,9 +169,7 @@ export function UploadCertificateDialog({
           {target && (
             <div className="text-[13.5px]">
               <div className="font-medium">{target.title}</div>
-              <div className="text-muted-foreground">
-                {[target.property, target.why].filter(Boolean).join(" · ")}
-              </div>
+              <div className="text-muted-foreground">{[target.property, target.why].filter(Boolean).join(" · ")}</div>
             </div>
           )}
 

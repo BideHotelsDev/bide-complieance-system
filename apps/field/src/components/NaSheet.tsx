@@ -71,11 +71,21 @@ export function NaSheet({ open, onClose, task }: { open: boolean; onClose: () =>
     >
       <div>
         <FieldLabel htmlFor="na-reason">Reason</FieldLabel>
-        <SelectBox id="na-reason" value={reason} onChange={setReason} options={REASONS.map((r) => ({ value: r, label: r }))} />
+        <SelectBox
+          id="na-reason"
+          value={reason}
+          onChange={setReason}
+          options={REASONS.map((r) => ({ value: r, label: r }))}
+        />
       </div>
       <div>
         <FieldLabel htmlFor="na-note">Note (required)</FieldLabel>
-        <TextArea id="na-note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="What's happening, and until when?" />
+        <TextArea
+          id="na-note"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="What's happening, and until when?"
+        />
       </div>
       {send.error && (send.error as { status?: number }).status !== 0 && (
         <p role="alert" className="m-0 text-[14.5px] text-st-red">

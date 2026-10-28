@@ -7,7 +7,15 @@ import type * as React from "react"
 import { api, ApiError } from "@bide-comply/api-client"
 import { DataTable, type ColumnDef } from "@bide-comply/ui/components/data-table"
 import { QuickViews, Summary } from "@bide-comply/ui/components/filter-bar"
-import { Avatar, Callout, Card, EmptyState, ErrorState, LoadingRows, NoPermission } from "@bide-comply/ui/components/page"
+import {
+  Avatar,
+  Callout,
+  Card,
+  EmptyState,
+  ErrorState,
+  LoadingRows,
+  NoPermission,
+} from "@bide-comply/ui/components/page"
 import { ClassBadge, GateBadge, Pill, PriorityBadge, type Tone } from "@bide-comply/ui/components/status"
 import { cn } from "@bide-comply/ui/lib/utils"
 
@@ -16,7 +24,12 @@ import { useParams } from "@/lib/params"
 import { useMe } from "@/lib/session"
 import type { ActionRow, PropertyDetail } from "./property-types"
 
-type ListOf<T> = { rows: T[]; total: number; summary: string; views: { key: string; label: string; count: number; on: boolean }[] }
+type ListOf<T> = {
+  rows: T[]
+  total: number
+  summary: string
+  views: { key: string; label: string; count: number; on: boolean }[]
+}
 
 function TableCard<T extends { id: string }>({
   q,
@@ -57,7 +70,11 @@ export function ActionsTab({ property }: { property: PropertyDetail }) {
     queryFn: () => api.get<ListOf<ActionRow>>("/api/actions", { property: property.id, view, page_size: 100 }),
   })
   const columns: ColumnDef<ActionRow, unknown>[] = [
-    { id: "ref", header: "ID", cell: ({ row }) => <span className="mono-id whitespace-nowrap">{row.original.ref}</span> },
+    {
+      id: "ref",
+      header: "ID",
+      cell: ({ row }) => <span className="mono-id whitespace-nowrap">{row.original.ref}</span>,
+    },
     {
       id: "desc",
       header: "What needs fixing",
@@ -84,18 +101,26 @@ export function ActionsTab({ property }: { property: PropertyDetail }) {
         </span>
       ),
     },
-    { id: "owner", header: "Owner", cell: ({ row }) => row.original.owner ?? <span className="text-st-amber">No owner</span> },
+    {
+      id: "owner",
+      header: "Owner",
+      cell: ({ row }) => row.original.owner ?? <span className="text-st-amber">No owner</span>,
+    },
     { id: "class", header: "Class", cell: ({ row }) => <ClassBadge klass={row.original.class} /> },
     {
       id: "status",
       header: "Status",
-      cell: ({ row }) => <Pill tone={row.original.status === "to_confirm" ? "amber" : "grey"}>{row.original.status_label}</Pill>,
+      cell: ({ row }) => (
+        <Pill tone={row.original.status === "to_confirm" ? "amber" : "grey"}>{row.original.status_label}</Pill>
+      ),
     },
   ]
   return (
     <div className="flex flex-col gap-3">
       {q.data && <QuickViews views={q.data.views} onPick={(k) => set({ aview: k === "all" ? undefined : k })} />}
-      {q.data && <Summary className="text-ink2">{q.data.summary.replace("Showing", `At ${property.name}: showing`)}</Summary>}
+      {q.data && (
+        <Summary className="text-ink2">{q.data.summary.replace("Showing", `At ${property.name}: showing`)}</Summary>
+      )}
       <TableCard
         q={q}
         columns={columns}
@@ -147,7 +172,11 @@ export function OpeningTab({ property }: { property: PropertyDetail }) {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {[
           { label: "Done", value: `${g.done} of ${g.applicable}`, sub: `${g.percent}%` },
-          { label: "Life-safety items open", value: g.class_a_open, sub: `${g.class_a_done} of ${g.class_a_applicable} done` },
+          {
+            label: "Life-safety items open",
+            value: g.class_a_open,
+            sub: `${g.class_a_done} of ${g.class_a_applicable} done`,
+          },
           { label: "To confirm", value: g.to_confirm, sub: "Waiting for evidence or a check" },
           { label: "Stage", value: property.stage_label, sub: property.note },
         ].map((k) => (
@@ -275,13 +304,18 @@ export function AlarmTab({ property }: { property: PropertyDetail }) {
     queryFn: () => api.get<AlarmList>(`/api/properties/${property.code}/alarm-events`),
   })
   const columns: ColumnDef<AlarmRow, unknown>[] = [
-    { id: "when", header: "When", cell: ({ row }) => <span className="whitespace-nowrap">{fmtDateTime(row.original.occurred_at)}</span> },
+    {
+      id: "when",
+      header: "When",
+      cell: ({ row }) => <span className="whitespace-nowrap">{fmtDateTime(row.original.occurred_at)}</span>,
+    },
     { id: "zone", header: "Zone", cell: ({ row }) => row.original.zone ?? "—" },
     { id: "cause", header: "Cause", cell: ({ row }) => row.original.cause ?? "Unknown" },
     {
       id: "false",
       header: "Type",
-      cell: ({ row }) => (row.original.false_alarm ? <Pill tone="amber">False alarm</Pill> : <Pill tone="red">Real</Pill>),
+      cell: ({ row }) =>
+        row.original.false_alarm ? <Pill tone="amber">False alarm</Pill> : <Pill tone="red">Real</Pill>,
     },
     { id: "arc", header: "Alarm company response", cell: ({ row }) => row.original.arc_response ?? "—" },
     {
@@ -300,8 +334,8 @@ export function AlarmTab({ property }: { property: PropertyDetail }) {
     <div className="flex flex-col gap-3">
       {review.map((c) => (
         <Callout key={c.cause} tone="red" icon={<AlertTriangle className="size-4" aria-hidden />}>
-          {c.count} false alarms with the same cause ({c.cause.toLowerCase()}) in 90 days. Three with the same cause means
-          an engineering review of the system.
+          {c.count} false alarms with the same cause ({c.cause.toLowerCase()}) in 90 days. Three with the same cause
+          means an engineering review of the system.
         </Callout>
       ))}
       {q.data && q.data.causes.length > 0 && (

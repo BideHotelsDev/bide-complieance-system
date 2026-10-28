@@ -57,7 +57,8 @@ export function exportRows(o: Overview): Record<string, string | number | null>[
   ]
 }
 
-const TH = "h-[34px] border-b border-divider bg-background px-2.5 py-1.5 align-bottom text-left text-xs leading-tight font-medium text-muted-foreground"
+const TH =
+  "h-[34px] border-b border-divider bg-background px-2.5 py-1.5 align-bottom text-left text-xs leading-tight font-medium text-muted-foreground"
 const TD = "border-b border-divider px-2.5 py-2.5 whitespace-nowrap"
 
 export function GroupTable({ overview }: { overview: Overview }) {
@@ -66,7 +67,9 @@ export function GroupTable({ overview }: { overview: Overview }) {
   const g = overview.group
   const alarm = worstAlarm(props)
   const open = (p: PropertySummary) =>
-    void router.navigate({ href: p.register_loaded || p.stage === "trading" ? `/properties/${p.code}` : `/gates/${p.code}` })
+    void router.navigate({
+      href: p.register_loaded || p.stage === "trading" ? `/properties/${p.code}` : `/gates/${p.code}`,
+    })
   return (
     <div className="-mx-1 overflow-x-auto">
       <table className="w-full border-collapse text-[13.5px]">
@@ -79,7 +82,11 @@ export function GroupTable({ overview }: { overview: Overview }) {
             <th scope="col" className={cn(TH, "text-right")}>
               Score
             </th>
-            <th scope="col" className={cn(TH, "text-right")} title="Checks overdue, with life-safety (Class A) in brackets">
+            <th
+              scope="col"
+              className={cn(TH, "text-right")}
+              title="Checks overdue, with life-safety (Class A) in brackets"
+            >
               Overdue (Class A)
             </th>
             <th scope="col" className={cn(TH, "text-right")}>

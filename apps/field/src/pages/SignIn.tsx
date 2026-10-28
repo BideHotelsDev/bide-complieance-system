@@ -30,7 +30,9 @@ export function SignInPage() {
     <Page className="px-6 pt-12">
       <Mark size={44} />
       <h1 className="m-0 mt-6 text-[26px] font-semibold">Sign in</h1>
-      <p className="m-0 mt-1.5 text-[16px] text-muted-foreground">Use your bide Google account to see today's checks.</p>
+      <p className="m-0 mt-1.5 text-[16px] text-muted-foreground">
+        Use your bide Google account to see today's checks.
+      </p>
       {reason && (
         <p role="alert" className="mt-4 rounded-xl bg-st-red-bg px-3.5 py-2.5 text-[15px] text-st-red">
           Sign-in didn't work. Try again.
@@ -122,7 +124,8 @@ export function CodePage({ stage }: { stage: "code" | "totp" | "totp-setup" }) {
   })
   const [code, setCode] = React.useState("")
   const verify = useMutation({
-    mutationFn: () => api.post<{ next: string }>(stage === "code" ? "/api/auth/code" : "/api/auth/totp", { code, trust: true }),
+    mutationFn: () =>
+      api.post<{ next: string }>(stage === "code" ? "/api/auth/code" : "/api/auth/totp", { code, trust: true }),
     onSuccess: (r) => {
       window.location.href = appPath(r.next || "/")
     },
@@ -157,12 +160,16 @@ export function CodePage({ stage }: { stage: "code" | "totp" | "totp-setup" }) {
             <p className="m-0 mt-1.5 text-[16px] text-muted-foreground">
               Admin accounts confirm sign-in with an authenticator app. Add this key to it, then enter the 6-digit code.
             </p>
-            {setup.data && <p className="mt-3 rounded-lg bg-hover px-3 py-2 font-mono text-[14px] break-all">{setup.data.secret}</p>}
+            {setup.data && (
+              <p className="mt-3 rounded-lg bg-hover px-3 py-2 font-mono text-[14px] break-all">{setup.data.secret}</p>
+            )}
           </>
         ) : (
           <>
             <h1 className="m-0 mt-6 text-[24px] font-semibold">Confirm it's you</h1>
-            <p className="m-0 mt-1.5 text-[16px] text-muted-foreground">Enter the 6-digit code from your authenticator app.</p>
+            <p className="m-0 mt-1.5 text-[16px] text-muted-foreground">
+              Enter the 6-digit code from your authenticator app.
+            </p>
           </>
         )}
         <CodeBoxes value={code} onChange={setCode} />

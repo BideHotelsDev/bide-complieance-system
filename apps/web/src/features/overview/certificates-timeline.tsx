@@ -13,7 +13,11 @@ const DAY = 86400000
 const LABEL_MAX = 200
 const t = (d: string) => new Date(`${d.slice(0, 10)}T12:00:00Z`).getTime()
 const dm = (ms: number, month = true) =>
-  new Date(ms).toLocaleDateString("en-GB", { day: "numeric", ...(month ? { month: "short" } : {}), timeZone: "Europe/London" })
+  new Date(ms).toLocaleDateString("en-GB", {
+    day: "numeric",
+    ...(month ? { month: "short" } : {}),
+    timeZone: "Europe/London",
+  })
 const shortProp = (p: string | null) => (p ? p.replace(/^The /, "") : null)
 
 export function CertificateTimeline({
@@ -45,7 +49,15 @@ export function CertificateTimeline({
   const pos = (ms: number) => Math.min(100, Math.max(0, ((ms - s) / (e - s)) * 100))
 
   const groups = (() => {
-    const out: { key: string; from: number; to: number; titles: string[]; property: string | null; status: string; full: string[] }[] = []
+    const out: {
+      key: string
+      from: number
+      to: number
+      titles: string[]
+      property: string | null
+      status: string
+      full: string[]
+    }[] = []
     for (const m of [...marks].sort((a, b) => t(a.date) - t(b.date))) {
       const ms = t(m.date)
       const last = out[out.length - 1]
@@ -55,7 +67,15 @@ export function CertificateTimeline({
         last.full.push(`${m.title}: ${dm(ms)}`)
         if (m.status === "fails" || m.status === "expired") last.status = m.status
       } else
-        out.push({ key: m.id, from: ms, to: ms, titles: [m.title], property: m.property, status: m.status, full: [`${m.title}: ${dm(ms)}`] })
+        out.push({
+          key: m.id,
+          from: ms,
+          to: ms,
+          titles: [m.title],
+          property: m.property,
+          status: m.status,
+          full: [`${m.title}: ${dm(ms)}`],
+        })
     }
     // Two staggered rows; more only if labels would still collide. Label widths are estimated from their text.
     const rightOnRow: number[] = []

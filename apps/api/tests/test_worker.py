@@ -23,13 +23,17 @@ def test_ladder_fires_once_and_never_repeats():
 
 def test_class_a_red_reaches_david_and_the_spv_directors():
     with engine.connect() as c:
-        rows = c.execute(select(escalation.c.summary, escalation.c.recipients).where(escalation.c.trigger == "red_7days")).all()
+        rows = c.execute(
+            select(escalation.c.summary, escalation.c.recipients).where(escalation.c.trigger == "red_7days")
+        ).all()
     assert any("Class A at The Villa" in r.summary for r in rows)
 
 
 def test_quiet_hours_never_hold_class_a():
     with engine.connect() as c:
-        held = c.execute(select(func.count()).where(notification.c["class"] == "A", notification.c.hold_until.isnot(None))).scalar()
+        held = c.execute(
+            select(func.count()).where(notification.c["class"] == "A", notification.c.hold_until.isnot(None))
+        ).scalar()
     assert held == 0
 
 
@@ -49,6 +53,10 @@ def test_nightly_chain_check_is_recorded():
 
     asyncio.run(worker.nightly({}))
     with engine.connect() as c:
-        last = c.execute(select(audit_event.c.summary).where(audit_event.c.action == "audit.chain_check")
-                         .order_by(audit_event.c.seq.desc()).limit(1)).scalar()
+        last = c.execute(
+            select(audit_event.c.summary)
+            .where(audit_event.c.action == "audit.chain_check")
+            .order_by(audit_event.c.seq.desc())
+            .limit(1)
+        ).scalar()
     assert last == "Checked the audit chain: intact"

@@ -114,7 +114,14 @@ export type RegisterDetail = RegisterRow & {
   evidence: { id: string; name: string | null; kind: "pdf" | "submission"; detail: string }[]
   actions: ActionRow[]
   history: { at: string | null; date?: string | null; text: string; who: string | null }[]
-  certificates: { id: string; title: string; issued_on: string | null; expires_on: string | null; fail_count: number; filing: string }[]
+  certificates: {
+    id: string
+    title: string
+    issued_on: string | null
+    expires_on: string | null
+    fail_count: number
+    filing: string
+  }[]
   can_assign: boolean
   can_toggle: boolean
   notes: string | null

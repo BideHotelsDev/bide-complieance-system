@@ -213,7 +213,9 @@ export function PropertyPage() {
             onClick={() => set({ tab: t.key === "register" ? undefined : t.key, item: undefined })}
             className={cn(
               "-mb-px inline-flex shrink-0 items-center gap-1.5 border-b-2 py-2 text-[13px] whitespace-nowrap",
-              tab === t.key ? "border-foreground font-medium text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
+              tab === t.key
+                ? "border-foreground font-medium text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground",
             )}
           >
             {t.label}

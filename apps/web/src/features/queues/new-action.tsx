@@ -46,8 +46,10 @@ export function NewActionDialog({
   React.useEffect(() => {
     if (open) setF(blank())
   }, [open, blank])
-  const up = (k: keyof ReturnType<typeof blank>) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-    setF((x) => ({ ...x, [k]: e.target.value }))
+  const up =
+    (k: keyof ReturnType<typeof blank>) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+      setF((x) => ({ ...x, [k]: e.target.value }))
   const create = useMutation({
     mutationFn: () =>
       api.post<{ ref: string; id: string }>("/api/actions", {

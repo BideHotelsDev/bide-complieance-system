@@ -60,7 +60,8 @@ export function Camera({ title, hint, index, total, stampPrefix, exampleUrl, onC
           return
         }
         setStream(s)
-        const caps = s.getVideoTracks()[0]?.getCapabilities?.() as (MediaTrackCapabilities & { torch?: boolean }) | undefined
+        const caps = s.getVideoTracks()[0]?.getCapabilities?.() as
+          (MediaTrackCapabilities & { torch?: boolean }) | undefined
         setTorchOk(Boolean(caps?.torch))
       } catch {
         if (!cancelled) setFallback(true)
@@ -147,18 +148,26 @@ export function Camera({ title, hint, index, total, stampPrefix, exampleUrl, onC
       </div>
       <div className="relative mx-3.5 mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl bg-white/10">
         {stream && !fallback ? (
-          <video ref={video} playsInline muted className="absolute inset-0 size-full object-cover" aria-label="Live camera view" />
+          <video
+            ref={video}
+            playsInline
+            muted
+            className="absolute inset-0 size-full object-cover"
+            aria-label="Live camera view"
+          />
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 px-8 text-center text-[14.5px] text-white/70">
-            {fallback
-              ? "Tap the shutter to open the camera."
-              : "Starting the camera…"}
+            {fallback ? "Tap the shutter to open the camera." : "Starting the camera…"}
           </div>
         )}
         {example && exampleUrl && (
           <div className="absolute inset-0 flex flex-col bg-black/85 p-3">
             <img src={exampleUrl} alt={`Example: ${title}`} className="min-h-0 flex-1 rounded-lg object-contain" />
-            <button type="button" onClick={() => setExample(false)} className="mt-2 h-12 rounded-xl bg-white/15 text-[15px] font-semibold">
+            <button
+              type="button"
+              onClick={() => setExample(false)}
+              className="mt-2 h-12 rounded-xl bg-white/15 text-[15px] font-semibold"
+            >
               Back to camera
             </button>
           </div>

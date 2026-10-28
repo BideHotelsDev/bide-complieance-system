@@ -4,6 +4,7 @@ Counts live in Redis so every API instance shares them; if Redis isn't reachable
 per-process window, which still stops a single client hammering one instance.
 """
 
+import logging
 import time
 from collections import defaultdict
 
@@ -11,6 +12,8 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 
 from bide_comply.config import settings
+
+log = logging.getLogger("bide_comply.ratelimit")
 
 # path prefix -> (requests, seconds)
 RULES: list[tuple[str, tuple[int, int]]] = [
@@ -51,8 +54,8 @@ def _hit(key: str, limit: int, window: int) -> bool:
             if n == 1:
                 r.expire(bucket, window)
             return n <= limit
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as e:  # noqa: BLE001 - Redis went away mid-request: fall through to the local window
+            log.debug("rate limit store unavailable: %s", e)
     now = time.time()
     q = [t for t in _local[key] if now - t < window]
     q.append(now)

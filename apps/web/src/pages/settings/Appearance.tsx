@@ -198,7 +198,9 @@ export function AppearancePage() {
           canEdit && (
             <>
               {(hasDraft || pending) && (
-                <span className="text-[12px] text-muted-foreground">{saving ? "Saving draft…" : "Draft · not live"}</span>
+                <span className="text-[12px] text-muted-foreground">
+                  {saving ? "Saving draft…" : "Draft · not live"}
+                </span>
               )}
               <button
                 type="button"
@@ -291,7 +293,9 @@ export function AppearancePage() {
                   )
                 })}
               </div>
-              <Hint>All three use Inter, the clean default font. Staff can also follow their phone's light or dark setting.</Hint>
+              <Hint>
+                All three use Inter, the clean default font. Staff can also follow their phone's light or dark setting.
+              </Hint>
             </Section>
 
             <Section title="Brand">
@@ -306,9 +310,27 @@ export function AppearancePage() {
                 />
               </div>
               <div className="grid grid-cols-3 gap-2.5">
-                <LogoSlot label="Logo · light" id={branding.logoLight} tone="light" colours={tokens.light} onDone={(id) => changeBrand({ logoLight: id })} />
-                <LogoSlot label="Logo · dark" id={branding.logoDark} tone="dark" colours={tokens.dark} onDone={(id) => changeBrand({ logoDark: id })} />
-                <LogoSlot label="App icon" id={branding.icon} tone="icon" colours={tokens.light} onDone={(id) => changeBrand({ icon: id })} />
+                <LogoSlot
+                  label="Logo · light"
+                  id={branding.logoLight}
+                  tone="light"
+                  colours={tokens.light}
+                  onDone={(id) => changeBrand({ logoLight: id })}
+                />
+                <LogoSlot
+                  label="Logo · dark"
+                  id={branding.logoDark}
+                  tone="dark"
+                  colours={tokens.dark}
+                  onDone={(id) => changeBrand({ logoDark: id })}
+                />
+                <LogoSlot
+                  label="App icon"
+                  id={branding.icon}
+                  tone="icon"
+                  colours={tokens.light}
+                  onDone={(id) => changeBrand({ icon: id })}
+                />
               </div>
               <Hint>PNG, WebP or SVG under 1 MB. SVGs are cleaned of scripts before use.</Hint>
             </Section>
@@ -442,8 +464,8 @@ export function AppearancePage() {
                   className="h-8 w-full"
                 />
                 <Hint className="mt-1 text-[11.5px]">
-                  Sets the wording style of reminders, alerts and empty states. Edit individual messages under Settings ›{" "}
-                  <a href="/settings/content">Content</a>.
+                  Sets the wording style of reminders, alerts and empty states. Edit individual messages under Settings
+                  › <a href="/settings/content">Content</a>.
                 </Hint>
               </div>
               <div>
@@ -467,7 +489,9 @@ export function AppearancePage() {
             <History
               data={q.data}
               hasDraft={hasDraft || pending}
-              draftName={(swatchOf(tokens)?.name ?? "Custom") + " primary · " + (mode === "dark" ? "Dark" : "Light") + " preview"}
+              draftName={
+                (swatchOf(tokens)?.name ?? "Custom") + " primary · " + (mode === "dark" ? "Dark" : "Light") + " preview"
+              }
               canEdit={canEdit}
               busy={busy}
               onRollback={(v) => rollback.mutate(v)}
@@ -655,7 +679,9 @@ function LivePreview({ tokens, branding, mode }: { tokens: DraftTokens; branding
   })
   const k = ov.data?.kpis
   const props = (ov.data?.properties ?? []).slice(0, 3)
-  const actions = ov.data ? ov.data.actions_by_urgency.high + ov.data.actions_by_urgency.med + ov.data.actions_by_urgency.low : null
+  const actions = ov.data
+    ? ov.data.actions_by_urgency.high + ov.data.actions_by_urgency.med + ov.data.actions_by_urgency.low
+    : null
   const compact = tokens.density === "compact"
   return (
     <section aria-label="Live preview" className="flex flex-col gap-3">
@@ -713,7 +739,11 @@ function LivePreview({ tokens, branding, mode }: { tokens: DraftTokens; branding
             </div>
             {props.map((p, i) => {
               const notReady = p.gate?.status === "not_ready"
-              const tone = notReady ? "grey" : (["red", "amber", "green"].includes(p.score_status) ? p.score_status : "grey")
+              const tone = notReady
+                ? "grey"
+                : ["red", "amber", "green"].includes(p.score_status)
+                  ? p.score_status
+                  : "grey"
               const word = notReady ? "Not ready" : tone === "grey" ? "No score" : tone[0].toUpperCase() + tone.slice(1)
               return (
                 <div
@@ -795,7 +825,9 @@ function History({
                 v{v.version} · {v.name}
               </span>
               <span className="flex items-center gap-2.5 text-[12px] text-muted-foreground">
-                {v.version === 1 && !v.by ? "At launch" : `${v.by ?? "Someone"} · ${v.published_at ? fmtDate(v.published_at) : ""}`}
+                {v.version === 1 && !v.by
+                  ? "At launch"
+                  : `${v.by ?? "Someone"} · ${v.published_at ? fmtDate(v.published_at) : ""}`}
                 {v.status === "live" ? (
                   <CheckIcon aria-label="In use" className="size-3.5 text-st-green" />
                 ) : (

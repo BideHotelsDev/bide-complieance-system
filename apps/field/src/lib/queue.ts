@@ -12,7 +12,13 @@ import type { SubmitResult } from "./types"
 
 const store = createStore("bide-comply-queue", "items")
 
-export type QueuedPhoto = { key: string; blob: Blob; captured_at: string; via?: "camera" | "upload"; evidence_id?: string }
+export type QueuedPhoto = {
+  key: string
+  blob: Blob
+  captured_at: string
+  via?: "camera" | "upload"
+  evidence_id?: string
+}
 
 export type QueuedCheck = {
   id: string

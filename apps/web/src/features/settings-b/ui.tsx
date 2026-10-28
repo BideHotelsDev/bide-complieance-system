@@ -116,7 +116,10 @@ export function Panel({
   "aria-label"?: string
 }) {
   return (
-    <section aria-label={ariaLabel} className={cn("rounded-[10px] border border-divider bg-surface p-[18px]", className)}>
+    <section
+      aria-label={ariaLabel}
+      className={cn("rounded-[10px] border border-divider bg-surface p-[18px]", className)}
+    >
       {(title || action) && (
         <div className="mb-3 flex items-center gap-3">
           {title && <h2 className="m-0 text-[14px] font-semibold">{title}</h2>}
@@ -153,7 +156,11 @@ export function ButtonGroup<T extends string | number>({
   className?: string
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className={cn("flex rounded-md border border-border bg-surface p-0.5", className)}>
+    <div
+      role="radiogroup"
+      aria-label={label}
+      className={cn("flex rounded-md border border-border bg-surface p-0.5", className)}
+    >
       {options.map((o) => (
         <button
           key={String(o.value)}

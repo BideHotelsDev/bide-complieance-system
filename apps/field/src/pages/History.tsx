@@ -32,7 +32,11 @@ export function HistoryPage() {
         <Loading label="Loading history" />
       ) : q.error ? (
         <ErrorBox
-          message={(q.error as ApiError).status === 0 ? "History needs a signal. Checks waiting on this phone are shown above." : q.error.message}
+          message={
+            (q.error as ApiError).status === 0
+              ? "History needs a signal. Checks waiting on this phone are shown above."
+              : q.error.message
+          }
           onRetry={() => void q.refetch()}
         />
       ) : (
@@ -61,7 +65,10 @@ export function HistoryPage() {
               <Card>
                 <ul className="m-0 list-none p-0">
                   {g.rows.map((r) => (
-                    <li key={r.id} className="flex items-center gap-3 border-b border-divider px-3.5 py-3 last:border-0">
+                    <li
+                      key={r.id}
+                      className="flex items-center gap-3 border-b border-divider px-3.5 py-3 last:border-0"
+                    >
                       <div className="min-w-0 flex-1">
                         <div className="text-[16px] font-semibold">{r.title}</div>
                         <div className="text-[14px] text-muted-foreground">{r.detail}</div>

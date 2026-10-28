@@ -58,7 +58,15 @@ export const SETTINGS_ITEMS = [
   { to: "/settings/audit", label: "Audit log", tip: "Every change, in order. Read only." },
 ]
 
-export function Sidebar({ onSearch, collapsed, onToggle }: { onSearch: () => void; collapsed: boolean; onToggle: () => void }) {
+export function Sidebar({
+  onSearch,
+  collapsed,
+  onToggle,
+}: {
+  onSearch: () => void
+  collapsed: boolean
+  onToggle: () => void
+}) {
   const me = useMe().data
   const { propertyId } = useProperty()
   const path = useRouterState({ select: (s) => s.location.pathname })
@@ -87,25 +95,82 @@ export function Sidebar({ onSearch, collapsed, onToggle }: { onSearch: () => voi
   if (!me) return null
   const show = navFor(me)
   const items: Item[] = [
-    { to: "/", label: "Home", icon: LayoutGrid, tip: "See where every property stands in ten seconds", show: show.home },
     {
-      to: "/todo", label: "My to-do", icon: CircleCheck, count: counts?.todo, tone: "red", show: show.todo,
-      tip: "Everything waiting for you: checks, actions, reviews, signatures", match: ["/todo", "/approvals"],
+      to: "/",
+      label: "Home",
+      icon: LayoutGrid,
+      tip: "See where every property stands in ten seconds",
+      show: show.home,
+    },
+    {
+      to: "/todo",
+      label: "My to-do",
+      icon: CircleCheck,
+      count: counts?.todo,
+      tone: "red",
+      show: show.todo,
+      tip: "Everything waiting for you: checks, actions, reviews, signatures",
+      match: ["/todo", "/approvals"],
     },
   ]
   const compliance: Item[] = [
-    { to: "/properties", label: "Properties", icon: Building2, tip: "Pick a property to see its checks, fixes and certificates",
-      show: show.properties, match: ["/properties", "/certificates"] },
-    { to: "/actions", label: "Actions to fix", icon: Flag, count: counts?.actions, tone: "grey", show: show.actions,
-      tip: "Problems found and who is fixing them" },
-    { to: "/reviews", label: "Evidence review", icon: ShieldCheck, count: counts?.reviews, tone: "blue", show: show.reviews,
-      tip: "Check the photos and certificates staff sent in" },
-    { to: "/gates", label: "Opening checklists", icon: ClipboardCheck, show: show.gates,
-      tip: "Everything that must be done before guests stay", match: ["/gates", "/assessor"] },
-    { to: "/signoffs", label: "Sign-offs", icon: PenLine, count: counts?.signoffs, tone: "amber", show: show.signoffs,
-      tip: "Things waiting for a signature or an approval" },
-    { to: "/scorecard", label: "Team scorecard", icon: BarChart3, show: show.scorecard, tip: "Weekly goals and the site league" },
-    { to: "/reports", label: "Reports and packs", icon: FileText, show: show.reports, tip: "Make a pack for an inspector or insurer" },
+    {
+      to: "/properties",
+      label: "Properties",
+      icon: Building2,
+      tip: "Pick a property to see its checks, fixes and certificates",
+      show: show.properties,
+      match: ["/properties", "/certificates"],
+    },
+    {
+      to: "/actions",
+      label: "Actions to fix",
+      icon: Flag,
+      count: counts?.actions,
+      tone: "grey",
+      show: show.actions,
+      tip: "Problems found and who is fixing them",
+    },
+    {
+      to: "/reviews",
+      label: "Evidence review",
+      icon: ShieldCheck,
+      count: counts?.reviews,
+      tone: "blue",
+      show: show.reviews,
+      tip: "Check the photos and certificates staff sent in",
+    },
+    {
+      to: "/gates",
+      label: "Opening checklists",
+      icon: ClipboardCheck,
+      show: show.gates,
+      tip: "Everything that must be done before guests stay",
+      match: ["/gates", "/assessor"],
+    },
+    {
+      to: "/signoffs",
+      label: "Sign-offs",
+      icon: PenLine,
+      count: counts?.signoffs,
+      tone: "amber",
+      show: show.signoffs,
+      tip: "Things waiting for a signature or an approval",
+    },
+    {
+      to: "/scorecard",
+      label: "Team scorecard",
+      icon: BarChart3,
+      show: show.scorecard,
+      tip: "Weekly goals and the site league",
+    },
+    {
+      to: "/reports",
+      label: "Reports and packs",
+      icon: FileText,
+      show: show.reports,
+      tip: "Make a pack for an inspector or insurer",
+    },
   ]
   const active = (it: Item) =>
     it.to === "/" ? path === "/" : (it.match ?? [it.to]).some((m) => path === m || path.startsWith(`${m}/`))
@@ -149,7 +214,8 @@ export function Sidebar({ onSearch, collapsed, onToggle }: { onSearch: () => voi
         className={cn(
           "relative flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[14px] font-medium text-ink2 no-underline hover:bg-hover",
           collapsed && "w-11 justify-center px-0",
-          active(it) && "bg-surface text-foreground shadow-[0_0_0_1px_var(--c-border),0_1px_2px_rgba(17,17,19,.05)] hover:bg-surface",
+          active(it) &&
+            "bg-surface text-foreground shadow-[0_0_0_1px_var(--c-border),0_1px_2px_rgba(17,17,19,.05)] hover:bg-surface",
         )}
       >
         <it.icon className={cn("size-[18px] shrink-0", active(it) ? "text-foreground" : "text-muted-foreground")} />
@@ -179,7 +245,12 @@ export function Sidebar({ onSearch, collapsed, onToggle }: { onSearch: () => voi
         </button>
       </div>
       {collapsed ? (
-        <button type="button" onClick={onToggle} aria-label="Expand sidebar" className="mb-1 rounded-md p-2 hover:bg-hover">
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-label="Expand sidebar"
+          className="mb-1 rounded-md p-2 hover:bg-hover"
+        >
           <PanelLeftOpen className="size-4" />
         </button>
       ) : (
@@ -197,7 +268,9 @@ export function Sidebar({ onSearch, collapsed, onToggle }: { onSearch: () => voi
         </>
       )}
       {items.map(link)}
-      {!collapsed && compliance.some((i) => i.show) && <div className="px-2.5 pt-4 pb-1.5 text-xs font-medium text-subtle">Compliance</div>}
+      {!collapsed && compliance.some((i) => i.show) && (
+        <div className="px-2.5 pt-4 pb-1.5 text-xs font-medium text-subtle">Compliance</div>
+      )}
       {compliance.map(link)}
       {show.settings && (
         <>
@@ -231,7 +304,8 @@ export function Sidebar({ onSearch, collapsed, onToggle }: { onSearch: () => voi
                   aria-current={path.startsWith(s.to) ? "page" : undefined}
                   className={cn(
                     "flex h-8 items-center rounded-md px-2 text-[13.5px] text-ink2 no-underline hover:bg-hover",
-                    path.startsWith(s.to) && "bg-surface font-medium text-foreground shadow-[0_0_0_1px_var(--c-border)]",
+                    path.startsWith(s.to) &&
+                      "bg-surface font-medium text-foreground shadow-[0_0_0_1px_var(--c-border)]",
                   )}
                 >
                   {s.label}
@@ -245,7 +319,9 @@ export function Sidebar({ onSearch, collapsed, onToggle }: { onSearch: () => voi
       {tour && !collapsed && (
         <div className="mx-0 my-3 flex flex-col gap-1.5 rounded-[10px] border border-border bg-surface p-3">
           <span className="text-[13px] font-semibold">New to bide Comply?</span>
-          <span className="text-[12.5px] text-muted-foreground">A 2-minute tour of where things are and what the colours mean.</span>
+          <span className="text-[12.5px] text-muted-foreground">
+            A 2-minute tour of where things are and what the colours mean.
+          </span>
           <span className="flex gap-1.5">
             <Link
               to="/help"

@@ -7,7 +7,11 @@ import * as React from "react"
 
 import { greeting } from "@/lib/format"
 
-export function AppLink({ href, children, ...props }: Omit<React.ComponentProps<"a">, "href" | "onClick"> & { href: string }) {
+export function AppLink({
+  href,
+  children,
+  ...props
+}: Omit<React.ComponentProps<"a">, "href" | "onClick"> & { href: string }) {
   const router = useRouter()
   return (
     <a
@@ -56,7 +60,15 @@ export type PropertySummary = {
   red_line: boolean
   class_a_late: number
   checks: { late: number; soon: number; ok: number; na: number; total: number }
-  actions: { open: number; urgent: number; soon: number; later: number; late: number; urgent_late: number; urgent_over_7: number }
+  actions: {
+    open: number
+    urgent: number
+    soon: number
+    later: number
+    late: number
+    urgent_late: number
+    urgent_over_7: number
+  }
   gate: {
     status: "not_ready" | "ready_to_open" | "trading_a_open"
     applicable: number
@@ -112,7 +124,11 @@ export type Overview = {
   next_certificates: { id: string; title: string; property: string; expires_on: string; days: number }[]
   heatmap: {
     domains: { key: string; name: string }[]
-    rows: { property_id: string; property: string; cells: { domain: string; status: string | null; counts: Record<string, number> }[] }[]
+    rows: {
+      property_id: string
+      property: string
+      cells: { domain: string; status: string | null; counts: Record<string, number> }[]
+    }[]
   }
 }
 
@@ -127,7 +143,16 @@ export type Todo = {
   now: TodoItem[]
   counts: { everything: number; decisions: number; reviews: number; actions: number; today: number }
   reviews: { pending: number; spot_check: number }
-  mine?: { id: string; ref: string; title: string; property: string; priority: "high" | "med" | "low"; due_on: string; class: string | null; link: string }[]
+  mine?: {
+    id: string
+    ref: string
+    title: string
+    property: string
+    priority: "high" | "med" | "low"
+    due_on: string
+    class: string | null
+    link: string
+  }[]
   signatures: { id: string; title: string; property: string; due_on: string | null }[]
   coming: { date: string; label: string; text: string; strong?: boolean }[]
 }

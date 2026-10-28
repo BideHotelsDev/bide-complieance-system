@@ -131,7 +131,11 @@ export function Legend({ items }: { items: Seg[] }) {
     <ul className="m-0 mt-1.5 flex min-w-0 list-none flex-col gap-[3px] p-0 text-[12.5px]">
       {items.map((s) => (
         <li key={s.label} className="flex items-center gap-1.5">
-          <span aria-hidden className="inline-block size-[9px] shrink-0 rounded-[3px]" style={{ background: s.color }} />
+          <span
+            aria-hidden
+            className="inline-block size-[9px] shrink-0 rounded-[3px]"
+            style={{ background: s.color }}
+          />
           {s.label}
           <strong className="tabular ml-auto pl-2.5 font-semibold">{s.value}</strong>
         </li>
@@ -140,7 +144,17 @@ export function Legend({ items }: { items: Seg[] }) {
   )
 }
 
-export function BarRow({ label, value, max, color = "var(--c-foreground)" }: { label: string; value: number; max: number; color?: string }) {
+export function BarRow({
+  label,
+  value,
+  max,
+  color = "var(--c-foreground)",
+}: {
+  label: string
+  value: number
+  max: number
+  color?: string
+}) {
   return (
     <div className="grid grid-cols-[84px_1fr_26px] items-center gap-2 text-[12.5px]">
       <span className="truncate">{label}</span>
@@ -156,7 +170,17 @@ export function BarRow({ label, value, max, color = "var(--c-foreground)" }: { l
   )
 }
 
-export function Progress({ value, total, height = 6, className }: { value: number; total: number; height?: number; className?: string }) {
+export function Progress({
+  value,
+  total,
+  height = 6,
+  className,
+}: {
+  value: number
+  total: number
+  height?: number
+  className?: string
+}) {
   const pct = total ? Math.min(100, (value / total) * 100) : 0
   return (
     <span
@@ -189,7 +213,15 @@ export function LineTabs({
   className?: string
 }) {
   return (
-    <div role="tablist" aria-label={label} className={cn("flex overflow-x-auto border-b border-divider", size === "sm" ? "gap-3.5" : "gap-[22px]", className)}>
+    <div
+      role="tablist"
+      aria-label={label}
+      className={cn(
+        "flex overflow-x-auto border-b border-divider",
+        size === "sm" ? "gap-3.5" : "gap-[22px]",
+        className,
+      )}
+    >
       {tabs.map((t) => {
         const on = t.key === value
         return (
@@ -202,7 +234,9 @@ export function LineTabs({
             className={cn(
               "-mb-px inline-flex shrink-0 items-center gap-1.5 border-b-2 whitespace-nowrap",
               size === "sm" ? "py-2 text-[13px]" : "py-2.5 text-[14px]",
-              on ? "border-foreground font-semibold text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
+              on
+                ? "border-foreground font-semibold text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground",
               on && size === "sm" && "font-medium",
             )}
           >
@@ -258,12 +292,20 @@ export function QDialog({
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <DialogPrimitive.Title className="m-0 text-[16px] font-semibold">{title}</DialogPrimitive.Title>
               {sub ? (
-                <DialogPrimitive.Description className="m-0 text-[13.5px] text-muted-foreground">{sub}</DialogPrimitive.Description>
+                <DialogPrimitive.Description className="m-0 text-[13.5px] text-muted-foreground">
+                  {sub}
+                </DialogPrimitive.Description>
               ) : (
-                <DialogPrimitive.Description className="sr-only">{typeof title === "string" ? title : "Dialog"}</DialogPrimitive.Description>
+                <DialogPrimitive.Description className="sr-only">
+                  {typeof title === "string" ? title : "Dialog"}
+                </DialogPrimitive.Description>
               )}
             </div>
-            <DialogPrimitive.Close aria-label="Close" className="rounded p-1 text-muted-foreground hover:bg-hover" disabled={busy}>
+            <DialogPrimitive.Close
+              aria-label="Close"
+              className="rounded p-1 text-muted-foreground hover:bg-hover"
+              disabled={busy}
+            >
               <X className="size-4" />
             </DialogPrimitive.Close>
           </div>
@@ -302,9 +344,22 @@ export const inputCls =
 export const textareaCls =
   "w-full resize-y rounded-lg border border-border bg-surface px-3 py-2 text-[13.5px] text-foreground outline-none placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-focus"
 
-export function Note({ icon, children, className }: { icon?: React.ReactNode; children: React.ReactNode; className?: string }) {
+export function Note({
+  icon,
+  children,
+  className,
+}: {
+  icon?: React.ReactNode
+  children: React.ReactNode
+  className?: string
+}) {
   return (
-    <div className={cn("flex items-start gap-2.5 rounded-[10px] bg-st-grey-bg px-3.5 py-3 text-[13.5px] text-ink2", className)}>
+    <div
+      className={cn(
+        "flex items-start gap-2.5 rounded-[10px] bg-st-grey-bg px-3.5 py-3 text-[13.5px] text-ink2",
+        className,
+      )}
+    >
       {icon && <span className="mt-0.5 shrink-0 text-muted-foreground">{icon}</span>}
       <div className="min-w-0 flex-1">{children}</div>
     </div>
@@ -335,7 +390,10 @@ export function Radio({
     >
       <span
         aria-hidden
-        className={cn("mt-0.5 inline-block size-4 shrink-0 rounded-full", on ? "border-[5px] border-foreground" : "border-[1.5px] border-subtle")}
+        className={cn(
+          "mt-0.5 inline-block size-4 shrink-0 rounded-full",
+          on ? "border-[5px] border-foreground" : "border-[1.5px] border-subtle",
+        )}
       />
       <span>
         <strong className="font-semibold">{title}</strong>

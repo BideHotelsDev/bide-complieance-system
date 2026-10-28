@@ -18,7 +18,16 @@ import { cn } from "@bide-comply/ui/lib/utils"
 
 import { exportRows, GROUP_COLUMNS, GroupTable } from "@/features/overview/home-group-table"
 import { MobileHomeView } from "@/features/overview/home-mobile"
-import { AppLink, hello, joinNames, opensLabel, useMediaQuery, type Overview, type PropertySummary, type TodoItem } from "@/features/overview/home-shared"
+import {
+  AppLink,
+  hello,
+  joinNames,
+  opensLabel,
+  useMediaQuery,
+  type Overview,
+  type PropertySummary,
+  type TodoItem,
+} from "@/features/overview/home-shared"
 import { fmtDate, fmtLongDay, fmtTime } from "@/lib/format"
 import { useParams } from "@/lib/params"
 import { useProperty } from "@/lib/property"
@@ -51,7 +60,12 @@ function Panel({
   children: React.ReactNode
 }) {
   return (
-    <section className={cn("flex min-w-0 flex-col gap-3.5 rounded-xl border border-divider bg-surface px-[18px] py-4", className)}>
+    <section
+      className={cn(
+        "flex min-w-0 flex-col gap-3.5 rounded-xl border border-divider bg-surface px-[18px] py-4",
+        className,
+      )}
+    >
       <div className="flex items-center justify-between gap-2">
         <h2 className="m-0 text-[15px] font-semibold">{title}</h2>
         {badge}
@@ -223,7 +237,11 @@ function OverviewBody({ o }: { o: Overview }) {
           title="Life-safety checks late, by property"
           link={
             <>
-              <button type="button" onClick={() => setAsTable((t) => !t)} className="text-xs font-normal text-link hover:underline">
+              <button
+                type="button"
+                onClick={() => setAsTable((t) => !t)}
+                className="text-xs font-normal text-link hover:underline"
+              >
                 {asTable ? "View as cards" : "View as table"}
               </button>
               {me.data && navFor(me.data).properties && (
@@ -300,7 +318,10 @@ function OverviewBody({ o }: { o: Overview }) {
             points={o.on_time_trend.map((p) => ({
               label: p.label,
               value: p.on_time,
-              title: p.on_time == null ? `${p.label}: no checks due` : `${p.label}: ${p.on_time}% of ${p.due} checks on time`,
+              title:
+                p.on_time == null
+                  ? `${p.label}: no checks due`
+                  : `${p.label}: ${p.on_time}% of ${p.due} checks on time`,
             }))}
           />
         </Panel>
@@ -430,7 +451,12 @@ function KpiCard({
 function Dots({ on, of }: { on: number; of: number }) {
   const n = Math.min(of, 40)
   return (
-    <span className="flex flex-wrap gap-[3px]" role="img" aria-label={`${on} of ${of} urgent actions are past 7 days`} title={`${on} of ${of} urgent actions are past 7 days`}>
+    <span
+      className="flex flex-wrap gap-[3px]"
+      role="img"
+      aria-label={`${on} of ${of} urgent actions are past 7 days`}
+      title={`${on} of ${of} urgent actions are past 7 days`}
+    >
       {Array.from({ length: n }).map((_, i) => (
         <span key={i} className={cn("size-[9px] rounded-full", i < on ? "bg-foreground" : "bg-border")} />
       ))}
@@ -445,7 +471,14 @@ function Spark({ values }: { values: number[] }) {
   const pts = values.map((v, i) => `${(i / (values.length - 1)) * W},${H - 2 - (v / 100) * (H - 4)}`).join(" ")
   return (
     <svg width={W} height={H} aria-hidden className="shrink-0">
-      <polyline points={pts} fill="none" stroke="var(--c-ink2)" strokeWidth={1.75} strokeLinejoin="round" strokeLinecap="round" />
+      <polyline
+        points={pts}
+        fill="none"
+        stroke="var(--c-ink2)"
+        strokeWidth={1.75}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
     </svg>
   )
 }
@@ -469,7 +502,12 @@ function PropertyTile({ p }: { p: PropertySummary }) {
     <>
       <span className="text-[13.5px] font-semibold">{p.name}</span>
       <span className="text-xs text-muted-foreground">{p.town ?? " "}</span>
-      <span className={cn("tabular mt-1.5 text-[30px] leading-[1.1] font-semibold tracking-[-0.02em]", !p.register_loaded && "text-subtle")}>
+      <span
+        className={cn(
+          "tabular mt-1.5 text-[30px] leading-[1.1] font-semibold tracking-[-0.02em]",
+          !p.register_loaded && "text-subtle",
+        )}
+      >
         {big}
       </span>
       <span className="text-[12.5px] text-ink2">{caption}</span>
@@ -518,7 +556,10 @@ function NeedRow({ n, today }: { n: TodoItem; today: string }) {
       title={`${n.title}\n${n.detail}`}
       className="flex items-center gap-2.5 border-b border-divider py-[9px] text-foreground no-underline last:border-b-0 hover:bg-hover/40"
     >
-      <span aria-hidden className={cn("inline-flex size-[30px] shrink-0 items-center justify-center rounded-lg", icon.cls)}>
+      <span
+        aria-hidden
+        className={cn("inline-flex size-[30px] shrink-0 items-center justify-center rounded-lg", icon.cls)}
+      >
         {icon.el}
       </span>
       <span className="min-w-0 flex-1">
@@ -537,4 +578,3 @@ function NeedRow({ n, today }: { n: TodoItem; today: string }) {
     </AppLink>
   )
 }
-

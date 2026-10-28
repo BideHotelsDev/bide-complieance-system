@@ -69,7 +69,9 @@ export function ApprovalsPage() {
       </nav>
       <header>
         <h1 className="m-0 text-[22px] font-semibold tracking-[-0.01em]">Approvals</h1>
-        <p className="m-0 mt-1 max-w-[760px] text-muted-foreground">Changes to what gets checked. Someone else must approve them.</p>
+        <p className="m-0 mt-1 max-w-[760px] text-muted-foreground">
+          Changes to what gets checked. Someone else must approve them.
+        </p>
       </header>
 
       {first.error ? (
@@ -79,12 +81,20 @@ export function ApprovalsPage() {
       ) : (
         <>
           {tabsRaw ? (
-            <LineTabs label="Kinds of request" value={tab} onChange={(k) => set({ tab: k, sel: undefined })} tabs={tabs} />
+            <LineTabs
+              label="Kinds of request"
+              value={tab}
+              onChange={(k) => set({ tab: k, sel: undefined })}
+              tabs={tabs}
+            />
           ) : (
             <Skeleton className="h-10 w-full" />
           )}
           <div className="flex flex-wrap items-start gap-5">
-            <section aria-label="Requests" className="w-full overflow-hidden rounded-[10px] border border-divider bg-surface md:max-w-[440px] md:flex-[1_1_360px]">
+            <section
+              aria-label="Requests"
+              className="w-full overflow-hidden rounded-[10px] border border-divider bg-surface md:max-w-[440px] md:flex-[1_1_360px]"
+            >
               {list.error ? (
                 <ErrorState onRetry={() => void list.refetch()} />
               ) : !list.data ? (
@@ -94,7 +104,10 @@ export function ApprovalsPage() {
                   ))}
                 </div>
               ) : rows.length === 0 ? (
-                <EmptyState icon={<CheckCircle2 className="size-6" />} title={tab === "history" ? "Nothing decided yet" : "Nothing waiting"}>
+                <EmptyState
+                  icon={<CheckCircle2 className="size-6" />}
+                  title={tab === "history" ? "Nothing decided yet" : "Nothing waiting"}
+                >
                   {tab === "history"
                     ? "Approved and declined requests appear here."
                     : `No ${KIND_NOUN[tab] ?? "requests"} waiting${property ? ` at ${property.name}` : ""}.`}
@@ -103,7 +116,10 @@ export function ApprovalsPage() {
                 rows.map((r) => <RequestRow key={r.id} r={r} on={r.id === sel} onPick={() => set({ sel: r.id })} />)
               )}
             </section>
-            <section aria-label="Request detail" className="min-w-0 flex-[999_1_480px] rounded-[10px] border border-divider bg-surface">
+            <section
+              aria-label="Request detail"
+              className="min-w-0 flex-[999_1_480px] rounded-[10px] border border-divider bg-surface"
+            >
               {sel ? (
                 <Detail key={sel} id={sel} onDecided={() => set({ sel: undefined })} />
               ) : list.data ? (
@@ -127,7 +143,12 @@ function StatusBadge({ s }: { s: ApprovalCard["status"] }) {
 
 function RequestRow({ r, on, onPick }: { r: ApprovalCard; on: boolean; onPick: () => void }) {
   return (
-    <button type="button" aria-current={on || undefined} onClick={onPick} className={cn(rowCls(on), "grid grid-cols-[1fr_auto] gap-2 px-[18px] py-3.5")}>
+    <button
+      type="button"
+      aria-current={on || undefined}
+      onClick={onPick}
+      className={cn(rowCls(on), "grid grid-cols-[1fr_auto] gap-2 px-[18px] py-3.5")}
+    >
       <span className="min-w-0">
         <span className="font-semibold">{r.title}</span>
         <span className="block text-[12.5px] text-muted-foreground">{r.sub}</span>
@@ -144,7 +165,10 @@ function RequestRow({ r, on, onPick }: { r: ApprovalCard; on: boolean; onPick: (
 
 function Detail({ id, onDecided }: { id: string; onDecided: () => void }) {
   const qc = useQueryClient()
-  const res = useQuery<ApprovalDetail, ApiError>({ queryKey: ["approval", id], queryFn: () => api.get<ApprovalDetail>(`/api/approvals/${id}`) })
+  const res = useQuery<ApprovalDetail, ApiError>({
+    queryKey: ["approval", id],
+    queryFn: () => api.get<ApprovalDetail>(`/api/approvals/${id}`),
+  })
   const [note, setNote] = React.useState("")
   const [missing, setMissing] = React.useState<"decline" | "question" | null>(null)
   const noteRef = React.useRef<HTMLTextAreaElement>(null)
@@ -152,7 +176,10 @@ function Detail({ id, onDecided }: { id: string; onDecided: () => void }) {
 
   const decide = useMutation({
     mutationFn: (decision: "approve" | "decline" | "question") =>
-      api.post<{ status?: string; ok?: boolean }>(`/api/approvals/${id}/decide`, { decision, note: note.trim() || null }),
+      api.post<{ status?: string; ok?: boolean }>(`/api/approvals/${id}/decide`, {
+        decision,
+        note: note.trim() || null,
+      }),
     onSuccess: (_r, decision) => {
       void qc.invalidateQueries({ queryKey: ["approvals"] })
       void qc.invalidateQueries({ queryKey: ["approval", id] })
@@ -162,7 +189,11 @@ function Detail({ id, onDecided }: { id: string; onDecided: () => void }) {
         setNote("")
         return
       }
-      toast(decision === "approve" ? `Approved. ${a?.requested_by ?? "They"} will be told.` : `Declined. ${a?.requested_by ?? "They"} will be told why.`)
+      toast(
+        decision === "approve"
+          ? `Approved. ${a?.requested_by ?? "They"} will be told.`
+          : `Declined. ${a?.requested_by ?? "They"} will be told why.`,
+      )
       onDecided()
     },
     onError: (e: ApiError) => toastError(e.message),
@@ -178,7 +209,12 @@ function Detail({ id, onDecided }: { id: string; onDecided: () => void }) {
   }
 
   if (res.error)
-    return <ErrorState title={res.error.status === 404 ? "This request wasn't found" : undefined} onRetry={() => void res.refetch()} />
+    return (
+      <ErrorState
+        title={res.error.status === 404 ? "This request wasn't found" : undefined}
+        onRetry={() => void res.refetch()}
+      />
+    )
   if (!a)
     return (
       <div className="flex flex-col gap-3 p-[18px]">
@@ -227,7 +263,9 @@ function Detail({ id, onDecided }: { id: string; onDecided: () => void }) {
         ))}
         {waiting && !a.can_decide && (
           <Callout tone="grey">
-            {a.own ? "You asked for this, so someone else must approve it." : "You can see this request but can't decide it."}
+            {a.own
+              ? "You asked for this, so someone else must approve it."
+              : "You can see this request but can't decide it."}
           </Callout>
         )}
         {waiting && a.can_decide && (
@@ -250,7 +288,9 @@ function Detail({ id, onDecided }: { id: string; onDecided: () => void }) {
               />
               {missing && !note.trim() && (
                 <span role="alert" className="text-[12px] text-st-red">
-                  {missing === "decline" ? "Say why you're declining, so they know what to do next." : "Write your question here first."}
+                  {missing === "decline"
+                    ? "Say why you're declining, so they know what to do next."
+                    : "Write your question here first."}
                 </span>
               )}
             </label>
@@ -258,7 +298,12 @@ function Detail({ id, onDecided }: { id: string; onDecided: () => void }) {
               <Button variant="outline" disabled={decide.isPending} onClick={() => run("question")}>
                 Ask a question
               </Button>
-              <Button variant="outline" className="border-st-red/30 text-st-red" disabled={decide.isPending} onClick={() => run("decline")}>
+              <Button
+                variant="outline"
+                className="border-st-red/30 text-st-red"
+                disabled={decide.isPending}
+                onClick={() => run("decline")}
+              >
                 Decline
               </Button>
               <Button disabled={decide.isPending} onClick={() => run("approve")}>

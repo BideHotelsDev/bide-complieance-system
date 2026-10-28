@@ -10,7 +10,15 @@ import * as React from "react"
 
 import { api, ApiError } from "@bide-comply/api-client"
 import { Button } from "@bide-comply/ui/components/button"
-import { Breadcrumb, Callout, Card, ErrorState, LoadingPage, NoPermission, PageHeader } from "@bide-comply/ui/components/page"
+import {
+  Breadcrumb,
+  Callout,
+  Card,
+  ErrorState,
+  LoadingPage,
+  NoPermission,
+  PageHeader,
+} from "@bide-comply/ui/components/page"
 import { toast } from "@bide-comply/ui/components/toaster"
 
 import { fmtDate } from "@/lib/format"
@@ -122,7 +130,13 @@ export function PropertyDetailsPage() {
   const canEdit = me.can["register.toggle"]
   return (
     <div className="mx-auto flex max-w-[1100px] flex-col gap-5">
-      <Breadcrumb items={[{ label: "Settings" }, { label: "Property details", href: "/settings/properties" }, { label: isNew ? "New property" : (d?.name ?? "") }]} />
+      <Breadcrumb
+        items={[
+          { label: "Settings" },
+          { label: "Property details", href: "/settings/properties" },
+          { label: isNew ? "New property" : (d?.name ?? "") },
+        ]}
+      />
       <PageHeader
         title={isNew ? "Add a property" : `${d?.name} · details`}
         subtitle="The legal frame and the features that decide which checks apply here. Choose who does each check in Property setup."
@@ -133,28 +147,45 @@ export function PropertyDetailsPage() {
                 <Link to={`/settings/setup/${code}`}>Property setup</Link>
               </Button>
             )}
-            <Button disabled={!canEdit || save.isPending || !form.name || (isNew && !form.code)} onClick={() => save.mutate()}>
+            <Button
+              disabled={!canEdit || save.isPending || !form.name || (isNew && !form.code)}
+              onClick={() => save.mutate()}
+            >
               {isNew ? "Add property" : "Save changes"}
             </Button>
           </>
         }
       />
       {form.legal_hold && (
-        <Callout tone="amber">Legal hold is on. Nothing at this property can be removed by the retention jobs until it's lifted.</Callout>
+        <Callout tone="amber">
+          Legal hold is on. Nothing at this property can be removed by the retention jobs until it's lifted.
+        </Callout>
       )}
       <div className="grid gap-5 lg:grid-cols-2">
         <Card title="Property" bodyClassName="grid grid-cols-2 gap-3 p-4">
           <Field label="Name">
             <input className={field} value={String(form.name ?? "")} onChange={(e) => set("name", e.target.value)} />
           </Field>
-          <Field label="Code" hint={isNew ? "2–4 letters. Starts every ID here, like TV-014." : "Fixed once the register has IDs."}>
-            <input className={field} value={String(form.code ?? "")} disabled={!isNew} onChange={(e) => set("code", e.target.value.toUpperCase())} />
+          <Field
+            label="Code"
+            hint={isNew ? "2–4 letters. Starts every ID here, like TV-014." : "Fixed once the register has IDs."}
+          >
+            <input
+              className={field}
+              value={String(form.code ?? "")}
+              disabled={!isNew}
+              onChange={(e) => set("code", e.target.value.toUpperCase())}
+            />
           </Field>
           <Field label="Town">
             <input className={field} value={String(form.town ?? "")} onChange={(e) => set("town", e.target.value)} />
           </Field>
           <Field label="Dutyholder (SPV)">
-            <select className={field} value={String(form.dutyholder_id ?? "")} onChange={(e) => set("dutyholder_id", e.target.value)}>
+            <select
+              className={field}
+              value={String(form.dutyholder_id ?? "")}
+              onChange={(e) => set("dutyholder_id", e.target.value)}
+            >
               <option value="">To confirm</option>
               {(d?.dutyholders ?? []).map((x) => (
                 <option key={x.id} value={x.id}>
@@ -164,23 +195,39 @@ export function PropertyDetailsPage() {
             </select>
           </Field>
           <Field label="Jurisdiction" hint="Scotland: Fire (Scotland) Act 2005. England: RR(FS)O 2005.">
-            <select className={field} value={String(form.jurisdiction ?? "scotland")} onChange={(e) => set("jurisdiction", e.target.value)}>
+            <select
+              className={field}
+              value={String(form.jurisdiction ?? "scotland")}
+              onChange={(e) => set("jurisdiction", e.target.value)}
+            >
               <option value="scotland">Scotland</option>
               <option value="england">England</option>
             </select>
           </Field>
           <Field label="Local authority">
-            <input className={field} value={String(form.local_authority ?? "")} onChange={(e) => set("local_authority", e.target.value)} />
+            <input
+              className={field}
+              value={String(form.local_authority ?? "")}
+              onChange={(e) => set("local_authority", e.target.value)}
+            />
           </Field>
           <Field label="Licence regime">
-            <select className={field} value={String(form.licence_regime ?? "class7_hotel")} onChange={(e) => set("licence_regime", e.target.value)}>
+            <select
+              className={field}
+              value={String(form.licence_regime ?? "class7_hotel")}
+              onChange={(e) => set("licence_regime", e.target.value)}
+            >
               <option value="class7_hotel">Class 7 hotel</option>
               <option value="stl">Short-term let</option>
               <option value="other">Other</option>
             </select>
           </Field>
           <Field label="Stage">
-            <select className={field} value={String(form.stage ?? "setup")} onChange={(e) => set("stage", e.target.value)}>
+            <select
+              className={field}
+              value={String(form.stage ?? "setup")}
+              onChange={(e) => set("stage", e.target.value)}
+            >
               <option value="setup">Not set up yet</option>
               <option value="pre_opening">Opening soon</option>
               <option value="trading">Trading</option>
@@ -188,15 +235,26 @@ export function PropertyDetailsPage() {
             </select>
           </Field>
           <Field label="Opening date">
-            <input type="date" className={field} value={String(form.opening_date ?? "")} onChange={(e) => set("opening_date", e.target.value)} />
+            <input
+              type="date"
+              className={field}
+              value={String(form.opening_date ?? "")}
+              onChange={(e) => set("opening_date", e.target.value)}
+            />
           </Field>
           <Field label="Trading since">
-            <input type="date" className={field} value={String(form.trading_since ?? "")} onChange={(e) => set("trading_since", e.target.value)} />
+            <input
+              type="date"
+              className={field}
+              value={String(form.trading_since ?? "")}
+              onChange={(e) => set("trading_since", e.target.value)}
+            />
           </Field>
         </Card>
         <Card title="What this property has" bodyClassName="p-4">
           <p className="mt-0 mb-3 text-[13px] text-muted-foreground">
-            Templates use these to decide whether they apply. A new property gets the matching templates proposed in Property setup.
+            Templates use these to decide whether they apply. A new property gets the matching templates proposed in
+            Property setup.
           </p>
           <div className="grid grid-cols-2 gap-2">
             {Object.entries(labels).map(([k, label]) => (
@@ -214,19 +272,41 @@ export function PropertyDetailsPage() {
           <h3 className="mt-5 mb-2 text-[13px] font-semibold">Location check (geofence)</h3>
           <div className="grid grid-cols-3 gap-3">
             <Field label="Latitude">
-              <input className={field} inputMode="decimal" value={g.lat ?? ""} onChange={(e) => set("geofence", { ...g, lat: e.target.value ? Number(e.target.value) : null })} />
+              <input
+                className={field}
+                inputMode="decimal"
+                value={g.lat ?? ""}
+                onChange={(e) => set("geofence", { ...g, lat: e.target.value ? Number(e.target.value) : null })}
+              />
             </Field>
             <Field label="Longitude">
-              <input className={field} inputMode="decimal" value={g.lng ?? ""} onChange={(e) => set("geofence", { ...g, lng: e.target.value ? Number(e.target.value) : null })} />
+              <input
+                className={field}
+                inputMode="decimal"
+                value={g.lng ?? ""}
+                onChange={(e) => set("geofence", { ...g, lng: e.target.value ? Number(e.target.value) : null })}
+              />
             </Field>
             <Field label="Radius (m)" hint="Default 150 m">
-              <input className={field} inputMode="numeric" value={g.radius_m ?? ""} onChange={(e) => set("geofence", { ...g, radius_m: e.target.value ? Number(e.target.value) : null })} />
+              <input
+                className={field}
+                inputMode="numeric"
+                value={g.radius_m ?? ""}
+                onChange={(e) => set("geofence", { ...g, radius_m: e.target.value ? Number(e.target.value) : null })}
+              />
             </Field>
           </div>
-          <p className="mb-0 text-xs text-muted-foreground">Read once when a check is sent, never tracked. Outside submissions are allowed and flagged for review.</p>
+          <p className="mb-0 text-xs text-muted-foreground">
+            Read once when a check is sent, never tracked. Outside submissions are allowed and flagged for review.
+          </p>
           {me.roles.includes("super_admin") && !isNew && (
             <label className="mt-4 flex items-center gap-2 text-[13.5px]">
-              <input type="checkbox" className="size-4 accent-[var(--c-primary)]" checked={!!form.legal_hold} onChange={(e) => set("legal_hold", e.target.checked)} />
+              <input
+                type="checkbox"
+                className="size-4 accent-[var(--c-primary)]"
+                checked={!!form.legal_hold}
+                onChange={(e) => set("legal_hold", e.target.checked)}
+              />
               Legal hold (suspends deletion, e.g. during an incident or claim)
             </label>
           )}
@@ -241,7 +321,15 @@ export function PropertyDetailsPage() {
 function Licences({ d }: { d: Detail }) {
   const qc = useQueryClient()
   const [adding, setAdding] = React.useState(false)
-  const [f, setF] = React.useState({ type: "premises", number: "", authority: "", issued_on: "", expires_on: "", max_occupancy: "", conditions: "" })
+  const [f, setF] = React.useState({
+    type: "premises",
+    number: "",
+    authority: "",
+    issued_on: "",
+    expires_on: "",
+    max_occupancy: "",
+    conditions: "",
+  })
   const add = useMutation({
     mutationFn: () =>
       api.post(`/api/admin/properties/${d.code}/licences`, {
@@ -275,16 +363,25 @@ function Licences({ d }: { d: Detail }) {
     >
       {d.licences.length === 0 && !adding && (
         <p className="m-0 p-4 text-[13px] text-muted-foreground">
-          No licences recorded. Class 7 hotels are normally outside short-term let licensing (gate item A03 confirms it).
+          No licences recorded. Class 7 hotels are normally outside short-term let licensing (gate item A03 confirms
+          it).
         </p>
       )}
       {d.licences.map((l) => (
         <div key={l.id} className="border-b border-divider p-4 last:border-0">
           <div className="flex flex-wrap items-center gap-2 text-[13.5px]">
-            <strong className="font-semibold">{{ stl: "Short-term let licence", premises: "Premises licence", other: "Licence" }[l.type] ?? l.type}</strong>
+            <strong className="font-semibold">
+              {{ stl: "Short-term let licence", premises: "Premises licence", other: "Licence" }[l.type] ?? l.type}
+            </strong>
             {l.number && <span className="mono-id">{l.number}</span>}
             <span className="text-muted-foreground">
-              {[l.authority, l.expires_on && `expires ${fmtDate(l.expires_on, true)}`, l.max_occupancy && `max ${l.max_occupancy} guests`].filter(Boolean).join(" · ")}
+              {[
+                l.authority,
+                l.expires_on && `expires ${fmtDate(l.expires_on, true)}`,
+                l.max_occupancy && `max ${l.max_occupancy} guests`,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             </span>
           </div>
           {l.conditions.length > 0 && (
@@ -320,17 +417,37 @@ function Licences({ d }: { d: Detail }) {
             <input className={field} value={f.authority} onChange={(e) => setF({ ...f, authority: e.target.value })} />
           </Field>
           <Field label="Issued">
-            <input type="date" className={field} value={f.issued_on} onChange={(e) => setF({ ...f, issued_on: e.target.value })} />
+            <input
+              type="date"
+              className={field}
+              value={f.issued_on}
+              onChange={(e) => setF({ ...f, issued_on: e.target.value })}
+            />
           </Field>
           <Field label="Expires">
-            <input type="date" className={field} value={f.expires_on} onChange={(e) => setF({ ...f, expires_on: e.target.value })} />
+            <input
+              type="date"
+              className={field}
+              value={f.expires_on}
+              onChange={(e) => setF({ ...f, expires_on: e.target.value })}
+            />
           </Field>
           <Field label="Maximum occupancy">
-            <input className={field} inputMode="numeric" value={f.max_occupancy} onChange={(e) => setF({ ...f, max_occupancy: e.target.value })} />
+            <input
+              className={field}
+              inputMode="numeric"
+              value={f.max_occupancy}
+              onChange={(e) => setF({ ...f, max_occupancy: e.target.value })}
+            />
           </Field>
           <label className={`${lbl} col-span-full`}>
             Conditions, one per line (start a line with "local:" for a local condition)
-            <textarea rows={4} className="rounded-md border border-border bg-surface p-2.5 text-[13.5px] font-normal" value={f.conditions} onChange={(e) => setF({ ...f, conditions: e.target.value })} />
+            <textarea
+              rows={4}
+              className="rounded-md border border-border bg-surface p-2.5 text-[13.5px] font-normal"
+              value={f.conditions}
+              onChange={(e) => setF({ ...f, conditions: e.target.value })}
+            />
           </label>
           <div className="col-span-full flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={() => setAdding(false)}>
@@ -360,7 +477,12 @@ function Locations({ d }: { d: Detail }) {
   })
   const typeName = Object.fromEntries(d.location_types.map((t) => [t.key, t.name]))
   return (
-    <Card title="Locations and assets" action={<span className="text-xs text-muted-foreground">Call points rotate in this order in the weekly alarm test</span>}>
+    <Card
+      title="Locations and assets"
+      action={
+        <span className="text-xs text-muted-foreground">Call points rotate in this order in the weekly alarm test</span>
+      }
+    >
       <table className="w-full text-[13.5px]">
         <thead>
           <tr className="text-left text-xs text-muted-foreground">
@@ -375,7 +497,12 @@ function Locations({ d }: { d: Detail }) {
               <td className="border-b border-divider px-4 py-2">{l.name}</td>
               <td className="border-b border-divider px-4 py-2 text-muted-foreground">{typeName[l.type] ?? l.type}</td>
               <td className="border-b border-divider px-4 py-2">
-                <a href={`/api/admin/locations/${l.id}/qr.svg`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[13px]">
+                <a
+                  href={`/api/admin/locations/${l.id}/qr.svg`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-[13px]"
+                >
                   <QrCode className="size-3.5" /> Print label
                 </a>
               </td>
@@ -392,7 +519,12 @@ function Locations({ d }: { d: Detail }) {
       >
         <label className={`${lbl} min-w-[240px] flex-1`}>
           Add a location
-          <input className={field} placeholder="e.g. CP6 · Second floor rear" value={name} onChange={(e) => setName(e.target.value)} />
+          <input
+            className={field}
+            placeholder="e.g. CP6 · Second floor rear"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
         </label>
         <label className={lbl}>
           Type
@@ -432,8 +564,13 @@ export function PropertyListAdmin() {
         <ul className="m-0 list-none p-0">
           {me.properties.map((p) => (
             <li key={p.id} className="border-b border-divider last:border-0">
-              <Link to={`/settings/properties/${p.code}`} className="flex items-center gap-3 px-4 py-3 text-foreground no-underline hover:bg-hover">
-                <span className="inline-flex h-6 w-8 items-center justify-center rounded bg-hover text-[11px] font-semibold">{p.code}</span>
+              <Link
+                to={`/settings/properties/${p.code}`}
+                className="flex items-center gap-3 px-4 py-3 text-foreground no-underline hover:bg-hover"
+              >
+                <span className="inline-flex h-6 w-8 items-center justify-center rounded bg-hover text-[11px] font-semibold">
+                  {p.code}
+                </span>
                 <span className="flex-1 font-medium">{p.name}</span>
                 <span className="text-[13px] text-muted-foreground">{p.town}</span>
               </Link>

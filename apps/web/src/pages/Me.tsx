@@ -10,7 +10,16 @@ import * as React from "react"
 import { api, ApiError } from "@bide-comply/api-client"
 import { Button } from "@bide-comply/ui/components/button"
 import { Segmented } from "@bide-comply/ui/components/filter-bar"
-import { Avatar, Card, Dl, EmptyState, ErrorState, LoadingPage, LoadingRows, PageHeader } from "@bide-comply/ui/components/page"
+import {
+  Avatar,
+  Card,
+  Dl,
+  EmptyState,
+  ErrorState,
+  LoadingPage,
+  LoadingRows,
+  PageHeader,
+} from "@bide-comply/ui/components/page"
 import { Pill } from "@bide-comply/ui/components/status"
 import { Switch } from "@bide-comply/ui/components/switch"
 import { toast, toastError } from "@bide-comply/ui/components/toaster"
@@ -112,7 +121,12 @@ function About({ me }: { me: Me }) {
             value: me.all_properties ? "All properties" : me.properties.map((p) => p.name).join(", ") || "None yet",
           },
           ...(me.session_ends_hours
-            ? [{ label: "Session", value: `Signs you out after ${me.session_ends_hours} hours, as you're signed in by email link.` }]
+            ? [
+                {
+                  label: "Session",
+                  value: `Signs you out after ${me.session_ends_hours} hours, as you're signed in by email link.`,
+                },
+              ]
             : []),
         ]}
       />
@@ -155,7 +169,9 @@ function Preferences({ me }: { me: Me }) {
           <li className="flex items-center gap-3 border-b border-divider px-4 py-3">
             <span className="min-w-0 flex-1">
               <span className="block font-medium">In the app</span>
-              <span className="block text-[13px] text-muted-foreground">Always on. Shown below and on your Home page.</span>
+              <span className="block text-[13px] text-muted-foreground">
+                Always on. Shown below and on your Home page.
+              </span>
             </span>
             <Pill tone="green">On</Pill>
           </li>
@@ -168,7 +184,9 @@ function Preferences({ me }: { me: Me }) {
                   <span className="block font-medium">{c.label}</span>
                   <span className="block text-[13px] text-muted-foreground">{c.line}</span>
                 </label>
-                <span className={cn("text-[13px]", on ? "text-st-green" : "text-muted-foreground")}>{on ? "On" : "Muted"}</span>
+                <span className={cn("text-[13px]", on ? "text-st-green" : "text-muted-foreground")}>
+                  {on ? "On" : "Muted"}
+                </span>
                 <Switch id={id} checked={on} onCheckedChange={(v) => setChannel(c.key, v)} disabled={save.isPending} />
               </li>
             )
@@ -214,7 +232,8 @@ function Preferences({ me }: { me: Me }) {
           />
         </div>
         <p className="m-0 text-[12.5px] text-muted-foreground">
-          Appearance applies on this device straight away. The colours and logo for everyone are set in Settings › Appearance.
+          Appearance applies on this device straight away. The colours and logo for everyone are set in Settings ›
+          Appearance.
         </p>
       </Card>
     </div>
@@ -263,12 +282,25 @@ function Notifications() {
       ) : (
         <ul className="m-0 list-none p-0">
           {q.data.rows.map((n) => (
-            <li key={n.id} className={cn("flex gap-3 border-b border-divider px-4 py-3 last:border-b-0", !n.read && "bg-st-blue-bg/30")}>
-              <span aria-hidden className={cn("mt-1.5 size-2 shrink-0 rounded-full", n.read ? "bg-transparent" : "bg-st-blue")} />
+            <li
+              key={n.id}
+              className={cn(
+                "flex gap-3 border-b border-divider px-4 py-3 last:border-b-0",
+                !n.read && "bg-st-blue-bg/30",
+              )}
+            >
+              <span
+                aria-hidden
+                className={cn("mt-1.5 size-2 shrink-0 rounded-full", n.read ? "bg-transparent" : "bg-st-blue")}
+              />
               <span className="min-w-0 flex-1">
                 <span className="flex flex-wrap items-center gap-2">
                   {n.link?.startsWith("/") ? (
-                    <Link to={n.link.split("?")[0]} search={Object.fromEntries(new URLSearchParams(n.link.split("?")[1] ?? ""))} className="font-medium text-foreground no-underline hover:underline">
+                    <Link
+                      to={n.link.split("?")[0]}
+                      search={Object.fromEntries(new URLSearchParams(n.link.split("?")[1] ?? ""))}
+                      className="font-medium text-foreground no-underline hover:underline"
+                    >
                       {n.title}
                     </Link>
                   ) : (
@@ -279,7 +311,11 @@ function Notifications() {
                 </span>
                 {n.body && <span className="mt-0.5 block text-[13px] text-muted-foreground">{n.body}</span>}
               </span>
-              <time dateTime={n.created_at} title={fmtDateTime(n.created_at)} className="shrink-0 text-xs whitespace-nowrap text-muted-foreground">
+              <time
+                dateTime={n.created_at}
+                title={fmtDateTime(n.created_at)}
+                className="shrink-0 text-xs whitespace-nowrap text-muted-foreground"
+              >
                 {relative(n.created_at) === "today" ? fmtTime(n.created_at) : relative(n.created_at)}
               </time>
             </li>

@@ -15,7 +15,16 @@ import { ClassBadge, PriorityBadge, RagBadge, type Rag } from "@bide-comply/ui/c
 
 import { useProperty } from "@/lib/property"
 
-type Item = { id: string; ref?: string; title: string; sub?: string; class?: string; status?: string; priority?: string; link: string }
+type Item = {
+  id: string
+  ref?: string
+  title: string
+  sub?: string
+  class?: string
+  status?: string
+  priority?: string
+  link: string
+}
 type Group = { type: string; label: string; items: Item[] }
 const RECENT = "bc-recent"
 
@@ -59,7 +68,8 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
   }, [q])
   const res = useQuery({
     queryKey: ["search", debounced, propertyId],
-    queryFn: () => api.get<{ groups: Group[]; scope_label: string }>("/api/search", { q: debounced, property: propertyId }),
+    queryFn: () =>
+      api.get<{ groups: Group[]; scope_label: string }>("/api/search", { q: debounced, property: propertyId }),
     enabled: open && debounced.length >= 2,
   })
   const go = (it: Item) => {
@@ -68,7 +78,8 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
     setQ("")
     void navigate({ to: it.link })
   }
-  const groups = debounced.length >= 2 ? (res.data?.groups ?? []) : [{ type: "recent", label: "Recent", items: recent() }]
+  const groups =
+    debounced.length >= 2 ? (res.data?.groups ?? []) : [{ type: "recent", label: "Recent", items: recent() }]
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
@@ -124,7 +135,9 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
                             </span>
                           )}
                         </span>
-                        {it.status && ["green", "amber", "red", "grey"].includes(it.status) && <RagBadge status={it.status as Rag} />}
+                        {it.status && ["green", "amber", "red", "grey"].includes(it.status) && (
+                          <RagBadge status={it.status as Rag} />
+                        )}
                         {it.priority && <PriorityBadge priority={it.priority as "high" | "med" | "low"} />}
                       </Command.Item>
                     ))}
@@ -135,7 +148,9 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
             <div className="flex gap-4 border-t border-divider px-3.5 py-2 text-xs text-muted-foreground">
               <span>↑ ↓ move</span>
               <span>↵ open</span>
-              <span className="ml-auto">{res.data?.scope_label ?? (propertyId ? "Searching this property" : "Searching all your properties")}</span>
+              <span className="ml-auto">
+                {res.data?.scope_label ?? (propertyId ? "Searching this property" : "Searching all your properties")}
+              </span>
             </div>
           </Command>
         </DialogPrimitive.Content>

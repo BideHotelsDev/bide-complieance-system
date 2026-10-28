@@ -114,7 +114,14 @@ export type History = {
 
 export type Documents = {
   all_set: boolean
-  rows: { id: string; title: string; detail: string; status: "ok" | "expiring" | "expired" | "pending" | "missing"; label: string; key: string }[]
+  rows: {
+    id: string
+    title: string
+    detail: string
+    status: "ok" | "expiring" | "expired" | "pending" | "missing"
+    label: string
+    key: string
+  }[]
   types: { key: string; name: string; renew_months: number | null }[]
 }
 

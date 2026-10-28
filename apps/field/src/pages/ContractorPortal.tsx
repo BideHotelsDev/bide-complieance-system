@@ -7,8 +7,18 @@ import { Mark } from "@bide-comply/ui/components/page"
 import { Page } from "@/components/kit"
 
 const VISITS = [
-  { title: "Fire alarm service", when: "Tomorrow", where: "The Villa · visit booked", action: "Upload the report after your visit" },
-  { title: "Fix: detector in room 7", when: "Due in 5 days", where: "The View · Urgent priority", action: "Mark as fixed, add photo" },
+  {
+    title: "Fire alarm service",
+    when: "Tomorrow",
+    where: "The Villa · visit booked",
+    action: "Upload the report after your visit",
+  },
+  {
+    title: "Fix: detector in room 7",
+    when: "Due in 5 days",
+    where: "The View · Urgent priority",
+    action: "Mark as fixed, add photo",
+  },
   { title: "Emergency lighting test", when: "Booked", where: "The View", action: null },
 ]
 
@@ -30,14 +40,22 @@ export function ContractorPortalPage() {
         </p>
         <h2 className="m-0 mt-2 text-[14px] font-semibold text-muted-foreground">Your visits</h2>
         {VISITS.map((v) => (
-          <div key={v.title} aria-disabled className="rounded-xl border border-divider bg-surface px-4 py-3.5 opacity-70">
+          <div
+            key={v.title}
+            aria-disabled
+            className="rounded-xl border border-divider bg-surface px-4 py-3.5 opacity-70"
+          >
             <div className="flex items-start justify-between gap-2">
               <div className="text-[16px] font-semibold">{v.title}</div>
               <span className="text-[13.5px] text-muted-foreground">{v.when}</span>
             </div>
             <div className="text-[14px] text-muted-foreground">{v.where}</div>
             {v.action && (
-              <button type="button" disabled className="mt-3 h-12 w-full rounded-xl border border-border text-[15.5px] font-semibold">
+              <button
+                type="button"
+                disabled
+                className="mt-3 h-12 w-full rounded-xl border border-border text-[15.5px] font-semibold"
+              >
                 {v.action}
               </button>
             )}

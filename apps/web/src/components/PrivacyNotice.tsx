@@ -23,8 +23,12 @@ export function PrivacyNotice() {
           onPointerDownOutside={(e: Event) => e.preventDefault()}
           className="fixed top-1/2 left-1/2 z-50 w-[min(480px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface p-5 shadow-2xl"
         >
-          <DialogPrimitive.Title className="m-0 text-[17px] font-semibold">What bide Comply records about you</DialogPrimitive.Title>
-          <DialogPrimitive.Description className="mt-2 text-[14px] text-ink2">{PRIVACY_TEXT}</DialogPrimitive.Description>
+          <DialogPrimitive.Title className="m-0 text-[17px] font-semibold">
+            What bide Comply records about you
+          </DialogPrimitive.Title>
+          <DialogPrimitive.Description className="mt-2 text-[14px] text-ink2">
+            {PRIVACY_TEXT}
+          </DialogPrimitive.Description>
           <div className="mt-4 flex justify-end">
             <Button onClick={() => seen.mutate()} disabled={seen.isPending}>
               I've read this

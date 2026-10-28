@@ -47,7 +47,9 @@ export function RegisterSheet({ refId, onClose }: { refId: string; onClose: () =
       footer={
         d && (d.can_assign || d.can_toggle) ? (
           <>
-            {d.can_assign && d.kind === "certificate" && <Button onClick={() => setDialog("cert")}>Upload new certificate</Button>}
+            {d.can_assign && d.kind === "certificate" && (
+              <Button onClick={() => setDialog("cert")}>Upload new certificate</Button>
+            )}
             {d.can_assign && (
               <Button variant={d.kind === "certificate" ? "outline" : "default"} onClick={() => setDialog("reassign")}>
                 Reassign
@@ -100,7 +102,9 @@ export function RegisterSheet({ refId, onClose }: { refId: string; onClose: () =
               </Callout>
             )}
             {d.needs_owner && (
-              <Callout tone="amber">This item needs a named person, pool or contractor before tasks can go out.</Callout>
+              <Callout tone="amber">
+                This item needs a named person, pool or contractor before tasks can go out.
+              </Callout>
             )}
             <Dl
               items={[
@@ -209,7 +213,11 @@ export function RegisterSheet({ refId, onClose }: { refId: string; onClose: () =
       )}
       {d && (
         <>
-          <ReassignDialog open={dialog === "reassign"} onOpenChange={(o) => setDialog(o ? "reassign" : null)} item={d} />
+          <ReassignDialog
+            open={dialog === "reassign"}
+            onOpenChange={(o) => setDialog(o ? "reassign" : null)}
+            item={d}
+          />
           <CertificateDialog open={dialog === "cert"} onOpenChange={(o) => setDialog(o ? "cert" : null)} item={d} />
           <RequestDialog
             open={dialog === "switch_off" || dialog === "pause"}

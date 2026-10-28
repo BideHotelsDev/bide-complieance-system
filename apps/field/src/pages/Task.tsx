@@ -40,7 +40,13 @@ import type { FormField, SubmitResult, TaskDetail } from "@/lib/types"
 const EVIDENCE = new Set(["photo", "file"])
 
 function isEmpty(v: unknown): boolean {
-  return v === undefined || v === null || v === "" || (Array.isArray(v) && v.length === 0) || (typeof v === "object" && v !== null && Object.keys(v).length === 0)
+  return (
+    v === undefined ||
+    v === null ||
+    v === "" ||
+    (Array.isArray(v) && v.length === 0) ||
+    (typeof v === "object" && v !== null && Object.keys(v).length === 0)
+  )
 }
 
 /* "alarm company answer", "log book photo": short words for what is left. */
@@ -67,7 +73,11 @@ export function TaskPage() {
     return (
       <FlowScreen title="Check" backLabel="Back to Today">
         <ErrorBox
-          message={(detail.error as ApiError).status === 0 ? "This check isn't saved on this phone. Open it again when you have signal." : detail.error.message}
+          message={
+            (detail.error as ApiError).status === 0
+              ? "This check isn't saved on this phone. Open it again when you have signal."
+              : detail.error.message
+          }
           onRetry={() => void detail.refetch()}
         />
       </FlowScreen>
@@ -110,7 +120,10 @@ function CheckForm({ task }: { task: TaskDetail }) {
   const photoFields = form.filter((f) => f.type === "photo")
   const need = (f: FormField) => (f.required === false ? 0 : Math.max(1, f.min_photos ?? 1))
   const count = (key: string) => shots.filter((s) => s.key === key).length
-  const photosNeeded = Math.max(1, photoFields.reduce((n, f) => n + need(f), 0))
+  const photosNeeded = Math.max(
+    1,
+    photoFields.reduce((n, f) => n + need(f), 0),
+  )
   const photosTaken = photoFields.reduce((n, f) => n + Math.min(count(f.key), need(f)), 0)
 
   const missing = form.filter((f) => {
@@ -274,7 +287,9 @@ function CheckForm({ task }: { task: TaskDetail }) {
           <div className="grid grid-cols-2 gap-2.5">
             {photoFields.flatMap((f) => {
               const mine = shots.filter((s) => s.key === f.key)
-              const slots = mine.map((s) => <ShotTile key={s.id} shot={s} label={f.label} onRemove={() => remove(s.id)} />)
+              const slots = mine.map((s) => (
+                <ShotTile key={s.id} shot={s} label={f.label} onRemove={() => remove(s.id)} />
+              ))
               const room = mine.length < Math.max(need(f), f.max_photos ?? 1)
               if (room)
                 slots.push(
@@ -284,7 +299,11 @@ function CheckForm({ task }: { task: TaskDetail }) {
                     onClick={() => setCamera(f)}
                     className="flex aspect-[4/3] flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-subtle bg-surface px-2 text-center text-[14.5px] font-semibold"
                   >
-                    {mine.length ? <Plus aria-hidden className="size-5" /> : <CameraIcon aria-hidden className="size-5" />}
+                    {mine.length ? (
+                      <Plus aria-hidden className="size-5" />
+                    ) : (
+                      <CameraIcon aria-hidden className="size-5" />
+                    )}
                     {mine.length ? "Another photo" : f.label}
                   </button>,
                 )
@@ -306,7 +325,11 @@ function CheckForm({ task }: { task: TaskDetail }) {
       )}
 
       {task.can_request_na && task.can_submit && (
-        <button type="button" onClick={() => setNa(true)} className="min-h-12 self-center text-[15px] font-medium text-link">
+        <button
+          type="button"
+          onClick={() => setNa(true)}
+          className="min-h-12 self-center text-[15px] font-medium text-link"
+        >
           This check doesn't apply? Mark as not applicable
         </button>
       )}
@@ -338,13 +361,24 @@ function ShotTile({ shot, label, onRemove }: { shot: Shot; label: string; onRemo
       : shot.status === "uploading"
         ? { icon: <Spinner className="size-3" />, text: "Uploading", cls: "bg-st-blue text-white" }
         : shot.status === "local"
-          ? { icon: <span className="size-2 rounded-full bg-white" />, text: "On this phone", cls: "bg-st-amber text-white" }
-          : { icon: <CircleAlert aria-hidden className="size-3.5" />, text: "Didn't upload", cls: "bg-st-red text-white" }
+          ? {
+              icon: <span className="size-2 rounded-full bg-white" />,
+              text: "On this phone",
+              cls: "bg-st-amber text-white",
+            }
+          : {
+              icon: <CircleAlert aria-hidden className="size-3.5" />,
+              text: "Didn't upload",
+              cls: "bg-st-red text-white",
+            }
   return (
     <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-hover">
       <img src={shot.url} alt={`${label}, taken`} className="size-full object-cover" />
       <span
-        className={cn("absolute top-2 left-2 inline-flex h-6 items-center gap-1 rounded-full px-2 text-[12px] font-semibold", status.cls)}
+        className={cn(
+          "absolute top-2 left-2 inline-flex h-6 items-center gap-1 rounded-full px-2 text-[12px] font-semibold",
+          status.cls,
+        )}
       >
         {status.icon}
         {status.text}
@@ -513,7 +547,12 @@ function FieldInput({
           <FieldLabel htmlFor={id} help={f.help}>
             {f.label}
           </FieldLabel>
-          <TextInput id={id} type="date" value={(value as string | undefined) ?? ""} onChange={(e) => onChange(e.target.value)} />
+          <TextInput
+            id={id}
+            type="date"
+            value={(value as string | undefined) ?? ""}
+            onChange={(e) => onChange(e.target.value)}
+          />
         </div>
       )
     case "signature":
@@ -532,12 +571,25 @@ function FieldInput({
             {f.label}
           </FieldLabel>
           {files.map((s) => (
-            <div key={s.id} className="mb-2 flex min-h-12 items-center gap-2 rounded-xl border border-divider bg-surface px-3.5 py-2 text-[15px]">
+            <div
+              key={s.id}
+              className="mb-2 flex min-h-12 items-center gap-2 rounded-xl border border-divider bg-surface px-3.5 py-2 text-[15px]"
+            >
               <span className="min-w-0 flex-1 truncate">{s.blob instanceof File ? s.blob.name : f.label}</span>
               <span className="text-[13px] text-muted-foreground">
-                {s.status === "done" ? "Uploaded" : s.status === "uploading" ? "Uploading" : s.status === "local" ? "On this phone" : "Didn't upload"}
+                {s.status === "done"
+                  ? "Uploaded"
+                  : s.status === "uploading"
+                    ? "Uploading"
+                    : s.status === "local"
+                      ? "On this phone"
+                      : "Didn't upload"}
               </span>
-              <button type="button" className="min-h-10 px-2 text-[14px] font-semibold text-st-red" onClick={() => onRemoveFile(s.id)}>
+              <button
+                type="button"
+                className="min-h-10 px-2 text-[14px] font-semibold text-st-red"
+                onClick={() => onRemoveFile(s.id)}
+              >
                 Remove
               </button>
             </div>

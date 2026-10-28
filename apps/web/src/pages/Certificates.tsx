@@ -5,7 +5,14 @@ import * as React from "react"
 import { api, type ApiError } from "@bide-comply/api-client"
 import { Button } from "@bide-comply/ui/components/button"
 import { DataTable, Pagination, type ColumnDef } from "@bide-comply/ui/components/data-table"
-import { FilterBar, QuickViews, SearchBox, Summary, type Facet, type QuickView } from "@bide-comply/ui/components/filter-bar"
+import {
+  FilterBar,
+  QuickViews,
+  SearchBox,
+  Summary,
+  type Facet,
+  type QuickView,
+} from "@bide-comply/ui/components/filter-bar"
 import { Breadcrumb, EmptyState, ErrorState, LoadingRows, PageHeader, Skeleton } from "@bide-comply/ui/components/page"
 import { Pill, type Tone } from "@bide-comply/ui/components/status"
 
@@ -88,7 +95,11 @@ export function CertificatesPage() {
           </span>
         ),
       },
-      { id: "property", header: "Property", cell: ({ row }) => <span className="whitespace-nowrap">{row.original.property ?? "Group"}</span> },
+      {
+        id: "property",
+        header: "Property",
+        cell: ({ row }) => <span className="whitespace-nowrap">{row.original.property ?? "Group"}</span>,
+      },
       {
         id: "why",
         header: "Why it is needed",
@@ -119,7 +130,9 @@ export function CertificatesPage() {
           <span className="flex flex-col items-start gap-0.5">
             <Pill tone={TONE[c.status]}>{c.status_label}</Pill>
             {!isRequired(c) && c.expires_on && (
-              <span className="tabular text-xs whitespace-nowrap text-muted-foreground">until {fmtDate(c.expires_on, true)}</span>
+              <span className="tabular text-xs whitespace-nowrap text-muted-foreground">
+                until {fmtDate(c.expires_on, true)}
+              </span>
             )}
           </span>
         ),
@@ -150,9 +163,7 @@ export function CertificatesPage() {
   const tl = d?.timeline
   const marksLabel =
     tl && tl.marks.length
-      ? tl.marks
-          .map((m) => `${m.title}${m.property ? ` at ${m.property}` : ""} ${fmtDate(m.date, true)}`)
-          .join("; ")
+      ? tl.marks.map((m) => `${m.title}${m.property ? ` at ${m.property}` : ""} ${fmtDate(m.date, true)}`).join("; ")
       : "No certificates expire in the next 12 months"
 
   return (
@@ -230,7 +241,9 @@ export function CertificatesPage() {
               d.any_filter ? (
                 <Button
                   variant="secondary"
-                  onClick={() => set({ view: undefined, q: undefined, prop: undefined, kind: undefined, page: undefined })}
+                  onClick={() =>
+                    set({ view: undefined, q: undefined, prop: undefined, kind: undefined, page: undefined })
+                  }
                 >
                   Show all certificates
                 </Button>
@@ -251,7 +264,13 @@ export function CertificatesPage() {
               columns={columns}
               rows={d.rows}
               caption="Certificates"
-              onRowClick={canFile ? (c) => { if (c.property_id) setDialog({ open: true, target: c }) } : undefined}
+              onRowClick={
+                canFile
+                  ? (c) => {
+                      if (c.property_id) setDialog({ open: true, target: c })
+                    }
+                  : undefined
+              }
               mobileCard={(c) => (
                 <div className="flex flex-col gap-1.5">
                   <div className="font-medium">{c.title}</div>

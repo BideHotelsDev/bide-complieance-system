@@ -23,7 +23,16 @@ import { useProperty } from "@/lib/property"
 import { useMe } from "@/lib/session"
 
 type History = {
-  rows: { id: string; type: string; property: string; signer: string; signed_name: string; subject: string; signed_at: string; fingerprint: string }[]
+  rows: {
+    id: string
+    type: string
+    property: string
+    signer: string
+    signed_name: string
+    subject: string
+    signed_at: string
+    fingerprint: string
+  }[]
 }
 
 const short = (dh: string | null) => (dh ?? "the dutyholder").split(" ")[0]
@@ -36,7 +45,10 @@ export function SignoffsPage() {
     queryKey: ["signoffs", propertyId],
     queryFn: () => api.get("/api/signoffs", { property: propertyId ?? undefined }),
   })
-  const history = useQuery<History, ApiError>({ queryKey: ["signoffs-history"], queryFn: () => api.get<History>("/api/signoffs/history") })
+  const history = useQuery<History, ApiError>({
+    queryKey: ["signoffs-history"],
+    queryFn: () => api.get<History>("/api/signoffs/history"),
+  })
   const canSign = !!me.data?.can["sign.dutyholder"] || !!me.data?.can["sign.countersign"]
   const isAdmin = !!me.data?.is_admin
 
@@ -62,7 +74,9 @@ export function SignoffsPage() {
             <Skeleton className="h-7 w-80" />
           ) : canSign ? (
             <h1 className="m-0 text-[22px] font-semibold">
-              {awaiting === 0 ? "Nothing needs your signature" : `${awaiting} ${awaiting === 1 ? "thing needs" : "things need"} your signature`}
+              {awaiting === 0
+                ? "Nothing needs your signature"
+                : `${awaiting} ${awaiting === 1 ? "thing needs" : "things need"} your signature`}
             </h1>
           ) : (
             <h1 className="m-0 text-[22px] font-semibold">Sign-offs</h1>
@@ -91,7 +105,8 @@ export function SignoffsPage() {
         ) : props.length === 0 ? (
           <div className="rounded-[10px] border border-divider bg-surface">
             <EmptyState icon={<FileSignature className="size-6" />} title="Nothing waiting for a signature">
-              Fire risk assessments, quarterly register sign-offs and opening checklists appear here when they are ready.
+              Fire risk assessments, quarterly register sign-offs and opening checklists appear here when they are
+              ready.
             </EmptyState>
           </div>
         ) : (
@@ -114,12 +129,18 @@ export function SignoffsPage() {
             </h2>
             <ul className="m-0 list-none p-0">
               {history.data!.rows.map((h) => (
-                <li key={h.id} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 border-b border-divider px-4 py-3 text-[13px] last:border-0">
+                <li
+                  key={h.id}
+                  className="flex flex-wrap items-center gap-x-3 gap-y-0.5 border-b border-divider px-4 py-3 text-[13px] last:border-0"
+                >
                   <span className="font-medium">{h.subject}</span>
                   <span className="text-muted-foreground">
                     {h.property} · {h.signed_name} · {fmtDateTime(h.signed_at)}
                   </span>
-                  <span className="ml-auto font-mono text-[11.5px] text-subtle" title="Fingerprint of the signed version">
+                  <span
+                    className="ml-auto font-mono text-[11.5px] text-subtle"
+                    title="Fingerprint of the signed version"
+                  >
                     {h.fingerprint}
                   </span>
                 </li>
@@ -161,7 +182,11 @@ function PropertyBlock({
             {p.town ? ` · ${p.town}` : ""}
           </div>
           <div className="mt-1">
-            {p.red_line ? <RagBadge status="red" label="Red · life safety open" /> : <RagBadge status={p.status} long />}
+            {p.red_line ? (
+              <RagBadge status="red" label="Red · life safety open" />
+            ) : (
+              <RagBadge status={p.status} long />
+            )}
           </div>
         </div>
         <div className="border-r border-divider px-4 py-3.5">
@@ -187,11 +212,18 @@ function PropertyBlock({
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-[10px] border border-divider bg-surface" aria-labelledby={`todo-${p.code}`}>
+      <section
+        className="overflow-hidden rounded-[10px] border border-divider bg-surface"
+        aria-labelledby={`todo-${p.code}`}
+      >
         <h2 id={`todo-${p.code}`} className="m-0 border-b border-divider px-4 py-3.5 text-[14px] font-semibold">
           {mine && !showName ? "Awaiting you" : `Awaiting signature${showName ? ` · ${p.property}` : ""}`}
         </h2>
-        {p.requests.length === 0 && <p className="m-0 px-4 py-6 text-center text-[13px] text-muted-foreground">Nothing waiting at {p.property}.</p>}
+        {p.requests.length === 0 && (
+          <p className="m-0 px-4 py-6 text-center text-[13px] text-muted-foreground">
+            Nothing waiting at {p.property}.
+          </p>
+        )}
         {p.requests.map((r) => (
           <RequestItem key={r.id} r={r} on={r.id === selId} onPick={() => onPick(r.id)} />
         ))}
@@ -270,7 +302,17 @@ function statement(r: SignRequest, p: SignoffProperty) {
   }
 }
 
-function SignPanel({ r, p, canSign, onSigned }: { r: SignRequest; p: SignoffProperty; canSign: boolean; onSigned: () => void }) {
+function SignPanel({
+  r,
+  p,
+  canSign,
+  onSigned,
+}: {
+  r: SignRequest
+  p: SignoffProperty
+  canSign: boolean
+  onSigned: () => void
+}) {
   const qc = useQueryClient()
   const [confirm, setConfirm] = React.useState(false)
   const [name, setName] = React.useState("")
@@ -293,7 +335,8 @@ function SignPanel({ r, p, canSign, onSigned }: { r: SignRequest; p: SignoffProp
   })
   const [code, version] = (r.subject ?? "").split(" · ")
   const heading = r.type === "gate" ? "Sign the opening checklist" : `Sign ${code || r.title}`
-  const docWord = r.type === "fra" ? "FRA" : r.type === "quarterly" ? "register" : r.type === "gate" ? "checklist" : "document"
+  const docWord =
+    r.type === "fra" ? "FRA" : r.type === "quarterly" ? "register" : r.type === "gate" ? "checklist" : "document"
   const ready = confirm && name.trim().length >= 3
   return (
     <aside
@@ -303,22 +346,40 @@ function SignPanel({ r, p, canSign, onSigned }: { r: SignRequest; p: SignoffProp
       <div className="flex items-center gap-2 border-b border-divider p-4">
         <ClassBadge klass="A" />
         <span className="font-semibold">{heading}</span>
-        {version && <span className="ml-auto font-mono text-[12px] text-muted-foreground">{version.charAt(0).toUpperCase() + version.slice(1)}</span>}
+        {version && (
+          <span className="ml-auto font-mono text-[12px] text-muted-foreground">
+            {version.charAt(0).toUpperCase() + version.slice(1)}
+          </span>
+        )}
       </div>
       <div className="flex flex-col gap-3.5 p-4">
         {r.type !== "gate" && (
           <div className="overflow-hidden rounded-lg border border-divider">
             {doc.data && doc.data.content_type === "application/pdf" ? (
-              <iframe title={`Preview of ${doc.data.file_name}`} src={doc.data.url} className="block h-[180px] w-full border-0 bg-hover" />
+              <iframe
+                title={`Preview of ${doc.data.file_name}`}
+                src={doc.data.url}
+                className="block h-[180px] w-full border-0 bg-hover"
+              />
             ) : doc.data && doc.data.content_type.startsWith("image/") ? (
-              <img src={doc.data.url} alt={`Preview of ${doc.data.file_name}`} className="block h-[180px] w-full object-cover" />
+              <img
+                src={doc.data.url}
+                alt={`Preview of ${doc.data.file_name}`}
+                className="block h-[180px] w-full object-cover"
+              />
             ) : (
               <div className="flex h-[180px] items-center justify-center bg-hover p-4 text-center text-st-grey">
-                {r.evidence_id ? (doc.isLoading ? "Loading the document…" : "Preview not available") : "No document attached yet"}
+                {r.evidence_id
+                  ? doc.isLoading
+                    ? "Loading the document…"
+                    : "Preview not available"
+                  : "No document attached yet"}
               </div>
             )}
             <div className="flex items-center gap-2 px-3 py-2.5">
-              <span className="min-w-0 flex-1 truncate text-[12.5px]">{r.file_name ?? doc.data?.file_name ?? r.title}</span>
+              <span className="min-w-0 flex-1 truncate text-[12.5px]">
+                {r.file_name ?? doc.data?.file_name ?? r.title}
+              </span>
               {doc.data && (
                 <Button asChild variant="outline" size="sm" className="h-[26px]">
                   <a href={doc.data.url} target="_blank" rel="noreferrer">
@@ -363,7 +424,12 @@ function SignPanel({ r, p, canSign, onSigned }: { r: SignRequest; p: SignoffProp
                 className="h-9 rounded-md border border-border bg-surface px-2.5 text-[15px] outline-none focus-visible:outline-2 focus-visible:outline-focus"
               />
             </label>
-            <Button size="lg" className="justify-center" disabled={!ready || sign.isPending} onClick={() => sign.mutate()}>
+            <Button
+              size="lg"
+              className="justify-center"
+              disabled={!ready || sign.isPending}
+              onClick={() => sign.mutate()}
+            >
               {sign.isPending ? "Signing…" : `Sign as ${p.dutyholder ?? "dutyholder"}`}
             </Button>
           </>
@@ -373,8 +439,8 @@ function SignPanel({ r, p, canSign, onSigned }: { r: SignRequest; p: SignoffProp
           </Callout>
         )}
         <p className="m-0 text-[12px] text-muted-foreground">
-          Recorded with your name, the time and a fingerprint of this exact version (SGN-01). If the {docWord} changes later, it will need
-          signing again.
+          Recorded with your name, the time and a fingerprint of this exact version (SGN-01). If the {docWord} changes
+          later, it will need signing again.
         </p>
       </div>
     </aside>

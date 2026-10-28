@@ -51,8 +51,14 @@ ACTION_FIELDS = {
     "due_on": ("Due", ["due"]),
     "status": ("Status", ["status"]),
 }
-STATUS_MAP = {"done": "done", "in progress": "in_progress", "not started": "not_started", "to confirm": "to_confirm",
-              "n/a": "na", "na": "na"}
+STATUS_MAP = {
+    "done": "done",
+    "in progress": "in_progress",
+    "not started": "not_started",
+    "to confirm": "to_confirm",
+    "n/a": "na",
+    "na": "na",
+}
 
 
 def _norm(s) -> str:
@@ -118,14 +124,20 @@ class StartIn(BaseModel):
 @router.post("")
 def start(body: StartIn, request: Request, pr: Current, conn: ConnDep) -> dict:
     pr.require("import.run")
-    ev = conn.execute(select(evidence).where(evidence.c.id == body.evidence_id, evidence.c.uploaded_by == pr.person_id)).mappings().first()
+    ev = (
+        conn.execute(select(evidence).where(evidence.c.id == body.evidence_id, evidence.c.uploaded_by == pr.person_id))
+        .mappings()
+        .first()
+    )
     if not ev:
         raise problem(404, "not_found", "Upload the file first.")
     data = storage.get(ev["storage_key"])
     try:
         book = _read_workbook(data, ev["original_name"] or ev["file_name"])
     except Exception as e:  # noqa: BLE001 - a broken file is a user problem, not a server error
-        raise problem(422, "unreadable", f"That file couldn't be read as a spreadsheet ({e.__class__.__name__}).") from None
+        raise problem(
+            422, "unreadable", f"That file couldn't be read as a spreadsheet ({e.__class__.__name__})."
+        ) from None
     sheets = []
     for name, rows in book.items():
         if not rows:
@@ -133,13 +145,29 @@ def start(body: StartIn, request: Request, pr: Current, conn: ConnDep) -> dict:
         hi = _header_row(rows)
         headers = [str(h).strip() for h in rows[hi] if h not in (None, "")]
         kind = _sheet_kind(name, headers)
-        data_rows = [r for r in rows[hi + 1:] if any(c not in (None, "") for c in r)]
+        data_rows = [r for r in rows[hi + 1 :] if any(c not in (None, "") for c in r)]
         prop = _property_for(conn, name) if kind == "gate" else None
-        sheets.append({"name": name, "kind": kind, "rows": len(data_rows), "header_row": hi, "headers": headers,
-                       "property_id": str(prop["id"]) if prop else None, "property": prop["name"] if prop else None,
-                       "example": {h: (str(v)[:80] if v is not None else None) for h, v in zip(headers, data_rows[0] if data_rows else [], strict=False)}})
+        sheets.append(
+            {
+                "name": name,
+                "kind": kind,
+                "rows": len(data_rows),
+                "header_row": hi,
+                "headers": headers,
+                "property_id": str(prop["id"]) if prop else None,
+                "property": prop["name"] if prop else None,
+                "example": {
+                    h: (str(v)[:80] if v is not None else None)
+                    for h, v in zip(headers, data_rows[0] if data_rows else [], strict=False)
+                },
+            }
+        )
     gate_sheets = [s for s in sheets if s["kind"] == "gate"]
-    detected = "BH-CMP-002 gate" if gate_sheets else ("Actions log" if any(s["kind"] == "actions" for s in sheets) else "spreadsheet")
+    detected = (
+        "BH-CMP-002 gate"
+        if gate_sheets
+        else ("Actions log" if any(s["kind"] == "actions" for s in sheets) else "spreadsheet")
+    )
     mapping = {}
     if gate_sheets:
         mapping["gate"] = _auto_map(gate_sheets[0]["headers"], GATE_FIELDS)
@@ -147,10 +175,26 @@ def start(body: StartIn, request: Request, pr: Current, conn: ConnDep) -> dict:
     if act:
         mapping["actions"] = _auto_map(act["headers"], ACTION_FIELDS)
     jid = uuid.uuid4()
-    conn.execute(import_job.insert().values(id=jid, kind="gate_workbook" if gate_sheets else "csv", file_name=ev["original_name"] or ev["file_name"],
-                                            evidence_id=ev["id"], sheets=sheets, mapping=mapping, created_by=pr.person_id))
-    audit.record(conn, actor_for(request, pr), category="record", action="import.start", summary=f"Started an import of {ev['original_name']}",
-                 entity_type="import", entity_id=jid)
+    conn.execute(
+        import_job.insert().values(
+            id=jid,
+            kind="gate_workbook" if gate_sheets else "csv",
+            file_name=ev["original_name"] or ev["file_name"],
+            evidence_id=ev["id"],
+            sheets=sheets,
+            mapping=mapping,
+            created_by=pr.person_id,
+        )
+    )
+    audit.record(
+        conn,
+        actor_for(request, pr),
+        category="record",
+        action="import.start",
+        summary=f"Started an import of {ev['original_name']}",
+        entity_type="import",
+        entity_id=jid,
+    )
     return {"id": str(jid), "detected": detected}
 
 
@@ -169,7 +213,7 @@ def _rows_for(conn, j: dict, sheet: dict) -> list[dict]:
     hi = sheet["header_row"]
     headers = [str(h).strip() if h is not None else "" for h in rows[hi]]
     out = []
-    for r in rows[hi + 1:]:
+    for r in rows[hi + 1 :]:
         if not any(c not in (None, "") for c in r):
             continue
         out.append({headers[i]: r[i] for i in range(min(len(headers), len(r))) if headers[i]})
@@ -199,7 +243,9 @@ def _plan(conn, j: dict) -> dict:
             if st == "done" and not ev:
                 done_no_ev.append(f"{s['property'] or s['name']} {ref}")
     actions, role_owners = 0, set()
-    known = {_norm(n) for n in conn.execute(select(person.c.name)).scalars()} | {_norm(n.split()[0]) for n in conn.execute(select(person.c.name)).scalars()}
+    known = {_norm(n) for n in conn.execute(select(person.c.name)).scalars()} | {
+        _norm(n.split()[0]) for n in conn.execute(select(person.c.name)).scalars()
+    }
     first_ref = last_ref = None
     for s in j["sheets"]:
         if s["kind"] != "actions":
@@ -215,10 +261,19 @@ def _plan(conn, j: dict) -> dict:
             if o and _norm(o) not in known:
                 role_owners.add(o)
     unmatched = [h for h, v in gmap.items() if not v]
-    return {"gate_items": gate_count, "properties": sorted(props), "actions": actions, "to_confirm": to_confirm,
-            "done_without_evidence": done_no_ev, "role_owners": sorted(role_owners), "unmatched_columns": unmatched,
-            "errors": 0, "action_range": f"{first_ref} to {last_ref}" if first_ref else None,
-            "matched": sum(1 for v in gmap.values() if v), "columns": len(gmap)}
+    return {
+        "gate_items": gate_count,
+        "properties": sorted(props),
+        "actions": actions,
+        "to_confirm": to_confirm,
+        "done_without_evidence": done_no_ev,
+        "role_owners": sorted(role_owners),
+        "unmatched_columns": unmatched,
+        "errors": 0,
+        "action_range": f"{first_ref} to {last_ref}" if first_ref else None,
+        "matched": sum(1 for v in gmap.values() if v),
+        "columns": len(gmap),
+    }
 
 
 @router.get("/{jid}")
@@ -226,14 +281,33 @@ def get_job(jid: uuid.UUID, pr: Current, conn: ConnDep) -> dict:
     j = _job(conn, pr, jid)
     gate_sheet = next((s for s in j["sheets"] if s["kind"] == "gate"), None)
     fields = [{"key": k, "label": v[0]} for k, v in GATE_FIELDS.items()]
-    return {"id": str(jid), "file_name": j["file_name"], "status": j["status"], "sheets": j["sheets"],
-            "detected": "BH-CMP-002 gate" if gate_sheet else "spreadsheet",
-            "gate_mapping": [{"column": h, "example": (gate_sheet["example"] if gate_sheet else {}).get(h), "field": v,
-                              "matched": v is not None} for h, v in j["mapping"].get("gate", {}).items()],
-            "fields": fields, "plan": _plan(conn, j), "result": j["result"], "owner_map": j["owner_map"],
-            "status_mapping": [{"from": "Done", "to": "Done if evidence"}, {"from": "In progress", "to": "In progress"},
-                               {"from": "Not started", "to": "Not started"}, {"from": "To confirm", "to": "To confirm"},
-                               {"from": "N/A", "to": "N/A reason from Notes"}]}
+    return {
+        "id": str(jid),
+        "file_name": j["file_name"],
+        "status": j["status"],
+        "sheets": j["sheets"],
+        "detected": "BH-CMP-002 gate" if gate_sheet else "spreadsheet",
+        "gate_mapping": [
+            {
+                "column": h,
+                "example": (gate_sheet["example"] if gate_sheet else {}).get(h),
+                "field": v,
+                "matched": v is not None,
+            }
+            for h, v in j["mapping"].get("gate", {}).items()
+        ],
+        "fields": fields,
+        "plan": _plan(conn, j),
+        "result": j["result"],
+        "owner_map": j["owner_map"],
+        "status_mapping": [
+            {"from": "Done", "to": "Done if evidence"},
+            {"from": "In progress", "to": "In progress"},
+            {"from": "Not started", "to": "Not started"},
+            {"from": "To confirm", "to": "To confirm"},
+            {"from": "N/A", "to": "N/A reason from Notes"},
+        ],
+    }
 
 
 class MapIn(BaseModel):
@@ -290,7 +364,9 @@ def run(jid: uuid.UUID, request: Request, pr: Current, conn: ConnDep) -> dict:
         if not gid:
             gid = uuid.uuid4()
             conn.execute(gate.insert().values(id=gid, property_id=pid))
-        existing = {r.ref: r.id for r in conn.execute(select(gate_item.c.ref, gate_item.c.id).where(gate_item.c.gate_id == gid))}
+        existing = {
+            r.ref: r.id for r in conn.execute(select(gate_item.c.ref, gate_item.c.id).where(gate_item.c.gate_id == gid))
+        }
         for i, r in enumerate(_rows_for(conn, j, s)):
             ref = str(r.get(gmap.get("ref", "")) or "").strip()
             if not re.match(r"^[A-H]\d\d$", ref):
@@ -300,11 +376,20 @@ def run(jid: uuid.UUID, request: Request, pr: Current, conn: ConnDep) -> dict:
             applies = _norm(r.get(gmap.get("applies", ""))) not in ("n/a", "na", "no")
             if st == "done" and not ev:
                 st = "to_confirm"  # no evidence, not done
-            vals = {"section": ref[0], "item": str(r.get(gmap.get("item", "")) or ref), "class": str(r.get(gmap.get("class", "")) or "B")[:1].upper(),
-                    "legal_basis": r.get(gmap.get("legal_basis", "")), "evidence_required": r.get(gmap.get("evidence_required", "")),
-                    "applies": applies, "status": "na" if not applies else st, "evidence_link": str(ev) if ev else None,
-                    "notes": r.get(gmap.get("notes", "")), "na_reason": r.get(gmap.get("notes", "")) if not applies else None,
-                    "owner_text": r.get(gmap.get("owner", "")), "sort": i + 1}
+            vals = {
+                "section": ref[0],
+                "item": str(r.get(gmap.get("item", "")) or ref),
+                "class": str(r.get(gmap.get("class", "")) or "B")[:1].upper(),
+                "legal_basis": r.get(gmap.get("legal_basis", "")),
+                "evidence_required": r.get(gmap.get("evidence_required", "")),
+                "applies": applies,
+                "status": "na" if not applies else st,
+                "evidence_link": str(ev) if ev else None,
+                "notes": r.get(gmap.get("notes", "")),
+                "na_reason": r.get(gmap.get("notes", "")) if not applies else None,
+                "owner_text": r.get(gmap.get("owner", "")),
+                "sort": i + 1,
+            }
             owner = _norm(vals["owner_text"])
             if owner in people:
                 vals["owner_id"] = people[owner]
@@ -323,33 +408,72 @@ def run(jid: uuid.UUID, request: Request, pr: Current, conn: ConnDep) -> dict:
             ref = str(r.get(amap.get("ref", "")) or "").strip().upper()
             if not ref or ref in have or ref[:2] not in codes:
                 continue
-            prio = {"high": "high", "urgent": "high", "med": "med", "medium": "med", "soon": "med", "low": "low", "later": "low"}.get(
-                _norm(r.get(amap.get("priority", ""))), "med")
-            typ = {"advisory": "advisory", "work required": "work_required"}.get(_norm(r.get(amap.get("type", ""))), "action")
+            prio = {
+                "high": "high",
+                "urgent": "high",
+                "med": "med",
+                "medium": "med",
+                "soon": "med",
+                "low": "low",
+                "later": "low",
+            }.get(_norm(r.get(amap.get("priority", ""))), "med")
+            typ = {"advisory": "advisory", "work required": "work_required"}.get(
+                _norm(r.get(amap.get("type", ""))), "action"
+            )
             raised = _date(r.get(amap.get("raised_on", ""))) or clock.today()
             owner_txt = str(r.get(amap.get("owner", "")) or "").strip()
-            oid = people.get(_norm(owner_txt)) or (uuid.UUID(j["owner_map"][owner_txt]) if owner_txt in j["owner_map"] else None)
-            conn.execute(action.insert().values(
-                id=uuid.uuid4(), ref=ref, property_id=codes[ref[:2]], type=typ, source="manual",
-                source_ref=r.get(amap.get("source_ref", "")), gate_ref=r.get(amap.get("gate_ref", "")),
-                description=str(r.get(amap.get("description", "")) or ref), priority=prio, owner_id=oid,
-                owner_text=None if oid else owner_txt or None, raised_on=raised,
-                due_on=_date(r.get(amap.get("due_on", ""))) or action_rules.due_date(prio, raised),
-                status="to_confirm" if _norm(r.get(amap.get("status", ""))) == "to confirm" else "open"))
+            oid = people.get(_norm(owner_txt)) or (
+                uuid.UUID(j["owner_map"][owner_txt]) if owner_txt in j["owner_map"] else None
+            )
+            conn.execute(
+                action.insert().values(
+                    id=uuid.uuid4(),
+                    ref=ref,
+                    property_id=codes[ref[:2]],
+                    type=typ,
+                    source="manual",
+                    source_ref=r.get(amap.get("source_ref", "")),
+                    gate_ref=r.get(amap.get("gate_ref", "")),
+                    description=str(r.get(amap.get("description", "")) or ref),
+                    priority=prio,
+                    owner_id=oid,
+                    owner_text=None if oid else owner_txt or None,
+                    raised_on=raised,
+                    due_on=_date(r.get(amap.get("due_on", ""))) or action_rules.due_date(prio, raised),
+                    status="to_confirm" if _norm(r.get(amap.get("status", ""))) == "to confirm" else "open",
+                )
+            )
             have.add(ref)
             acts += 1
-    result = {"gate_created": created, "gate_updated": updated_, "actions": acts, "roles_left_to_map": unmapped_roles,
-              "at": clock.now().isoformat()}
+    result = {
+        "gate_created": created,
+        "gate_updated": updated_,
+        "actions": acts,
+        "roles_left_to_map": unmapped_roles,
+        "at": clock.now().isoformat(),
+    }
     conn.execute(update(import_job).where(import_job.c.id == jid).values(status="imported", result=result))
-    audit.record(conn, actor_for(request, pr), category="record", action="import.run",
-                 summary=f"Imported {created + updated_} gate items and {acts} Actions from {j['file_name']}",
-                 entity_type="import", entity_id=jid, after=result)
+    audit.record(
+        conn,
+        actor_for(request, pr),
+        category="record",
+        action="import.run",
+        summary=f"Imported {created + updated_} gate items and {acts} Actions from {j['file_name']}",
+        entity_type="import",
+        entity_id=jid,
+        after=result,
+    )
     return result
 
 
 @router.get("/options/owners")
 def owner_options(pr: Current, conn: ConnDep) -> dict:
     pr.require("import.run")
-    ppl = conn.execute(select(person.c.id, person.c.name).where(person.c.employment_status == "active").order_by(person.c.name)).all()
+    ppl = conn.execute(
+        select(person.c.id, person.c.name).where(person.c.employment_status == "active").order_by(person.c.name)
+    ).all()
     pools = conn.execute(select(pool.c.id, pool.c.name).order_by(pool.c.name)).all()
-    return {"people": [{"id": str(p.id), "name": p.name} for p in ppl], "pools": [{"id": str(p.id), "name": p.name} for p in pools]}
+    return {
+        "people": [{"id": str(p.id), "name": p.name} for p in ppl],
+        "pools": [{"id": str(p.id), "name": p.name} for p in pools],
+    }

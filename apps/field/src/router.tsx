@@ -34,7 +34,11 @@ const routes = [
   createRoute({ getParentRoute: () => root, path: "/signin", component: SignInPage }),
   createRoute({ getParentRoute: () => root, path: "/signin/code", component: () => <CodePage stage="code" /> }),
   createRoute({ getParentRoute: () => root, path: "/signin/totp", component: () => <CodePage stage="totp" /> }),
-  createRoute({ getParentRoute: () => root, path: "/signin/totp-setup", component: () => <CodePage stage="totp-setup" /> }),
+  createRoute({
+    getParentRoute: () => root,
+    path: "/signin/totp-setup",
+    component: () => <CodePage stage="totp-setup" />,
+  }),
   createRoute({ getParentRoute: () => root, path: "/contractor", component: ContractorPortalPage }),
   authed.addChildren([
     createRoute({ getParentRoute: () => authed, path: "/", component: TodayPage }),

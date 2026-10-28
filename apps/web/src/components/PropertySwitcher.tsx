@@ -27,7 +27,9 @@ export function PropertySwitcher() {
             {property ? property.code : <Building2 className="size-4" />}
           </span>
           <span className="flex min-w-0 flex-1 flex-col leading-tight">
-            <span className="truncate text-[14px] font-semibold">{property?.name ?? (single ? me.properties[0].name : allLabel)}</span>
+            <span className="truncate text-[14px] font-semibold">
+              {property?.name ?? (single ? me.properties[0].name : allLabel)}
+            </span>
             <span className="truncate text-xs text-muted-foreground">
               {property ? "Change property" : single ? me.properties[0].town : `All ${n} properties`}
             </span>
@@ -43,7 +45,10 @@ export function PropertySwitcher() {
             className="z-50 w-[240px] rounded-lg border border-border bg-popover p-1.5 shadow-lg"
           >
             <div role="listbox" aria-label="Properties">
-              {[{ id: null as string | null, name: allLabel, code: "", town: `All ${n} properties` }, ...me.properties].map((p) => (
+              {[
+                { id: null as string | null, name: allLabel, code: "", town: `All ${n} properties` },
+                ...me.properties,
+              ].map((p) => (
                 <button
                   key={p.id ?? "all"}
                   type="button"

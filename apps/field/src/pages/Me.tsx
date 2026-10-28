@@ -125,7 +125,11 @@ export function MePage() {
             checked={Boolean(all.reminder)}
             onChange={(v) => setPref("reminder", v)}
           />
-          <Toggle label="Quiet on days off" checked={Boolean(all.quiet_days_off)} onChange={(v) => setPref("quiet_days_off", v)} />
+          <Toggle
+            label="Quiet on days off"
+            checked={Boolean(all.quiet_days_off)}
+            onChange={(v) => setPref("quiet_days_off", v)}
+          />
         </Card>
         <p className="m-0 px-1 text-[13.5px] text-muted-foreground">Life-safety alerts always come through.</p>
 
@@ -136,14 +140,18 @@ export function MePage() {
               <div className="text-[15.5px]">Waiting to send</div>
               <div className="text-[13.5px] text-muted-foreground">Sends when you're back online</div>
             </div>
-            <span className="tabular rounded-full bg-hover px-2.5 py-0.5 text-[14px] font-semibold">{queue.length}</span>
+            <span className="tabular rounded-full bg-hover px-2.5 py-0.5 text-[14px] font-semibold">
+              {queue.length}
+            </span>
           </div>
           <div className="flex min-h-[60px] items-center gap-3 px-3.5 py-2.5">
             <div className="min-w-0 flex-1">
               <div className="text-[15.5px]">Trusted until</div>
               <div className="text-[13.5px] text-muted-foreground">Then you'll get a new email code</div>
             </div>
-            <span className="text-[15px] text-ink2">{fm.data?.trusted_until ? fmtDate(fm.data.trusted_until) : "–"}</span>
+            <span className="text-[15px] text-ink2">
+              {fm.data?.trusted_until ? fmtDate(fm.data.trusted_until) : "–"}
+            </span>
           </div>
           <button
             type="button"

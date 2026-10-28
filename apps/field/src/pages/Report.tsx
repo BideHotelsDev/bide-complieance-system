@@ -11,7 +11,16 @@ import { Bell, CirclePlus, TriangleAlert, X } from "lucide-react"
 import * as React from "react"
 
 import { Camera } from "@/components/Camera"
-import { Choice, FieldLabel, FlowScreen, PrimaryButton, SelectBox, Spinner, TextArea, TextInput } from "@/components/kit"
+import {
+  Choice,
+  FieldLabel,
+  FlowScreen,
+  PrimaryButton,
+  SelectBox,
+  Spinner,
+  TextArea,
+  TextInput,
+} from "@/components/kit"
 import { toastCouldntSave, toastSent } from "@/components/sync"
 import { shortName } from "@/lib/format"
 import { useMe, useProperty } from "@/lib/session"
@@ -21,9 +30,24 @@ import type { Location } from "@/lib/types"
 type Kind = "hazard" | "hurt" | "alarm"
 
 const KINDS: { value: Kind; title: string; hint: string; icon: React.ReactNode }[] = [
-  { value: "hazard", title: "Something is broken or unsafe", hint: "A door, light, appliance, trip hazard", icon: <TriangleAlert aria-hidden className="size-5" /> },
-  { value: "hurt", title: "Someone was hurt, or nearly", hint: "Accident or near miss", icon: <CirclePlus aria-hidden className="size-5" /> },
-  { value: "alarm", title: "The fire alarm went off", hint: "Real or false alarm", icon: <Bell aria-hidden className="size-5" /> },
+  {
+    value: "hazard",
+    title: "Something is broken or unsafe",
+    hint: "A door, light, appliance, trip hazard",
+    icon: <TriangleAlert aria-hidden className="size-5" />,
+  },
+  {
+    value: "hurt",
+    title: "Someone was hurt, or nearly",
+    hint: "Accident or near miss",
+    icon: <CirclePlus aria-hidden className="size-5" />,
+  },
+  {
+    value: "alarm",
+    title: "The fire alarm went off",
+    hint: "Real or false alarm",
+    icon: <Bell aria-hidden className="size-5" />,
+  },
 ]
 
 const CAUSES = [
@@ -37,7 +61,13 @@ const CAUSES = [
   "Real fire",
   "Not known",
 ]
-const ARC = ["Alarm company phoned the keyholder", "Fire service came out", "Fire service called off", "No call from the alarm company", "Not monitored"]
+const ARC = [
+  "Alarm company phoned the keyholder",
+  "Fire service came out",
+  "Fire service called off",
+  "No call from the alarm company",
+  "Not monitored",
+]
 
 // Same words the server uses to decide a report is life safety (field.py LIFE_SAFETY_WORDS).
 const LIFE = ["fire door", "door doesn't close", "exit", "escape", "alarm", "smoke", "emergency light", "extinguisher"]
@@ -181,10 +211,18 @@ export function ReportPage() {
           </div>
           <div>
             <FieldLabel htmlFor="people">Who was involved?</FieldLabel>
-            <TextInput id="people" value={people} onChange={(e) => setPeople(e.target.value)} placeholder="A guest, a member of staff, a contractor" />
+            <TextInput
+              id="people"
+              value={people}
+              onChange={(e) => setPeople(e.target.value)}
+              placeholder="A guest, a member of staff, a contractor"
+            />
           </div>
           <div>
-            <FieldLabel id="riddor-l" help="For example a broken bone, or they can't do their normal work for more than 7 days.">
+            <FieldLabel
+              id="riddor-l"
+              help="For example a broken bone, or they can't do their normal work for more than 7 days."
+            >
               Did they go to hospital, or will they be off work?
             </FieldLabel>
             <Choice
@@ -210,7 +248,12 @@ export function ReportPage() {
           </div>
           <div>
             <FieldLabel htmlFor="cause">What set it off?</FieldLabel>
-            <SelectBox id="cause" value={cause} onChange={setCause} options={CAUSES.map((c) => ({ value: c, label: c }))} />
+            <SelectBox
+              id="cause"
+              value={cause}
+              onChange={setCause}
+              options={CAUSES.map((c) => ({ value: c, label: c }))}
+            />
           </div>
           <div>
             <FieldLabel id="false-l">Was it a false alarm?</FieldLabel>

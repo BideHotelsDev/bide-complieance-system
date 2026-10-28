@@ -50,10 +50,14 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "S", "SIM"]
 # S101: asserts are how pytest checks. S311: random sampling for spot-checks is not cryptographic.
-ignore = ["S101", "S311", "B008"]
+# E501: the formatter owns line length; what it leaves long is a string that reads better whole.
+ignore = ["S101", "S311", "B008", "E501", "SIM102", "SIM108"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S105", "S106"]
+"tests/**" = ["S105", "S106", "S108"]
+# Local Postgres/Redis launcher and the dev reset: fixed commands, development only.
+"bide_comply/devinfra.py" = ["S603", "S607", "S608"]
+"bide_comply/seed/__main__.py" = ["S603"]
 "bide_comply/seed/**" = ["E501"]
 
 [tool.pytest.ini_options]

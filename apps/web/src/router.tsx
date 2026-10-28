@@ -46,7 +46,11 @@ const routeTree = root.addChildren([
   createRoute({ getParentRoute: () => root, path: "/signin", component: SignInPage, validateSearch: loose }),
   createRoute({ getParentRoute: () => root, path: "/signin/code", component: () => <CodePage stage="code" /> }),
   createRoute({ getParentRoute: () => root, path: "/signin/totp", component: () => <CodePage stage="totp" /> }),
-  createRoute({ getParentRoute: () => root, path: "/signin/totp-setup", component: () => <CodePage stage="totp-setup" /> }),
+  createRoute({
+    getParentRoute: () => root,
+    path: "/signin/totp-setup",
+    component: () => <CodePage stage="totp-setup" />,
+  }),
   shell.addChildren([
     r("/", HomePage),
     r("/todo", MyTodoPage),

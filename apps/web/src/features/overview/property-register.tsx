@@ -51,62 +51,68 @@ export function RegisterTab({ property }: { property: PropertyDetail }) {
 
   const columns = React.useMemo<ColumnDef<RegisterRow, unknown>[]>(
     () =>
-      ([
-      {
-        id: "ref",
-        header: "ID",
-        cell: ({ row }) => <span className="mono-id whitespace-nowrap">{row.original.ref}</span>,
-        meta: { sortable: true },
-      },
-      {
-        id: "check",
-        header: "Check",
-        cell: ({ row }) => <span className="block max-w-[360px] truncate" title={row.original.check}>{row.original.check}</span>,
-      },
-      {
-        id: "status",
-        header: "Status",
-        cell: ({ row }) => <StatusPill status={row.original.status} label={row.original.status_label} />,
-        meta: { sortable: true },
-      },
-      {
-        id: "next_due",
-        header: "Next due",
-        cell: ({ row }) => <span className="whitespace-nowrap">{row.original.next_due_label}</span>,
-        meta: { sortable: true },
-      },
-      {
-        id: "done_by",
-        header: "Done by",
-        cell: ({ row }) =>
-          row.original.done_by === "Needs a name" ? (
-            <span className="text-st-amber">Needs a name</span>
-          ) : (
-            <span className="whitespace-nowrap">{row.original.done_by}</span>
-          ),
-      },
-      {
-        id: "freq",
-        header: "How often",
-        cell: ({ row }) => <span className="whitespace-nowrap">{row.original.frequency_label}</span>,
-      },
-      {
-        id: "class",
-        header: "Class",
-        cell: ({ row }) => (
-          <ClassBadge klass={row.original.class} className={cn(row.original.status === "grey" && "opacity-50")} />
-        ),
-      },
-      {
-        id: "last",
-        header: "Last done",
-        cell: ({ row }) => (
-          <span className={cn("whitespace-nowrap", !row.original.last_done_on && "text-muted-foreground")}>
-            {row.original.last_done_label}
-          </span>
-        ),
-      },
-      ] as Col[]).map((c) => ({
+      (
+        [
+          {
+            id: "ref",
+            header: "ID",
+            cell: ({ row }) => <span className="mono-id whitespace-nowrap">{row.original.ref}</span>,
+            meta: { sortable: true },
+          },
+          {
+            id: "check",
+            header: "Check",
+            cell: ({ row }) => (
+              <span className="block max-w-[360px] truncate" title={row.original.check}>
+                {row.original.check}
+              </span>
+            ),
+          },
+          {
+            id: "status",
+            header: "Status",
+            cell: ({ row }) => <StatusPill status={row.original.status} label={row.original.status_label} />,
+            meta: { sortable: true },
+          },
+          {
+            id: "next_due",
+            header: "Next due",
+            cell: ({ row }) => <span className="whitespace-nowrap">{row.original.next_due_label}</span>,
+            meta: { sortable: true },
+          },
+          {
+            id: "done_by",
+            header: "Done by",
+            cell: ({ row }) =>
+              row.original.done_by === "Needs a name" ? (
+                <span className="text-st-amber">Needs a name</span>
+              ) : (
+                <span className="whitespace-nowrap">{row.original.done_by}</span>
+              ),
+          },
+          {
+            id: "freq",
+            header: "How often",
+            cell: ({ row }) => <span className="whitespace-nowrap">{row.original.frequency_label}</span>,
+          },
+          {
+            id: "class",
+            header: "Class",
+            cell: ({ row }) => (
+              <ClassBadge klass={row.original.class} className={cn(row.original.status === "grey" && "opacity-50")} />
+            ),
+          },
+          {
+            id: "last",
+            header: "Last done",
+            cell: ({ row }) => (
+              <span className={cn("whitespace-nowrap", !row.original.last_done_on && "text-muted-foreground")}>
+                {row.original.last_done_label}
+              </span>
+            ),
+          },
+        ] as Col[]
+      ).map((c) => ({
         ...c,
         // Grey (not applicable) rows read quieter, as in the design.
         cell: (ctx) => {
@@ -157,7 +163,8 @@ export function RegisterTab({ property }: { property: PropertyDetail }) {
     }
   }
 
-  const sortLabel = { next_due: "sorted by next due", ref: "sorted by ID", status: "worst first" }[sort] ?? "sorted by next due"
+  const sortLabel =
+    { next_due: "sorted by next due", ref: "sorted by ID", status: "worst first" }[sort] ?? "sorted by next due"
 
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
@@ -167,7 +174,9 @@ export function RegisterTab({ property }: { property: PropertyDetail }) {
           facets={d?.facets ?? []}
           onFacet={(k, v) => set({ [k]: v.join(",") || undefined })}
           anyFilter={FACET_PARAMS.some((k) => p[k]) || !!p.q}
-          onClearAll={() => set({ status: undefined, area: undefined, doneby: undefined, class: undefined, q: undefined })}
+          onClearAll={() =>
+            set({ status: undefined, area: undefined, doneby: undefined, class: undefined, q: undefined })
+          }
           search={
             <SearchBox
               value={p.q ?? ""}
@@ -222,7 +231,14 @@ export function RegisterTab({ property }: { property: PropertyDetail }) {
                         type="button"
                         className="text-link"
                         onClick={() =>
-                          set({ view: "all", status: undefined, area: undefined, doneby: undefined, class: undefined, q: undefined })
+                          set({
+                            view: "all",
+                            status: undefined,
+                            area: undefined,
+                            doneby: undefined,
+                            class: undefined,
+                            q: undefined,
+                          })
                         }
                       >
                         Show everything

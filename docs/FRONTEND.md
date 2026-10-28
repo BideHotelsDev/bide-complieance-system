@@ -5,12 +5,12 @@ layout, words and hierarchy. Where the design shows illustrative numbers, show t
 
 ## Apps and packages
 
-| Path | What |
-| --- | --- |
-| `apps/web` | Management portal and admin CMS. Vite + React 19 + TanStack Router (code-based, `src/router.tsx`) + TanStack Query. Port 5180, proxies `/api` to the API on 8310. |
-| `apps/field` | Staff app (installable PWA). Port 5181, same proxy. |
-| `packages/ui` | Shared tokens (`styles.css`) and components. Import as `@bide-comply/ui/components/<file>` and `@bide-comply/ui/lib/utils`. |
-| `packages/api-client` | `api.get/post/put/patch/del`, `upload()`, `download()`, `ApiError`. Import from `@bide-comply/api-client`. |
+| Path                  | What                                                                                                                                                              |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/web`            | Management portal and admin CMS. Vite + React 19 + TanStack Router (code-based, `src/router.tsx`) + TanStack Query. Port 5180, proxies `/api` to the API on 8310. |
+| `apps/field`          | Staff app (installable PWA). Port 5181, same proxy.                                                                                                               |
+| `packages/ui`         | Shared tokens (`styles.css`) and components. Import as `@bide-comply/ui/components/<file>` and `@bide-comply/ui/lib/utils`.                                       |
+| `packages/api-client` | `api.get/post/put/patch/del`, `upload()`, `download()`, `ApiError`. Import from `@bide-comply/api-client`.                                                        |
 
 ## UI kit (packages/ui/src/components)
 

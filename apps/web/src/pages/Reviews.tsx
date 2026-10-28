@@ -46,7 +46,10 @@ export function ReviewsPage() {
   const sel = params.sel ?? rows[0]?.id ?? null
   const idx = rows.findIndex((r) => r.id === sel)
 
-  if (me.data && !me.data.can.verify) return <NoPermission message="Evidence review is for verifiers. Ask Samantha (system owner) if you think you should." />
+  if (me.data && !me.data.can.verify)
+    return (
+      <NoPermission message="Evidence review is for verifiers. Ask Samantha (system owner) if you think you should." />
+    )
 
   const go = (id: string | null) => set({ sel: id ?? undefined })
   const eligible = rows.filter((r) => r.badge !== "Failed")
@@ -67,11 +70,13 @@ export function ReviewsPage() {
             label="Queue"
             value={queue}
             onChange={(k) => set({ queue: k === "needs_review" ? undefined : k, sel: undefined })}
-            tabs={(list.data?.queues ?? [
-              { key: "needs_review", label: "Needs review", count: 0 },
-              { key: "spot_check", label: "Spot-check", count: 0 },
-              { key: "back_filed", label: "Back-filed", count: 0 },
-            ]).map((q) => ({ ...q, count: list.data ? q.count : null }))}
+            tabs={(
+              list.data?.queues ?? [
+                { key: "needs_review", label: "Needs review", count: 0 },
+                { key: "spot_check", label: "Spot-check", count: 0 },
+                { key: "back_filed", label: "Back-filed", count: 0 },
+              ]
+            ).map((q) => ({ ...q, count: list.data ? q.count : null }))}
           />
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
@@ -154,7 +159,12 @@ export function ReviewsPage() {
 
 function QueueRow({ r, on, onPick }: { r: QueueCard; on: boolean; onPick: () => void }) {
   return (
-    <button type="button" aria-current={on || undefined} onClick={onPick} className={cn(rowCls(on), "flex flex-col gap-1 px-3.5 py-3")}>
+    <button
+      type="button"
+      aria-current={on || undefined}
+      onClick={onPick}
+      className={cn(rowCls(on), "flex flex-col gap-1 px-3.5 py-3")}
+    >
       <span className="flex items-center gap-1.5">
         <ClassBadge klass={r.class} />
         <span className="mono-id">{r.ref}</span>
@@ -170,8 +180,10 @@ function QueueRow({ r, on, onPick }: { r: QueueCard; on: boolean; onPick: () => 
 
 function answerValue(a: { value: string; failed: boolean }) {
   const v = a.value
-  if (["Yes", "Pass", "True"].includes(v)) return <Pill tone={a.failed ? "red" : "green"}>{v === "True" ? "Yes" : v}</Pill>
-  if (["No", "Fail", "False"].includes(v)) return <Pill tone={a.failed ? "red" : "grey"}>{v === "False" ? "No" : v}</Pill>
+  if (["Yes", "Pass", "True"].includes(v))
+    return <Pill tone={a.failed ? "red" : "green"}>{v === "True" ? "Yes" : v}</Pill>
+  if (["No", "Fail", "False"].includes(v))
+    return <Pill tone={a.failed ? "red" : "grey"}>{v === "False" ? "No" : v}</Pill>
   if (v === "None") return <span className="text-muted-foreground">None</span>
   return <span className={cn("font-medium", a.failed && "text-st-red")}>{v}</span>
 }
@@ -190,7 +202,10 @@ function Submission({
   onDecided: (label: string) => void
 }) {
   const qc = useQueryClient()
-  const res = useQuery<ReviewDetail, ApiError>({ queryKey: ["review", id], queryFn: () => api.get<ReviewDetail>(`/api/reviews/${id}`) })
+  const res = useQuery<ReviewDetail, ApiError>({
+    queryKey: ["review", id],
+    queryFn: () => api.get<ReviewDetail>(`/api/reviews/${id}`),
+  })
   const [comment, setComment] = React.useState("")
   const [needComment, setNeedComment] = React.useState(false)
   const [amending, setAmending] = React.useState(false)
@@ -204,7 +219,11 @@ function Submission({
       api.post(`/api/reviews/${id}/verify`, { result, comment: comment.trim() || null }),
     onSuccess: (_d, result) => {
       void qc.invalidateQueries({ queryKey: ["review", id] })
-      const what = { approved: "Approved. Marked Verified and locked.", rejected: "Rejected. The task is open again for a redo.", needs_action: "Needs action. An Action was raised." }[result]
+      const what = {
+        approved: "Approved. Marked Verified and locked.",
+        rejected: "Rejected. The task is open again for a redo.",
+        needs_action: "Needs action. An Action was raised.",
+      }[result]
       onDecided(`${s?.ref ?? ""} ${what}`.trim())
     },
     onError: (e: ApiError) => toastError(e.message),
@@ -297,20 +316,35 @@ function Submission({
               Evidence · {s.photo_count} {s.photo_count === 1 ? "photo" : "photos"}
             </span>
             {s.photos.length > 0 && (
-              <span className="text-[12px] text-muted-foreground">{camera ? "In-app camera only" : "Includes uploaded files"}</span>
+              <span className="text-[12px] text-muted-foreground">
+                {camera ? "In-app camera only" : "Includes uploaded files"}
+              </span>
             )}
           </div>
           {s.photos.length === 0 ? (
-            <div className="rounded-lg bg-hover px-4 py-10 text-center text-[13px] text-muted-foreground">No photos with this check.</div>
+            <div className="rounded-lg bg-hover px-4 py-10 text-center text-[13px] text-muted-foreground">
+              No photos with this check.
+            </div>
           ) : (
             <div className="grid grid-cols-2 gap-2.5">
               {s.photos.map((p, i) => (
                 <figure key={p.id} className="m-0">
-                  <a href={p.url} target="_blank" rel="noreferrer" className="relative block h-[210px] overflow-hidden rounded-lg bg-hover">
+                  <a
+                    href={p.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="relative block h-[210px] overflow-hidden rounded-lg bg-hover"
+                  >
                     {p.content_type.startsWith("image/") ? (
-                      <img src={p.url} alt={`Photo ${i + 1}: ${p.required ?? p.file_name}`} className="size-full object-cover" />
+                      <img
+                        src={p.url}
+                        alt={`Photo ${i + 1}: ${p.required ?? p.file_name}`}
+                        className="size-full object-cover"
+                      />
                     ) : (
-                      <span className="flex size-full items-center justify-center p-4 text-center text-[13px] text-st-grey">{p.file_name}</span>
+                      <span className="flex size-full items-center justify-center p-4 text-center text-[13px] text-st-grey">
+                        {p.file_name}
+                      </span>
                     )}
                     <span className="absolute inset-x-2 bottom-2 rounded-[5px] bg-black/80 px-2 py-[5px] text-left font-mono text-[10.5px] text-white">
                       {p.stamp}
@@ -322,14 +356,22 @@ function Submission({
                       )}
                     </span>
                   </a>
-                  {p.required && <figcaption className="mt-1 text-[12px] text-muted-foreground">Required: {p.required.toLowerCase()}</figcaption>}
+                  {p.required && (
+                    <figcaption className="mt-1 text-[12px] text-muted-foreground">
+                      Required: {p.required.toLowerCase()}
+                    </figcaption>
+                  )}
                 </figure>
               ))}
             </div>
           )}
           <div className="flex flex-wrap gap-1.5">
             {s.original_kept && <Pill tone="green">Original kept, unaltered</Pill>}
-            {s.duplicate_found ? <Pill tone="amber">Photo used before</Pill> : <Pill tone="grey">No duplicate found</Pill>}
+            {s.duplicate_found ? (
+              <Pill tone="amber">Photo used before</Pill>
+            ) : (
+              <Pill tone="grey">No duplicate found</Pill>
+            )}
           </div>
         </div>
 
@@ -359,10 +401,20 @@ function Submission({
             <dt className="text-muted-foreground">Server time</dt>
             <dd className="m-0">{s.presence.server_time}</dd>
             <dt className="text-muted-foreground">Device time</dt>
-            <dd className="m-0">{s.presence.device_time ?? <span className="text-muted-foreground">Not recorded</span>}</dd>
+            <dd className="m-0">
+              {s.presence.device_time ?? <span className="text-muted-foreground">Not recorded</span>}
+            </dd>
             <dt className="text-muted-foreground">Location</dt>
             <dd className="m-0">
-              <Pill tone={s.presence.location === "Inside geofence" ? "green" : s.presence.location === "Outside geofence" ? "amber" : "grey"}>
+              <Pill
+                tone={
+                  s.presence.location === "Inside geofence"
+                    ? "green"
+                    : s.presence.location === "Outside geofence"
+                      ? "amber"
+                      : "grey"
+                }
+              >
                 {s.presence.location}
               </Pill>{" "}
               <span className="text-muted-foreground">read once at submission</span>
@@ -378,7 +430,9 @@ function Submission({
             {(s.presence.captured_offline || s.presence.back_filed) && (
               <>
                 <dt className="text-muted-foreground">Captured</dt>
-                <dd className="m-0">{s.presence.back_filed ? "Back-filed from a paper record" : "Offline, sent later"}</dd>
+                <dd className="m-0">
+                  {s.presence.back_filed ? "Back-filed from a paper record" : "Offline, sent later"}
+                </dd>
               </>
             )}
           </dl>
@@ -392,8 +446,12 @@ function Submission({
         >
           <div className="flex flex-wrap items-center gap-3">
             <span className="flex-1">
-              {v.result === "approved" ? "Verified" : v.result === "rejected" ? "Rejected and reopened" : "Needs action"} by {v.by},{" "}
-              {fmtDateTime(v.at)}
+              {v.result === "approved"
+                ? "Verified"
+                : v.result === "rejected"
+                  ? "Rejected and reopened"
+                  : "Needs action"}{" "}
+              by {v.by}, {fmtDateTime(v.at)}
               {v.comment ? `: “${v.comment}”.` : "."} The record is locked.
             </span>
             {s.can_amend && (
@@ -471,8 +529,8 @@ function Submission({
             </div>
           </div>
           <p className="m-0 text-[12px] text-muted-foreground">
-            Reject reopens the task for a redo with your reason. Needs action raises an Action. Approve marks it Verified and locks the record.
-            Corrections after that are amendments with a reason.
+            Reject reopens the task for a redo with your reason. Needs action raises an Action. Approve marks it
+            Verified and locks the record. Corrections after that are amendments with a reason.
           </p>
         </>
       )}
@@ -546,7 +604,8 @@ function AmendDialog({ s, onDone }: { s: ReviewDetail; onDone: () => void }) {
         </select>
       </Field>
       <Note>
-        The original stays in the record. Your correction is added underneath with your name and the time, and shows in the audit log.
+        The original stays in the record. Your correction is added underneath with your name and the time, and shows in
+        the audit log.
       </Note>
     </QDialog>
   )
@@ -577,7 +636,9 @@ function BulkDialog({
     onSuccess: (r) => {
       toast(
         `${r.approved} ${r.approved === 1 ? "check" : "checks"} approved` +
-          (r.left_for_review ? `. ${r.left_for_review} life-safety ${r.left_for_review === 1 ? "check is" : "checks are"} left to review one by one.` : ""),
+          (r.left_for_review
+            ? `. ${r.left_for_review} life-safety ${r.left_for_review === 1 ? "check is" : "checks are"} left to review one by one.`
+            : ""),
       )
       onApproved()
       onDone()

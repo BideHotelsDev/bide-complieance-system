@@ -27,15 +27,21 @@ from bide_comply.api import (
     reports,
     reviews,
     scorecard,
-    settings as settings_api,
     setup,
+)
+from bide_comply.api import (
+    settings as settings_api,
 )
 from bide_comply.config import settings
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s %(message)s")
 
-app = FastAPI(title="bide Comply API", version="0.1.0", docs_url="/api/docs" if not settings.is_production else None,
-              openapi_url="/api/openapi.json")
+app = FastAPI(
+    title="bide Comply API",
+    version="0.1.0",
+    docs_url="/api/docs" if not settings.is_production else None,
+    openapi_url="/api/openapi.json",
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -53,10 +59,12 @@ app.middleware("http")(ratelimit.middleware)
 async def security_headers(request: Request, call_next):
     resp = await call_next(request)
     # §9.5: strict CSP (no inline scripts), HSTS, no framing, camera and geolocation for our own origin only.
-    resp.headers.setdefault("Content-Security-Policy",
-                            "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-                            "font-src 'self' https://fonts.gstatic.com; script-src 'self'; connect-src 'self'; "
-                            "frame-ancestors 'none'; base-uri 'self'; form-action 'self'")
+    resp.headers.setdefault(
+        "Content-Security-Policy",
+        "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' data: https://fonts.gstatic.com; script-src 'self'; connect-src 'self'; "
+        "frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+    )
     resp.headers.setdefault("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload")
     resp.headers.setdefault("X-Content-Type-Options", "nosniff")
     resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
@@ -75,8 +83,14 @@ async def http_error(request: Request, exc: HTTPException):
 async def validation_error(request: Request, exc: RequestValidationError):
     first = exc.errors()[0] if exc.errors() else {}
     field_ = ".".join(str(x) for x in first.get("loc", [])[1:])
-    return JSONResponse({"code": "invalid", "message": f"Check {field_ or 'the form'}: {first.get('msg', 'invalid value')}.",
-                         "errors": exc.errors()}, status_code=422)
+    return JSONResponse(
+        {
+            "code": "invalid",
+            "message": f"Check {field_ or 'the form'}: {first.get('msg', 'invalid value')}.",
+            "errors": exc.errors(),
+        },
+        status_code=422,
+    )
 
 
 @app.get("/api/health")
@@ -84,10 +98,29 @@ def health() -> dict:
     return {"ok": True}
 
 
-for r in (auth.router, home.router, register.router, actions.router, reviews.router, gates.router, approvals.router,
-          certificates.router, scorecard.router, assessor.router, field.router, files.router, people.router,
-          people.groups_router, library.router, setup.router, imports.router, settings_api.router, reports.router,
-          reports.export_router, admin.router):
+for r in (
+    auth.router,
+    home.router,
+    register.router,
+    actions.router,
+    reviews.router,
+    gates.router,
+    approvals.router,
+    certificates.router,
+    scorecard.router,
+    assessor.router,
+    field.router,
+    files.router,
+    people.router,
+    people.groups_router,
+    library.router,
+    setup.router,
+    imports.router,
+    settings_api.router,
+    reports.router,
+    reports.export_router,
+    admin.router,
+):
     app.include_router(r)
 
 

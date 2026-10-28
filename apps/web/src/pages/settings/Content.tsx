@@ -78,7 +78,11 @@ export function ContentPage() {
   const publish = useMutation<{ published: number }, ApiError>({
     mutationFn: () => api.post("/api/settings/content/publish"),
     onSuccess: (r) => {
-      toast.success(r.published === 1 ? "Published 1 change. Everyone sees it now." : `Published ${r.published} changes. Everyone sees them now.`)
+      toast.success(
+        r.published === 1
+          ? "Published 1 change. Everyone sees it now."
+          : `Published ${r.published} changes. Everyone sees them now.`,
+      )
       void qc.invalidateQueries({ queryKey: ["settings", "content"] })
     },
     onError: (e) => toast.error(errText(e)),
@@ -368,7 +372,10 @@ function Editor({ msg, canEdit }: { msg: Message; canEdit: boolean }) {
 
           <div
             role="status"
-            className={cn("rounded-lg px-3.5 py-3", allOk ? "bg-st-green-bg text-st-green" : "bg-st-amber-bg text-st-amber")}
+            className={cn(
+              "rounded-lg px-3.5 py-3",
+              allOk ? "bg-st-green-bg text-st-green" : "bg-st-amber-bg text-st-amber",
+            )}
           >
             <div className="text-[14px] font-semibold">
               {allOk ? "Tone check: looks good" : "Tone check: worth another look"}
@@ -419,7 +426,9 @@ function Editor({ msg, canEdit }: { msg: Message; canEdit: boolean }) {
                 </div>
               </div>
             </div>
-            <p className="m-0 text-[12.5px] text-muted-foreground">Push notifications use a shorter version automatically.</p>
+            <p className="m-0 text-[12.5px] text-muted-foreground">
+              Push notifications use a shorter version automatically.
+            </p>
           </>
         )}
       </aside>

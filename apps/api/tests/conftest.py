@@ -104,8 +104,16 @@ def upload_photo(client, property_id: str | None = None, task_id: str | None = N
     buf = io.BytesIO()
     Image.new("RGB", (64, 48), tuple(uuid.uuid4().bytes[:3])).save(buf, "JPEG")
     data = buf.getvalue()
-    slot = client.post("/api/uploads", json={"content_type": "image/jpeg", "size": len(data), "captured_with": "camera",
-                                              "property_id": property_id, "task_id": task_id}).json()
+    slot = client.post(
+        "/api/uploads",
+        json={
+            "content_type": "image/jpeg",
+            "size": len(data),
+            "captured_with": "camera",
+            "property_id": property_id,
+            "task_id": task_id,
+        },
+    ).json()
     put = client.put(slot["upload"]["url"], content=data, headers={"Content-Type": "image/jpeg"})
     assert put.status_code == 200, put.text
     done = client.post(f"/api/uploads/{slot['evidence_id']}/complete", json={"task_id": task_id})

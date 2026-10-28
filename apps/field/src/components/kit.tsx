@@ -10,7 +10,11 @@ import * as React from "react"
 import { OfflineBanner } from "./sync"
 
 export function Page({ children, className }: { children?: React.ReactNode; className?: string }) {
-  return <div className={cn("mx-auto flex min-h-dvh w-full max-w-[480px] flex-col bg-background", className)}>{children}</div>
+  return (
+    <div className={cn("mx-auto flex min-h-dvh w-full max-w-[480px] flex-col bg-background", className)}>
+      {children}
+    </div>
+  )
 }
 
 /* A main tab: title block, content, the bottom tab bar. */
@@ -51,10 +55,7 @@ const TABS = [
 
 export function TabBar() {
   return (
-    <nav
-      aria-label="App"
-      className="pb-safe sticky bottom-0 z-20 grid grid-cols-4 border-t border-divider bg-surface"
-    >
+    <nav aria-label="App" className="pb-safe sticky bottom-0 z-20 grid grid-cols-4 border-t border-divider bg-surface">
       {TABS.map((t) => (
         <Link
           key={t.to}
@@ -195,7 +196,9 @@ export function Choice<T extends string>({
             onClick={() => onChange(o.value)}
             className={cn(
               "h-12 rounded-xl border text-[16px] font-semibold transition-colors",
-              on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-surface text-foreground hover:bg-hover",
+              on
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-surface text-foreground hover:bg-hover",
             )}
           >
             {o.label}
@@ -256,7 +259,10 @@ export function TextInput({ className, ...props }: React.ComponentProps<"input">
   return (
     <input
       {...props}
-      className={cn("h-12 w-full rounded-xl border border-border bg-surface px-3.5 text-[16px] text-foreground", className)}
+      className={cn(
+        "h-12 w-full rounded-xl border border-border bg-surface px-3.5 text-[16px] text-foreground",
+        className,
+      )}
     />
   )
 }
@@ -324,7 +330,10 @@ export function Spinner({ className }: { className?: string }) {
   return (
     <span
       aria-hidden
-      className={cn("inline-block size-4 animate-spin rounded-full border-2 border-current border-t-transparent", className)}
+      className={cn(
+        "inline-block size-4 animate-spin rounded-full border-2 border-current border-t-transparent",
+        className,
+      )}
     />
   )
 }
@@ -341,7 +350,10 @@ export function Loading({ label = "Loading" }: { label?: string }) {
 
 export function ErrorBox({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
-    <div role="alert" className="flex flex-col items-center gap-3 rounded-xl border border-divider bg-surface px-5 py-8 text-center">
+    <div
+      role="alert"
+      className="flex flex-col items-center gap-3 rounded-xl border border-divider bg-surface px-5 py-8 text-center"
+    >
       <p className="m-0 text-[15px]">{message}</p>
       {onRetry && (
         <SecondaryButton className="w-auto px-6" onClick={onRetry}>

@@ -50,7 +50,10 @@ export function AppShell() {
     )
   return (
     <div className="flex min-h-screen bg-background">
-      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded focus:bg-surface focus:p-2">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded focus:bg-surface focus:p-2"
+      >
         Skip to content
       </a>
       <div className="hidden md:block">

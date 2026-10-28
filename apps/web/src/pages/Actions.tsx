@@ -71,7 +71,16 @@ export function ActionsPage() {
 
   const pick = (ref: string | null) => set({ sel: ref ?? undefined })
   const clearAll = () =>
-    set({ q: undefined, view: undefined, prop: undefined, type: undefined, prio: undefined, source: undefined, gate: undefined, page: undefined })
+    set({
+      q: undefined,
+      view: undefined,
+      prop: undefined,
+      type: undefined,
+      prio: undefined,
+      source: undefined,
+      gate: undefined,
+      page: undefined,
+    })
 
   const selectedId = d?.rows.find((r) => r.ref === sel)?.id ?? null
 
@@ -110,7 +119,9 @@ export function ActionsPage() {
         cell: ({ row: { original: r } }) => (
           <>
             <span className="tabular">{fmtDate(r.due_on)}</span>
-            <div className={cn("text-[12px]", r.late ? "font-medium text-st-red" : "text-muted-foreground")}>{r.left}</div>
+            <div className={cn("text-[12px]", r.late ? "font-medium text-st-red" : "text-muted-foreground")}>
+              {r.left}
+            </div>
           </>
         ),
       },
@@ -147,7 +158,11 @@ export function ActionsPage() {
           subtitle="Everything that needs fixing, who owns it, and when it's due."
           actions={
             <>
-              <Button variant="outline" aria-pressed={board} onClick={() => set({ board: board ? undefined : "1", page: undefined })}>
+              <Button
+                variant="outline"
+                aria-pressed={board}
+                onClick={() => set({ board: board ? undefined : "1", page: undefined })}
+              >
                 {board ? "List view" : "Board view"}
               </Button>
               {me.data?.can["action.raise"] && <Button onClick={() => setCreating(true)}>New Action</Button>}
@@ -177,7 +192,11 @@ export function ActionsPage() {
             />
           }
         >
-          <SortMenu value={sort} label={sortLabel} onChange={(s) => set({ sort: s === "due" ? undefined : s, page: undefined })} />
+          <SortMenu
+            value={sort}
+            label={sortLabel}
+            onChange={(s) => set({ sort: s === "due" ? undefined : s, page: undefined })}
+          />
         </FilterBar>
 
         <Summary className="-mt-1 text-[13.5px] text-ink2">{d ? d.summary : " "}</Summary>
@@ -242,7 +261,12 @@ export function ActionsPage() {
 
       {sel && <ActionPanel key={sel} ref_={sel} onClose={() => pick(null)} onClosed={() => pick(null)} />}
 
-      <NewActionDialog open={creating} onOpenChange={setCreating} defaultPropertyId={propertyId} onCreated={(ref) => pick(ref)} />
+      <NewActionDialog
+        open={creating}
+        onOpenChange={setCreating}
+        defaultPropertyId={propertyId}
+        onCreated={(ref) => pick(ref)}
+      />
     </div>
   )
 }
@@ -267,7 +291,8 @@ function NoRows({ anyFilter, summary, onClear }: { anyFilter: boolean; summary: 
     </EmptyState>
   ) : (
     <EmptyState icon={<ListChecks className="size-6" />} title="Nothing to fix">
-      Every Action here is closed. New ones appear when a check fails, an assessor finds something, or someone raises one.
+      Every Action here is closed. New ones appear when a check fails, an assessor finds something, or someone raises
+      one.
     </EmptyState>
   )
 }
@@ -319,7 +344,10 @@ function Stats({ d }: { d: ActionList | undefined }) {
           <StatBig value={s.urgent_late} sub={`of ${s.urgent_total} urgent`} />
           <div className="mt-2 flex flex-wrap gap-[3px]" aria-hidden>
             {Array.from({ length: Math.min(s.urgent_total, 40) }).map((_, i) => (
-              <span key={i} className={cn("size-[9px] rounded-full", i < s.urgent_late ? "bg-foreground" : "bg-border")} />
+              <span
+                key={i}
+                className={cn("size-[9px] rounded-full", i < s.urgent_late ? "bg-foreground" : "bg-border")}
+              />
             ))}
           </div>
         </div>
@@ -342,7 +370,11 @@ function SortMenu({ value, label, onChange }: { value: string; label: string; on
         </button>
       </Menu.Trigger>
       <Menu.Portal>
-        <Menu.Content align="end" sideOffset={6} className="z-50 w-60 rounded-lg border border-border bg-popover p-1.5 shadow-lg">
+        <Menu.Content
+          align="end"
+          sideOffset={6}
+          className="z-50 w-60 rounded-lg border border-border bg-popover p-1.5 shadow-lg"
+        >
           <Menu.RadioGroup value={value} onValueChange={onChange}>
             {SORTS.map((s) => (
               <Menu.RadioItem
@@ -365,7 +397,15 @@ function SortMenu({ value, label, onChange }: { value: string; label: string; on
   )
 }
 
-function Board({ d, sel, onPick }: { d: ActionList | undefined; sel: string | null; onPick: (ref: string | null) => void }) {
+function Board({
+  d,
+  sel,
+  onPick,
+}: {
+  d: ActionList | undefined
+  sel: string | null
+  onPick: (ref: string | null) => void
+}) {
   if (!d)
     return (
       <div className="grid gap-3.5 md:grid-cols-3">
@@ -384,14 +424,20 @@ function Board({ d, sel, onPick }: { d: ActionList | undefined; sel: string | nu
       {cols.map((c) => {
         const rows = d.board[c.key] ?? []
         return (
-          <section key={c.key} aria-label={c.label} className="flex flex-col rounded-[10px] border border-divider bg-sidebar">
+          <section
+            key={c.key}
+            aria-label={c.label}
+            className="flex flex-col rounded-[10px] border border-divider bg-sidebar"
+          >
             <h2 className="m-0 flex items-center gap-2 px-3 py-2.5 text-[13.5px] font-semibold">
               <PriorityBadge priority={c.key} />
               <span className="font-normal text-muted-foreground">{c.window}</span>
               <span className="tabular ml-auto text-muted-foreground">{rows.length}</span>
             </h2>
             <ul className="m-0 flex list-none flex-col gap-2 p-2 pt-0">
-              {rows.length === 0 && <li className="px-2 py-4 text-center text-[13px] text-muted-foreground">Nothing here</li>}
+              {rows.length === 0 && (
+                <li className="px-2 py-4 text-center text-[13px] text-muted-foreground">Nothing here</li>
+              )}
               {rows.map((r) => (
                 <li key={r.id}>
                   <button
@@ -406,7 +452,12 @@ function Board({ d, sel, onPick }: { d: ActionList | undefined; sel: string | nu
                     <span className="flex items-center gap-2">
                       <span className="mono-id">{r.ref}</span>
                       <span className="text-[12px] text-muted-foreground">{r.type_label}</span>
-                      <span className={cn("ml-auto text-[12px]", r.late ? "font-medium text-st-red" : "text-muted-foreground")}>
+                      <span
+                        className={cn(
+                          "ml-auto text-[12px]",
+                          r.late ? "font-medium text-st-red" : "text-muted-foreground",
+                        )}
+                      >
                         {fmtDate(r.due_on)}
                       </span>
                     </span>
@@ -427,4 +478,3 @@ function Board({ d, sel, onPick }: { d: ActionList | undefined; sel: string | nu
     </div>
   )
 }
-

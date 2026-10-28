@@ -63,11 +63,15 @@ export function SignInPage() {
       )}
       {search.error && (
         <p role="alert" className="mt-3 rounded-md bg-st-red-bg px-3 py-2 text-[13px] text-st-red">
-          {search.error === "link" ? "That sign-in link has expired. Ask for a new one below." : "Sign-in didn't work. Try again."}
+          {search.error === "link"
+            ? "That sign-in link has expired. Ask for a new one below."
+            : "Sign-in didn't work. Try again."}
         </p>
       )}
       <Button asChild size="lg" className="mt-4 w-full">
-        <a href={`/api/auth/google/start?app=web&next=${encodeURIComponent(search.next ?? "/")}`}>Sign in with Google</a>
+        <a href={`/api/auth/google/start?app=web&next=${encodeURIComponent(search.next ?? "/")}`}>
+          Sign in with Google
+        </a>
       </Button>
       <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
         <span className="h-px flex-1 bg-divider" />
@@ -103,7 +107,9 @@ export function SignInPage() {
       )}
       {dev.data && (
         <div className="mt-6 border-t border-divider pt-4">
-          <div className="mb-2 text-xs font-medium text-muted-foreground">Development sign-in (not available in production)</div>
+          <div className="mb-2 text-xs font-medium text-muted-foreground">
+            Development sign-in (not available in production)
+          </div>
           <div className="flex max-h-64 flex-col gap-1 overflow-y-auto">
             {dev.data.map((p) => (
               <button
@@ -187,7 +193,9 @@ export function CodePage({ stage }: { stage: "code" | "totp" | "totp-setup" }) {
       ) : (
         <>
           <h1 className="m-0 text-[18px] font-semibold">Confirm it's you</h1>
-          <p className="mt-1 text-[13.5px] text-muted-foreground">Enter the 6-digit code from your authenticator app.</p>
+          <p className="mt-1 text-[13.5px] text-muted-foreground">
+            Enter the 6-digit code from your authenticator app.
+          </p>
         </>
       )}
       <form
@@ -205,7 +213,12 @@ export function CodePage({ stage }: { stage: "code" | "totp" | "totp-setup" }) {
         )}
         {stage === "code" && (
           <label className="flex items-center gap-2 text-[13.5px]">
-            <input type="checkbox" checked={trust} onChange={(e) => setTrust(e.target.checked)} className="size-4 accent-[var(--c-primary)]" />
+            <input
+              type="checkbox"
+              checked={trust}
+              onChange={(e) => setTrust(e.target.checked)}
+              className="size-4 accent-[var(--c-primary)]"
+            />
             Trust this computer for 90 days
           </label>
         )}

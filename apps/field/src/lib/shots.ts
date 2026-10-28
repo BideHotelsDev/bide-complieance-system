@@ -84,7 +84,15 @@ export function useShots(ctx: Ctx) {
 
   const add = React.useCallback(
     (key: string, blob: Blob, captured_at: string, via: "camera" | "upload" = "camera") => {
-      const s: Shot = { id: crypto.randomUUID(), key, blob, url: URL.createObjectURL(blob), captured_at, status: "uploading", via }
+      const s: Shot = {
+        id: crypto.randomUUID(),
+        key,
+        blob,
+        url: URL.createObjectURL(blob),
+        captured_at,
+        status: "uploading",
+        via,
+      }
       latest.current = [...latest.current, s]
       setShots((all) => [...all, s])
       void send(s)

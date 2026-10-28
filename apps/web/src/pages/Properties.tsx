@@ -23,7 +23,6 @@ const VIEW_NOUN: Record<string, string> = {
   setup: "not-set-up ",
 }
 
-
 export function PropertiesPage() {
   const [params, set] = useParams()
   const me = useMe()
@@ -50,9 +49,15 @@ export function PropertiesPage() {
         header: "Property",
         cell: ({ row: { original: p } }) => (
           <span className="flex items-center gap-3">
-            <ScoreRing score={p.score} status={p.score == null ? "grey" : p.score_status} redLine={p.red_line} size={36} />
+            <ScoreRing
+              score={p.score}
+              status={p.score == null ? "grey" : p.score_status}
+              redLine={p.red_line}
+              size={36}
+            />
             <span>
-              <span className="font-medium">{p.name}</span> <span className="mono-id text-muted-foreground">{p.code}</span>
+              <span className="font-medium">{p.name}</span>{" "}
+              <span className="mono-id text-muted-foreground">{p.code}</span>
               <span className="block text-[12.5px] text-muted-foreground">{placeLine(p)}</span>
             </span>
           </span>
@@ -66,7 +71,12 @@ export function PropertiesPage() {
         meta: { align: "right" },
         cell: ({ row }) => (row.original.register_loaded ? row.original.class_a_late : "—"),
       },
-      { id: "urgent", header: "Urgent actions", meta: { align: "right" }, cell: ({ row }) => row.original.actions.urgent },
+      {
+        id: "urgent",
+        header: "Urgent actions",
+        meta: { align: "right" },
+        cell: ({ row }) => row.original.actions.urgent,
+      },
       {
         id: "gate",
         header: "Gate A open",
@@ -181,7 +191,8 @@ export function PropertiesPage() {
         </div>
       )}
       <p className="m-0 text-[12.5px] text-muted-foreground">
-        The ring is the compliance score. It turns red whenever any life-safety item is overdue, whatever the percentage.
+        The ring is the compliance score. It turns red whenever any life-safety item is overdue, whatever the
+        percentage.
       </p>
     </div>
   )

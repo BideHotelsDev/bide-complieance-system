@@ -44,7 +44,8 @@ export function GatePage() {
   const quick = useMutation({
     mutationFn: ({ item, status }: { item: GateItem; status: string }) => saveItem(item.id, { status }),
     onSuccess: (r, { item, status }) => {
-      if (status === "done" && r.status === "to_confirm") toast(`${item.ref} stays To confirm until its evidence is attached`)
+      if (status === "done" && r.status === "to_confirm")
+        toast(`${item.ref} stays To confirm until its evidence is attached`)
       else toast(`${item.ref} marked ${GATE_STATUSES.find((s) => s.value === r.status)?.label ?? r.status}`)
       refresh()
     },
@@ -94,7 +95,11 @@ export function GatePage() {
             </Link>
           </Button>
           {g.can_edit && (
-            <Button variant={edit ? "outline" : "default"} aria-pressed={edit} onClick={() => set({ edit: edit ? undefined : "1" })}>
+            <Button
+              variant={edit ? "outline" : "default"}
+              aria-pressed={edit}
+              onClick={() => set({ edit: edit ? undefined : "1" })}
+            >
               {edit ? "Done marking" : "Mark items"}
             </Button>
           )}
@@ -112,7 +117,9 @@ export function GatePage() {
           />
           <div className="min-w-0">
             <StatTitle>Checklist done</StatTitle>
-            <div className="mt-1.5 text-[12.5px] text-muted-foreground">Every life-safety item must be done to open</div>
+            <div className="mt-1.5 text-[12.5px] text-muted-foreground">
+              Every life-safety item must be done to open
+            </div>
           </div>
         </StatCard>
         <StatCard>
@@ -157,7 +164,10 @@ export function GatePage() {
       </div>
 
       <div className="flex flex-wrap items-start gap-4">
-        <section aria-label="Sections" className="min-w-0 flex-[1_1_420px] overflow-hidden rounded-[10px] border border-divider bg-surface">
+        <section
+          aria-label="Sections"
+          className="min-w-0 flex-[1_1_420px] overflow-hidden rounded-[10px] border border-divider bg-surface"
+        >
           <div className="grid grid-cols-[28px_1fr_90px_70px_140px] gap-2.5 border-b border-divider px-3.5 py-2 text-[12px] font-medium text-muted-foreground max-sm:grid-cols-[28px_1fr_70px_60px]">
             <span />
             <span>Section</span>
@@ -185,7 +195,9 @@ export function GatePage() {
                   <span className="tabular">
                     {x.done} of {x.total}
                   </span>
-                  <span className={cn("tabular", x.a_open ? "font-semibold text-st-red" : "text-muted-foreground")}>{x.a_open}</span>
+                  <span className={cn("tabular", x.a_open ? "font-semibold text-st-red" : "text-muted-foreground")}>
+                    {x.a_open}
+                  </span>
                   <Progress value={x.done} total={x.total} className="max-sm:hidden" />
                 </button>
               )
@@ -193,7 +205,10 @@ export function GatePage() {
           </div>
         </section>
 
-        <section aria-label="Gate sign-off" className="flex flex-[1_1_300px] flex-col gap-3 rounded-[10px] border border-divider bg-surface p-4">
+        <section
+          aria-label="Gate sign-off"
+          className="flex flex-[1_1_300px] flex-col gap-3 rounded-[10px] border border-divider bg-surface p-4"
+        >
           <div className="flex items-center gap-2">
             <PenLine aria-hidden className="size-4" />
             <span className="font-semibold">H08 · Gate sign-off</span>
@@ -227,7 +242,10 @@ export function GatePage() {
       </div>
 
       {sec && (
-        <section aria-labelledby={`sec-${sec.key}`} className="overflow-hidden rounded-[10px] border border-divider bg-surface">
+        <section
+          aria-labelledby={`sec-${sec.key}`}
+          className="overflow-hidden rounded-[10px] border border-divider bg-surface"
+        >
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-divider px-3.5 py-3">
             <h2 id={`sec-${sec.key}`} className="m-0 text-[14px] font-semibold">
               {sec.key} · {sec.name} <span className="font-normal text-muted-foreground">{items.length} items</span>
@@ -240,37 +258,45 @@ export function GatePage() {
           </div>
           {edit && (
             <div className="border-b border-divider bg-st-blue-bg px-3.5 py-2 text-[13px] text-st-blue">
-              Marking items. Change a status here, or open an item to add evidence, an owner and notes. Done needs evidence, otherwise it
-              stays To confirm.
+              Marking items. Change a status here, or open an item to add evidence, an owner and notes. Done needs
+              evidence, otherwise it stays To confirm.
             </div>
           )}
           <div className="overflow-x-auto">
             <table className="w-full min-w-[980px] border-collapse">
-              <caption className="sr-only">
-                Section {sec.key} items
-              </caption>
+              <caption className="sr-only">Section {sec.key} items</caption>
               <thead>
                 <tr>
-                  {["Ref", "Item", "Class", "Evidence required", "Status", "Notes", ...(edit ? [""] : [])].map((h, i) => (
-                    <th
-                      key={i}
-                      scope="col"
-                      className="h-[34px] border-b border-divider bg-background px-2.5 text-left text-[12px] font-medium whitespace-nowrap text-muted-foreground"
-                    >
-                      {h}
-                    </th>
-                  ))}
+                  {["Ref", "Item", "Class", "Evidence required", "Status", "Notes", ...(edit ? [""] : [])].map(
+                    (h, i) => (
+                      <th
+                        key={i}
+                        scope="col"
+                        className="h-[34px] border-b border-divider bg-background px-2.5 text-left text-[12px] font-medium whitespace-nowrap text-muted-foreground"
+                      >
+                        {h}
+                      </th>
+                    ),
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {items.map((i) => (
                   <tr
                     key={i.id}
-                    className={cn("border-b border-divider last:border-0", g.can_edit && "cursor-pointer hover:bg-hover/50")}
+                    className={cn(
+                      "border-b border-divider last:border-0",
+                      g.can_edit && "cursor-pointer hover:bg-hover/50",
+                    )}
                     onClick={g.can_edit ? () => setEditing(i) : undefined}
                   >
                     <td className="px-2.5 py-2 align-middle font-mono text-[11.5px] text-subtle">{i.ref}</td>
-                    <td className={cn("px-2.5 py-2 align-middle text-[13.5px]", (i.wording_pending || !i.applies) && "text-muted-foreground")}>
+                    <td
+                      className={cn(
+                        "px-2.5 py-2 align-middle text-[13.5px]",
+                        (i.wording_pending || !i.applies) && "text-muted-foreground",
+                      )}
+                    >
                       <span className={cn(!i.applies && "line-through")}>{i.item}</span>
                       {i.wording_pending && <span className="block text-[12px] text-subtle">Wording pending</span>}
                       {i.actions > 0 && (
@@ -291,7 +317,9 @@ export function GatePage() {
                       {i.evidence_required ?? "—"}
                       {(i.evidence.length > 0 || i.evidence_link) && (
                         <span className="block text-[12px] text-st-green">
-                          {i.evidence.length > 0 ? `${i.evidence.length} ${i.evidence.length === 1 ? "file" : "files"} filed` : `Filed: ${i.evidence_link}`}
+                          {i.evidence.length > 0
+                            ? `${i.evidence.length} ${i.evidence.length === 1 ? "file" : "files"} filed`
+                            : `Filed: ${i.evidence_link}`}
                         </span>
                       )}
                     </td>
@@ -316,7 +344,9 @@ export function GatePage() {
                       ) : (
                         <span className="flex flex-col items-start gap-0.5">
                           <GateItemBadge status={i.status} />
-                          {i.done_without_evidence && <span className="text-[11.5px] text-st-amber">No evidence filed</span>}
+                          {i.done_without_evidence && (
+                            <span className="text-[11.5px] text-st-amber">No evidence filed</span>
+                          )}
                         </span>
                       )}
                     </td>
@@ -346,15 +376,25 @@ export function GatePage() {
         </section>
       )}
 
-      {editing && <GateItemDialog item={editing} propertyId={g.property_id} onDone={() => setEditing(null)} onSaved={refresh} />}
+      {editing && (
+        <GateItemDialog item={editing} propertyId={g.property_id} onDone={() => setEditing(null)} onSaved={refresh} />
+      )}
       {signing && <SignGateDialog g={g} onDone={() => setSigning(false)} onSigned={refresh} />}
     </div>
   )
 }
 
 function GateCount({ k, n }: { k: string; n: number }) {
-  const label = { in_progress: "In progress", to_confirm: "To confirm", not_started: "Not started", done: "Done", na: "N/A" }[k]
-  const tone = ({ in_progress: "blue", to_confirm: "amber", not_started: "outline", done: "green", na: "grey" } as const)[k as "done"]
+  const label = {
+    in_progress: "In progress",
+    to_confirm: "To confirm",
+    not_started: "Not started",
+    done: "Done",
+    na: "N/A",
+  }[k]
+  const tone = (
+    { in_progress: "blue", to_confirm: "amber", not_started: "outline", done: "green", na: "grey" } as const
+  )[k as "done"]
   return (
     <Pill tone={tone}>
       {label} {n}
@@ -395,10 +435,15 @@ function SignGateDialog({ g, onDone, onSigned }: { g: GateDetail; onDone: () => 
       }
     >
       <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-border p-3">
-        <input type="checkbox" checked={confirm} onChange={(e) => setConfirm(e.target.checked)} className="mt-0.5 size-4 shrink-0 accent-[var(--c-primary)]" />
+        <input
+          type="checkbox"
+          checked={confirm}
+          onChange={(e) => setConfirm(e.target.checked)}
+          className="mt-0.5 size-4 shrink-0 accent-[var(--c-primary)]"
+        />
         <span>
-          I confirm every applicable life-safety item on the opening checklist for {g.property} is done with evidence. I sign on behalf of{" "}
-          {g.dutyholder ?? "the dutyholder"}.
+          I confirm every applicable life-safety item on the opening checklist for {g.property} is done with evidence. I
+          sign on behalf of {g.dutyholder ?? "the dutyholder"}.
         </span>
       </label>
       <label className="flex flex-col gap-[5px]">

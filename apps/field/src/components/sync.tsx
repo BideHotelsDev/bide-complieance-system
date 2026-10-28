@@ -23,7 +23,11 @@ export function toastCouldntSave(retry?: () => void) {
   toast("Couldn't save. Check your connection.", {
     duration: Infinity,
     closeButton: true,
-    icon: <span aria-hidden className="font-bold">!</span>,
+    icon: (
+      <span aria-hidden className="font-bold">
+        !
+      </span>
+    ),
     action: retry ? { label: "Try again", onClick: retry } : undefined,
     className: "!bg-st-red !text-white",
   })
@@ -34,7 +38,10 @@ export function OfflineBanner() {
   const queue = useQueue()
   if (online) return null
   return (
-    <div role="status" className="sticky top-0 z-30 flex items-center gap-2 bg-foreground px-4 py-2.5 text-[14px] text-background">
+    <div
+      role="status"
+      className="sticky top-0 z-30 flex items-center gap-2 bg-foreground px-4 py-2.5 text-[14px] text-background"
+    >
       <CloudOff aria-hidden className="size-4 shrink-0" />
       <span>
         You're offline. Checks are saved on this phone
@@ -89,7 +96,9 @@ function itemStatus(q: QueuedCheck, online: boolean): { text: string; tone: "amb
   }
   const up = q.photos.filter((p) => p.evidence_id).length
   return {
-    text: online ? "Waiting to send" : `Waiting for signal${q.photos.length ? ` · ${up} of ${q.photos.length} photos sent` : ""}`,
+    text: online
+      ? "Waiting to send"
+      : `Waiting for signal${q.photos.length ? ` · ${up} of ${q.photos.length} photos sent` : ""}`,
     tone: "amber",
   }
 }

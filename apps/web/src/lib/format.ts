@@ -11,7 +11,12 @@ export function fmtDate(d: string | Date | null | undefined, withYear?: boolean)
   if (!d) return ""
   const date = toDate(d)
   const y = withYear ?? date.getUTCFullYear() !== new Date().getFullYear()
-  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", ...(y ? { year: "numeric" } : {}), timeZone: TZ })
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    ...(y ? { year: "numeric" } : {}),
+    timeZone: TZ,
+  })
 }
 
 export function fmtDay(d: string | Date | null | undefined): string {

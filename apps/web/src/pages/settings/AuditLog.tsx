@@ -221,7 +221,9 @@ export function AuditLogPage() {
           <LoadingRows rows={6} label="Loading the audit log" />
         ) : d.rows.length === 0 ? (
           <EmptyState title="No events match">
-            {when === "today" ? "Nothing matches today yet. Try the last 7 days." : "Try fewer filters or a longer period."}
+            {when === "today"
+              ? "Nothing matches today yet. Try the last 7 days."
+              : "Try fewer filters or a longer period."}
           </EmptyState>
         ) : (
           <div className="overflow-x-auto">
@@ -342,7 +344,10 @@ function Details({ row }: { row: Row }) {
         </>
       )}
       <span className="text-muted-foreground">Fingerprint</span>
-      <span className="col-span-2 font-mono text-[12px] text-ink2" title={`prev ${row.prev_hash ?? "none"}\nthis ${row.hash}`}>
+      <span
+        className="col-span-2 font-mono text-[12px] text-ink2"
+        title={`prev ${row.prev_hash ?? "none"}\nthis ${row.hash}`}
+      >
         prev {short(row.prev_hash)} → this {short(row.hash)}
       </span>
     </div>

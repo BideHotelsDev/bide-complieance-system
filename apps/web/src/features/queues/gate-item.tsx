@@ -75,7 +75,8 @@ export function GateItemDialog({
         due_on: due && due !== item.due_on ? due : null,
       }),
     onSuccess: (r) => {
-      if (status === "done" && r.status === "to_confirm") toast(`${item.ref} saved as To confirm. Attach the evidence to mark it Done.`)
+      if (status === "done" && r.status === "to_confirm")
+        toast(`${item.ref} saved as To confirm. Attach the evidence to mark it Done.`)
       else toast(`${item.ref} saved`)
       onSaved()
       onDone()
@@ -131,7 +132,12 @@ export function GateItemDialog({
       {isH08 && <Note>H08 is done by the dutyholder signing the checklist.</Note>}
       {status === "na" && (
         <Field label="Why doesn't it apply here?">
-          <input value={naReason} onChange={(e) => setNaReason(e.target.value)} placeholder="e.g. No lift in the building" className={inputCls} />
+          <input
+            value={naReason}
+            onChange={(e) => setNaReason(e.target.value)}
+            placeholder="e.g. No lift in the building"
+            className={inputCls}
+          />
         </Field>
       )}
       {status === "done" && !hasEvidence && (
@@ -149,7 +155,12 @@ export function GateItemDialog({
         </select>
       </Field>
       <Field label="Where the evidence is" hint="(folder or link)">
-        <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="e.g. 05 Certificates & Evidence/C01" className={inputCls} />
+        <input
+          value={link}
+          onChange={(e) => setLink(e.target.value)}
+          placeholder="e.g. 05 Certificates & Evidence/C01"
+          className={inputCls}
+        />
       </Field>
       {(item.evidence.length > 0 || files.length > 0) && (
         <ul className="m-0 flex list-none flex-col gap-1 p-0 text-[13px]">

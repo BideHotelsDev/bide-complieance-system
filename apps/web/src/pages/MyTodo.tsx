@@ -71,8 +71,24 @@ function cardFor(i: TodoItem): Card {
       callRef: i.call_due ? i.action_ref : undefined,
     }
   if (i.kind === "approval")
-    return { key: i.id, tone: "amber", icon: <Check className="size-[18px]" />, title: i.title, detail: i.detail, href: i.link, button: "Review" }
-  return { key: i.id, tone: "grey", icon: <Flag className="size-[18px]" />, title: i.title, detail: i.detail, href: i.link, button: "Open" }
+    return {
+      key: i.id,
+      tone: "amber",
+      icon: <Check className="size-[18px]" />,
+      title: i.title,
+      detail: i.detail,
+      href: i.link,
+      button: "Review",
+    }
+  return {
+    key: i.id,
+    tone: "grey",
+    icon: <Flag className="size-[18px]" />,
+    title: i.title,
+    detail: i.detail,
+    href: i.link,
+    button: "Open",
+  }
 }
 
 export function MyTodoPage() {
@@ -101,8 +117,10 @@ export function MyTodoPage() {
   let cards: Card[] = []
   if (t) {
     if (view === "everything") cards = [...nowItems.map(cardFor), ...signCards]
-    else if (view === "decisions") cards = nowItems.filter((i) => i.kind === "approval" || i.kind === "call").map(cardFor)
-    else if (view === "today") cards = nowItems.filter((i) => i.kind === "call" || (i.due_on && i.due_on <= today)).map(cardFor)
+    else if (view === "decisions")
+      cards = nowItems.filter((i) => i.kind === "approval" || i.kind === "call").map(cardFor)
+    else if (view === "today")
+      cards = nowItems.filter((i) => i.kind === "call" || (i.due_on && i.due_on <= today)).map(cardFor)
     else if (view === "actions")
       cards = t.mine
         ? t.mine.map((a) => ({
@@ -202,7 +220,9 @@ export function MyTodoPage() {
                 }
               >
                 {reviewTotal === 0 ? (
-                  <EmptyState title="No evidence waiting">Submissions from staff appear here for a second check.</EmptyState>
+                  <EmptyState title="No evidence waiting">
+                    Submissions from staff appear here for a second check.
+                  </EmptyState>
                 ) : (
                   <>
                     {t.reviews.pending > 0 && (
@@ -250,7 +270,9 @@ export function MyTodoPage() {
                 <ol className="m-0 list-none py-1.5 pl-0">
                   {t.coming.map((c, i) => (
                     <li key={i} className="grid grid-cols-[64px_1fr] gap-2.5 px-[18px] py-2">
-                      <span className="font-semibold text-muted-foreground">{c.label.split(" ").slice(0, 2).join(" ")}</span>
+                      <span className="font-semibold text-muted-foreground">
+                        {c.label.split(" ").slice(0, 2).join(" ")}
+                      </span>
                       <span>{c.strong ? <strong className="font-semibold">{c.text}</strong> : c.text}</span>
                     </li>
                   ))}

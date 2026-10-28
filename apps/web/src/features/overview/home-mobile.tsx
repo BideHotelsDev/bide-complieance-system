@@ -33,7 +33,11 @@ function needRow(i: TodoItem, today: string): Row {
 
 function Tile({ p }: { p: PropertySummary }) {
   const opening = p.stage === "pre_opening"
-  const big = p.register_loaded ? String(p.class_a_late) : opening && p.gate ? `${p.gate.done}/${p.gate.applicable}` : "–"
+  const big = p.register_loaded
+    ? String(p.class_a_late)
+    : opening && p.gate
+      ? `${p.gate.done}/${p.gate.applicable}`
+      : "–"
   const muted = !p.register_loaded
   const sub = p.register_loaded
     ? `score ${p.score ?? 0}%`
@@ -56,7 +60,10 @@ function Tile({ p }: { p: PropertySummary }) {
 }
 
 export function MobileHomeView({ today }: { today: string }) {
-  const q = useQuery<MobileHome, ApiError>({ queryKey: ["mobile-home"], queryFn: () => api.get<MobileHome>("/api/mobile-home") })
+  const q = useQuery<MobileHome, ApiError>({
+    queryKey: ["mobile-home"],
+    queryFn: () => api.get<MobileHome>("/api/mobile-home"),
+  })
   const me = useMe()
   const path = useRouterState({ select: (s) => s.location.pathname })
   const rows: Row[] = q.data
@@ -80,11 +87,13 @@ export function MobileHomeView({ today }: { today: string }) {
   return (
     <div className="-mx-4 -my-5 flex min-h-[calc(100vh)] flex-col pb-20">
       <header className="border-b border-divider bg-surface px-[18px] pt-[18px] pb-3">
-        <div className="text-[14px] text-muted-foreground">
-          {hello(me.data?.name, me.data?.first_name)}
-        </div>
+        <div className="text-[14px] text-muted-foreground">{hello(me.data?.name, me.data?.first_name)}</div>
         <h1 className="m-0 text-[22px] font-semibold">
-          {q.data ? (rows.length ? `${rows.length} ${rows.length === 1 ? "thing needs" : "things need"} you` : "Nothing needs you") : " "}
+          {q.data
+            ? rows.length
+              ? `${rows.length} ${rows.length === 1 ? "thing needs" : "things need"} you`
+              : "Nothing needs you"
+            : " "}
         </h1>
       </header>
       <div className="flex flex-1 flex-col gap-3 p-4">
@@ -124,7 +133,9 @@ export function MobileHomeView({ today }: { today: string }) {
                 <Tile key={p.id} p={p} />
               ))}
             </div>
-            <p className="m-0 text-center text-[13px] text-muted-foreground">Full dashboards and reports are on the desktop.</p>
+            <p className="m-0 text-center text-[13px] text-muted-foreground">
+              Full dashboards and reports are on the desktop.
+            </p>
           </>
         )}
       </div>

@@ -7,7 +7,15 @@ import { ShieldCheck } from "lucide-react"
 
 import { api, ApiError } from "@bide-comply/api-client"
 import { MeterBar } from "@bide-comply/ui/components/charts"
-import { Avatar, Callout, Card, ErrorState, LoadingPage, NoPermission, PageHeader } from "@bide-comply/ui/components/page"
+import {
+  Avatar,
+  Callout,
+  Card,
+  ErrorState,
+  LoadingPage,
+  NoPermission,
+  PageHeader,
+} from "@bide-comply/ui/components/page"
 import { Pill } from "@bide-comply/ui/components/status"
 import { Button } from "@bide-comply/ui/components/button"
 import { toast, toastError } from "@bide-comply/ui/components/toaster"
@@ -72,7 +80,11 @@ function Scorecard() {
   })
   if (q.isPending) return <LoadingPage />
   if (q.error)
-    return q.error.status === 403 ? <NoPermission /> : <ErrorState message={q.error.message} onRetry={() => void q.refetch()} />
+    return q.error.status === 403 ? (
+      <NoPermission />
+    ) : (
+      <ErrorState message={q.error.message} onRetry={() => void q.refetch()} />
+    )
   const d = q.data
 
   const share = async () => {
@@ -103,7 +115,8 @@ function Scorecard() {
         }
       />
       <Callout tone="green" icon={<ShieldCheck className="size-4" aria-hidden />}>
-        <strong className="font-semibold">Finding a problem never costs points.</strong> Reporting it scores the same as a pass.
+        <strong className="font-semibold">Finding a problem never costs points.</strong> Reporting it scores the same as
+        a pass.
       </Callout>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_370px]">
@@ -142,7 +155,10 @@ function League({ rows, month }: { rows: LeagueRow[]; month: string }) {
             <span className="tabular text-muted-foreground">{r.score}%</span>
             {r.clean_sheet && <Pill tone="green">Clean sheet</Pill>}
             {r.red_line && (
-              <Pill tone="red" title="Shown red because a life-safety (Class A) item is overdue, whatever the percentage.">
+              <Pill
+                tone="red"
+                title="Shown red because a life-safety (Class A) item is overdue, whatever the percentage."
+              >
                 Life-safety item overdue
               </Pill>
             )}
@@ -150,7 +166,10 @@ function League({ rows, month }: { rows: LeagueRow[]; month: string }) {
         ))}
         {joining.map((r) => (
           <li key={r.property} className="flex items-center gap-2 rounded-full border border-divider py-1 pr-3 pl-1">
-            <span aria-hidden className="inline-flex size-6 items-center justify-center rounded-full bg-hover text-[12px] text-muted-foreground">
+            <span
+              aria-hidden
+              className="inline-flex size-6 items-center justify-center rounded-full bg-hover text-[12px] text-muted-foreground"
+            >
               –
             </span>
             <span className="font-semibold">{r.property}</span>
@@ -165,16 +184,28 @@ function League({ rows, month }: { rows: LeagueRow[]; month: string }) {
         </p>
       ) : (
         <div>
-          <ul role="img" aria-label={`Score this month: ${scored.map((r) => `${r.property} ${r.score}%`).join(", ")}. Goal ${goal}%.`} className="m-0 flex list-none flex-col gap-3 p-0">
+          <ul
+            role="img"
+            aria-label={`Score this month: ${scored.map((r) => `${r.property} ${r.score}%`).join(", ")}. Goal ${goal}%.`}
+            className="m-0 flex list-none flex-col gap-3 p-0"
+          >
             {scored.map((r) => {
               const score = r.score ?? 0
-              const tone = r.red_line || score < 80 ? "var(--c-red)" : score < goal ? "var(--c-amber)" : "var(--c-green)"
+              const tone =
+                r.red_line || score < 80 ? "var(--c-red)" : score < goal ? "var(--c-amber)" : "var(--c-green)"
               return (
                 <li key={r.property} className="grid grid-cols-[120px_1fr_44px] items-center gap-3 text-[13px]">
                   <span className="truncate">{r.property}</span>
                   <span className="relative h-2.5 rounded-full bg-hover" title={`${r.property}: ${score}%`}>
-                    <span className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${Math.min(score, 100)}%`, background: tone }} />
-                    <span aria-hidden className="absolute -inset-y-1 w-0 border-l border-dashed border-st-green" style={{ left: `${goal}%` }} />
+                    <span
+                      className="absolute inset-y-0 left-0 rounded-full"
+                      style={{ width: `${Math.min(score, 100)}%`, background: tone }}
+                    />
+                    <span
+                      aria-hidden
+                      className="absolute -inset-y-1 w-0 border-l border-dashed border-st-green"
+                      style={{ left: `${goal}%` }}
+                    />
                   </span>
                   <strong className="tabular text-right font-semibold">{score}%</strong>
                 </li>
@@ -182,8 +213,8 @@ function League({ rows, month }: { rows: LeagueRow[]; month: string }) {
             })}
           </ul>
           <p className="m-0 mt-3 text-xs text-muted-foreground">
-            Dashed line: goal {goal}%. A site with an overdue life-safety (Class A) item shows red whatever its score. A clean
-            sheet month has nothing overdue.
+            Dashed line: goal {goal}%. A site with an overdue life-safety (Class A) item shows red whatever its score. A
+            clean sheet month has nothing overdue.
           </p>
         </div>
       )}
@@ -193,7 +224,11 @@ function League({ rows, month }: { rows: LeagueRow[]; month: string }) {
 
 function Goals({ goals }: { goals: Goal[] }) {
   return (
-    <Card title="Weekly goals" action={<span className="text-muted-foreground">Live</span>} bodyClassName="flex flex-col gap-5 p-4">
+    <Card
+      title="Weekly goals"
+      action={<span className="text-muted-foreground">Live</span>}
+      bodyClassName="flex flex-col gap-5 p-4"
+    >
       {goals.map((g) => {
         const pct = g.unit === "%"
         const value = g.value ?? 0
@@ -246,8 +281,12 @@ function People({
           <table className="w-full border-collapse text-[13.5px]">
             <thead className="bg-background">
               <tr className="border-b border-divider">
-                <th scope="col" className={th}>Person</th>
-                <th scope="col" className={th}>Property</th>
+                <th scope="col" className={th}>
+                  Person
+                </th>
+                <th scope="col" className={th}>
+                  Property
+                </th>
                 <th scope="col" className={cn(th, "text-right")} title={definitions.on_time}>
                   Checks on time · {targets.on_time}%
                 </th>
@@ -257,7 +296,9 @@ function People({
                 <th scope="col" className={cn(th, "text-right")} title={definitions.actions_on_time}>
                   Actions on time · {targets.actions}%
                 </th>
-                <th scope="col" className={th}>Streak</th>
+                <th scope="col" className={th}>
+                  Streak
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -311,14 +352,25 @@ function People({
 }
 
 function Cell({ show, empty, children }: { show: boolean; empty: string; children: React.ReactNode }) {
-  return <span className="flex justify-end whitespace-nowrap">{show ? children : <span className="text-muted-foreground">{empty}</span>}</span>
+  return (
+    <span className="flex justify-end whitespace-nowrap">
+      {show ? children : <span className="text-muted-foreground">{empty}</span>}
+    </span>
+  )
 }
 
 /* Plain text for the Friday call: goals and the site league. Individual numbers stay on screen (SCO-03). */
 function summary(d: Scorecard): string {
-  const lines = [`Team scorecard · ${d.week_label}`, "Finding a problem never costs points. Reporting it scores the same as a pass.", "", "Weekly goals"]
+  const lines = [
+    `Team scorecard · ${d.week_label}`,
+    "Finding a problem never costs points. Reporting it scores the same as a pass.",
+    "",
+    "Weekly goals",
+  ]
   for (const g of d.goals)
-    lines.push(`- ${g.label}: ${g.value == null ? "no data" : `${g.value}${g.unit ?? ""}`} (goal ${g.goal}) · ${g.on_goal ? "on goal" : "off goal"}`)
+    lines.push(
+      `- ${g.label}: ${g.value == null ? "no data" : `${g.value}${g.unit ?? ""}`} (goal ${g.goal}) · ${g.on_goal ? "on goal" : "off goal"}`,
+    )
   lines.push("", `Site league · ${d.month_label}`)
   for (const r of d.league) {
     if (r.score == null) lines.push(`- ${r.property}: ${(r.joins ?? "joins later").toLowerCase()}`)

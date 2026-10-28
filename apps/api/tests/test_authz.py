@@ -113,8 +113,9 @@ class TestSeparationOfDuties:
     def test_site_lead_can_only_request_a_switch_off(self, login):
         setup = login(SAM).get("/api/setup/TM").json()
         row = next(r for r in setup["rows"] if r["applies"] and r["class"] == "C" or r["applies"])
-        r = login(SL_VIEW).post("/api/setup/TM/toggle", json={"template_id": row["template_id"], "applies": False,
-                                                               "reason": "Not needed"})
+        r = login(SL_VIEW).post(
+            "/api/setup/TM/toggle", json={"template_id": row["template_id"], "applies": False, "reason": "Not needed"}
+        )
         # The settings screen itself needs settings.view; either way the site lead can't switch it off directly.
         assert r.status_code in (200, 403)
         if r.status_code == 200:
@@ -123,7 +124,10 @@ class TestSeparationOfDuties:
 
 class TestSigning:
     def test_only_the_spvs_directors_can_sign(self, login):
-        assert login(DAVID).post("/api/gates/TV/sign", json={"confirm": True, "full_name": "David Liddell"}).status_code == 403
+        assert (
+            login(DAVID).post("/api/gates/TV/sign", json={"confirm": True, "full_name": "David Liddell"}).status_code
+            == 403
+        )
 
     def test_gate_sign_off_locked_until_ready(self, login):
         r = login(TDA).post("/api/gates/TV/sign", json={"confirm": True, "full_name": "TDA Director"})
