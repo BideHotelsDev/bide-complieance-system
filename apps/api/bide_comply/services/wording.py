@@ -9,6 +9,7 @@ import re
 from sqlalchemy import Connection, select
 
 from bide_comply.schema import content_message, theme_version
+from bide_comply.services import contact
 
 PLACEHOLDER = re.compile(r"\{([a-z_]+)\}")
 
@@ -83,9 +84,10 @@ def text(conn: Connection, key: str, default: str, values: dict | None = None) -
 
 def screen_texts(conn: Connection) -> dict[str, str]:
     """On-screen wording (privacy notice, tour, empty states, the failed-check result), published versions only.
-    Texts with details in them ({property}...) are filled in where they're used; see empty_overdue()."""
+    {contact} (who to ask) is filled in here; other details ({property}...) where they're used, see empty_overdue()."""
+    who = contact.phrase(conn, with_role=False)
     return {
-        r.key: r.body
+        r.key: r.body.replace("{contact}", who)
         for r in conn.execute(
             select(content_message.c.key, content_message.c.body).where(content_message.c.group == "screen")
         )

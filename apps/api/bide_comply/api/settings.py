@@ -257,6 +257,7 @@ EXAMPLE = {
     "action": "TV-030",
     "owner": "Lynne",
     "caller": "Samantha",
+    "contact": "Samantha",
     "certificate": "Fire alarm service",
     "expiry_date": "6 Feb 2027",
     "days_left": "60 days",

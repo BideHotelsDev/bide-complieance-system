@@ -175,9 +175,9 @@ MESSAGES = [
         [],
         "bide Comply records the checks you do, the photos you take, the time, and your location once at the moment you "
         "send a check, so inspectors can see the work was done. It never tracks where you are. Your manager and the "
-        "compliance team can see your own numbers; nobody else can. Ask Samantha for a copy of anything held about you.",
+        "compliance team can see your own numbers; nobody else can. Ask {contact} for a copy of anything held about you.",
         None,
-        [],
+        ["contact"],
     ),
     (
         "tour",

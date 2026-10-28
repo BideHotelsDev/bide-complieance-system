@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { api, ApiError } from "@bide-comply/api-client"
+import type { Contact } from "@bide-comply/ui/lib/contact"
 
 export type Me = {
   id: string
@@ -20,6 +21,7 @@ export type Me = {
   preferences: Record<string, unknown>
   privacy_notice_seen: boolean
   session_ends_hours: number | null
+  contact: Contact
 }
 
 export function useMe() {

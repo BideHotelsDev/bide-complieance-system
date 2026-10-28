@@ -146,7 +146,7 @@ class Principal:
         return "staff"
 
 
-NO_PERMISSION = "You don't have permission to do that. Ask Samantha (system owner) if you think you should."
+NO_PERMISSION = "You don't have permission to do that. Ask the system owner if you think you should."
 MESSAGES = {
     "sign.dutyholder": "Only the SPV's own directors can sign this.",
     "approval.decide": "Only the system owner can approve this. It needs someone other than the person who asked.",

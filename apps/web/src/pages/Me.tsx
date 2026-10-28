@@ -23,6 +23,7 @@ import {
 import { Pill } from "@bide-comply/ui/components/status"
 import { Switch } from "@bide-comply/ui/components/switch"
 import { toast, toastError } from "@bide-comply/ui/components/toaster"
+import { contactPhrase } from "@bide-comply/ui/lib/contact"
 import { applyMode, savedMode, type Mode } from "@bide-comply/ui/lib/theme"
 import { cn } from "@bide-comply/ui/lib/utils"
 
@@ -131,7 +132,7 @@ function About({ me }: { me: Me }) {
         ]}
       />
       <p className="m-0 text-[12.5px] text-muted-foreground">
-        Something wrong here? Ask Samantha (system owner) to change your roles or properties.
+        Something wrong here? Ask {contactPhrase(me.contact)} to change your roles or properties.
       </p>
     </Card>
   )

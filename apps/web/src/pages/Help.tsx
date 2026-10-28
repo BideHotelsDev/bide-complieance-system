@@ -9,6 +9,7 @@ import * as React from "react"
 
 import { Callout, Card, PageHeader } from "@bide-comply/ui/components/page"
 import { ClassBadge, PriorityBadge, RagBadge, TaskBadge } from "@bide-comply/ui/components/status"
+import { useContact } from "@bide-comply/ui/lib/contact"
 import { cn } from "@bide-comply/ui/lib/utils"
 
 import { navFor, useMe } from "@/lib/session"
@@ -105,6 +106,7 @@ const SECTIONS = [
 
 export function HelpPage() {
   const me = useMe().data
+  const contact = useContact()
   const tour = useWording().data?.tour
   // This page is the tour: opening it marks the tour as taken, so the sidebar stops offering it.
   React.useEffect(() => {
@@ -287,7 +289,7 @@ export function HelpPage() {
       </Section>
 
       <p className="m-0 text-[13px] text-muted-foreground">
-        Still stuck? Ask Samantha (system owner). Your notification and display settings are in{" "}
+        Still stuck? Ask {contact}. Your notification and display settings are in{" "}
         <Link to="/me" className="text-link">
           Your account
         </Link>

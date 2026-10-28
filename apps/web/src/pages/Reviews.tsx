@@ -13,6 +13,7 @@ import { Button } from "@bide-comply/ui/components/button"
 import { Callout, EmptyState, ErrorState, NoPermission, Skeleton } from "@bide-comply/ui/components/page"
 import { ClassBadge, FlagBadge, Pill, type Tone } from "@bide-comply/ui/components/status"
 import { toast, toastError } from "@bide-comply/ui/components/toaster"
+import { contactPhrase } from "@bide-comply/ui/lib/contact"
 import { cn } from "@bide-comply/ui/lib/utils"
 
 import { ContractorUpload } from "@/features/queues/contractor-upload"
@@ -50,7 +51,9 @@ export function ReviewsPage() {
 
   if (me.data && !me.data.can.verify)
     return (
-      <NoPermission message="Evidence review is for verifiers. Ask Samantha (system owner) if you think you should." />
+      <NoPermission
+        message={`Evidence review is for verifiers. Ask ${contactPhrase(me.data.contact)} if you think you should.`}
+      />
     )
 
   const go = (id: string | null) => set({ sel: id ?? undefined })

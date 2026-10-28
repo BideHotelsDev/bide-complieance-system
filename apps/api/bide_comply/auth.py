@@ -32,6 +32,7 @@ from bide_comply.authz import STRONG_AUTH_ROLES, Principal, load_principal
 from bide_comply.config import settings
 from bide_comply.db import ConnDep
 from bide_comply.schema import auth_session, device, otp_challenge, person, role_assignment, totp_secret
+from bide_comply.services import contact
 
 ACCESS_COOKIE = "bc_access"
 REFRESH_COOKIE = "bc_refresh"
@@ -185,7 +186,7 @@ def _send_otp(conn: Connection, p: dict, device_id: uuid.UUID, purpose: str = "n
         f"Your bide Comply code: {code}",
         f"Your code is {code}. It works for {settings.otp_minutes} minutes.\n\n"
         "You're seeing this because someone signed in to bide Comply on a new device. If it wasn't you, tell "
-        "Samantha straight away.",
+        f"{contact.phrase(conn)} straight away.",
     )
     return cid
 
@@ -418,7 +419,11 @@ def google_callback(request: Request, conn: ConnDep, code: str, state: str) -> R
     p = conn.execute(select(person).where(person.c.email == email)).mappings().first()
     if not p:
         raise HTTPException(
-            403, detail={"code": "unknown", "message": "You're not set up in bide Comply yet. Ask Samantha."}
+            403,
+            detail={
+                "code": "unknown",
+                "message": f"You're not set up in bide Comply yet. Ask {contact.phrase(conn, with_role=False)}.",
+            },
         )
     if not p["google_sub"]:
         conn.execute(update(person).where(person.c.id == p["id"]).values(google_sub=claims["sub"]))
@@ -443,7 +448,13 @@ def pending_state(request: Request, conn: ConnDep) -> dict:
     p = conn.execute(select(person.c.name, person.c.email).where(person.c.id == pend.person_id)).first()
     email = p.email or ""
     local, _, dom = email.partition("@")
-    return {"stage": pend.stage, "name": p.name, "email_masked": f"{local[:2]}…@{dom}", "app": pend.app}
+    return {
+        "stage": pend.stage,
+        "name": p.name,
+        "email_masked": f"{local[:2]}…@{dom}",
+        "app": pend.app,
+        "contact": contact.contact(conn),
+    }
 
 
 @router.post("/code")

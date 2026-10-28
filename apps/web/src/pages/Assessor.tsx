@@ -13,6 +13,7 @@ import { Button } from "@bide-comply/ui/components/button"
 import { Card, EmptyState, ErrorState, LoadingPage, NoPermission, PageHeader } from "@bide-comply/ui/components/page"
 import { ClassBadge, Pill } from "@bide-comply/ui/components/status"
 import { toast, toastError } from "@bide-comply/ui/components/toaster"
+import { useContact } from "@bide-comply/ui/lib/contact"
 import { cn } from "@bide-comply/ui/lib/utils"
 
 import { AppLink } from "@/features/overview/home-shared"
@@ -104,11 +105,10 @@ export function AssessorPage() {
 /* The assessor's properties, as links. Shown when no walk loads, and as a switcher when there is more than one. */
 function PropertyPicker({ current, compact = false }: { current?: string; compact?: boolean }) {
   const me = useMe().data
+  const contact = useContact()
   const props = me?.properties ?? []
   if (props.length === 0)
-    return compact ? null : (
-      <EmptyState title="No properties yet">Ask Samantha (system owner) to add you to a property.</EmptyState>
-    )
+    return compact ? null : <EmptyState title="No properties yet">Ask {contact} to add you to a property.</EmptyState>
   if (compact && props.length < 2) return null
   return (
     <nav

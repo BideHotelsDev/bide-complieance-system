@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     google_workspace_domains: str = "bidehotels.com"
     # Local development and demos only: sign in as any seeded person without Google. Refused in production.
     dev_login: bool = False
+    # First Super Admins for a new install, as "Name <email>, email". Used at start-up only while nobody is a
+    # Super Admin; see seed/admins.py.
+    bootstrap_admins: str = ""
 
     # Business logic runs in UK time whatever the viewer's timezone (SCH-04).
     business_timezone: str = "Europe/London"

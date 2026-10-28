@@ -5,6 +5,7 @@
 import * as React from "react"
 import { AlertTriangle, Lock, Maximize2, X } from "lucide-react"
 
+import { useContact } from "../lib/contact"
 import { cn } from "../lib/utils"
 
 export function PageHeader({
@@ -298,12 +299,13 @@ export function ErrorState({
 }
 
 export function NoPermission({ message }: { message?: React.ReactNode }) {
+  const contact = useContact()
   return (
     <div className="flex flex-col items-center gap-2 px-6 py-16 text-center">
       <Lock aria-hidden className="size-6 text-subtle" />
       <div className="font-semibold">You don't have access to this page</div>
       <div className="max-w-md text-[13px] text-muted-foreground">
-        {message ?? "Ask Samantha (system owner) if you think you should."}
+        {message ?? `Ask ${contact} if you think you should.`}
       </div>
     </div>
   )

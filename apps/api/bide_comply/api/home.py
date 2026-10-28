@@ -27,7 +27,7 @@ from bide_comply.schema import (
     template,
     theme_version,
 )
-from bide_comply.services import views
+from bide_comply.services import contact, views
 from bide_comply.services.common import fmt_day, initials, problem
 from bide_comply.services.register import scores
 
@@ -97,6 +97,8 @@ def me(pr: Current, conn: ConnDep) -> dict:
         "preferences": p["preferences"] or {},
         "privacy_notice_seen": bool(p["privacy_notice_seen_at"]),
         "session_ends_hours": 8 if pr.kind == "external" else None,
+        # Who "Ask ..." lines name: the system owner, else a Super Admin.
+        "contact": contact.contact(conn),
     }
 
 

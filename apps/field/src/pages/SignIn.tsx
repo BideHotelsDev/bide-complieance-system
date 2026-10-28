@@ -7,6 +7,7 @@ import { appPath } from "@/lib/base"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { api, ApiError } from "@bide-comply/api-client"
 import { Mark } from "@bide-comply/ui/components/page"
+import { contactPhrase, type Contact } from "@bide-comply/ui/lib/contact"
 import { cn } from "@bide-comply/ui/lib/utils"
 import { ShieldCheck } from "lucide-react"
 import * as React from "react"
@@ -113,7 +114,8 @@ function CodeBoxes({ value, onChange }: { value: string; onChange: (v: string) =
 export function CodePage({ stage }: { stage: "code" | "totp" | "totp-setup" }) {
   const pending = useQuery({
     queryKey: ["pending"],
-    queryFn: () => api.get<{ stage: string; name: string; email_masked: string }>("/api/auth/pending"),
+    queryFn: () =>
+      api.get<{ stage: string; name: string; email_masked: string; contact: Contact }>("/api/auth/pending"),
     retry: false,
   })
   const setup = useQuery({
@@ -193,7 +195,10 @@ export function CodePage({ stage }: { stage: "code" | "totp" | "totp-setup" }) {
             </p>
             <div className="mt-4 flex gap-3 rounded-xl border border-divider bg-surface px-4 py-3.5 text-[15px]">
               <ShieldCheck aria-hidden className="mt-0.5 size-5 shrink-0" />
-              <span>After this, the phone is trusted for 90 days. If it is lost, ask Samantha to sign it out.</span>
+              <span>
+                After this, the phone is trusted for 90 days. If it is lost, ask{" "}
+                {contactPhrase(pending.data?.contact ?? null, false)} to sign it out.
+              </span>
             </div>
           </>
         )}

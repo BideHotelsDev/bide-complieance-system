@@ -4,16 +4,18 @@ import { Dialog as DialogPrimitive } from "radix-ui"
 
 import { api } from "@bide-comply/api-client"
 import { Button } from "@bide-comply/ui/components/button"
+import { useContact } from "@bide-comply/ui/lib/contact"
 
 import { useWording } from "@/lib/wording"
 
-export const PRIVACY_TEXT =
-  "bide Comply records the checks you do, the photos you take, the time, and your location once at the moment you send a check, so inspectors can see the work was done. It never tracks where you are. Your manager and the compliance team can see your own numbers; nobody else can. Ask Samantha for a copy of anything held about you."
+const privacyText = (contact: string) =>
+  `bide Comply records the checks you do, the photos you take, the time, and your location once at the moment you send a check, so inspectors can see the work was done. It never tracks where you are. Your manager and the compliance team can see your own numbers; nobody else can. Ask ${contact} for a copy of anything held about you.`
 
 export function PrivacyNotice() {
   const qc = useQueryClient()
   // The published wording from Settings › Messages and wording; the built-in text until it loads.
   const words = useWording()
+  const contact = useContact(false)
   const seen = useMutation({
     mutationFn: () => api.post("/api/me/privacy-notice"),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["me"] }),
@@ -31,7 +33,7 @@ export function PrivacyNotice() {
             What bide Comply records about you
           </DialogPrimitive.Title>
           <DialogPrimitive.Description className="mt-2 text-[14px] text-ink2">
-            {words.data?.privacy_notice || PRIVACY_TEXT}
+            {words.data?.privacy_notice || privacyText(contact)}
           </DialogPrimitive.Description>
           <div className="mt-4 flex justify-end">
             <Button onClick={() => seen.mutate()} disabled={seen.isPending}>
