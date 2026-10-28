@@ -19,6 +19,7 @@ from bide_comply.schema import (
     contractor,
     contractor_visit,
     device,
+    escalation,
     incident,
     incident_evidence,
     location,
@@ -117,9 +118,14 @@ def today(pr: Current, conn: ConnDep, property: uuid.UUID | None = None) -> dict
             "life_safety": r["klass"] == "A",
             "property": r["property"],
             "subtitle": _subtitle(r, []),
+            "property_id": str(r["property_id"]),
             "due_at": r["due_at"],
             "minutes": r["typical_minutes"],
         }
+        if card["subtitle"] == "Rotate call point":
+            nxt = _next_call_point(conn, r["register_item_id"], r["property_id"])
+            if nxt:
+                card["subtitle"] += f" · next is {nxt.split(' · ')[0]}"
         if r["status"] == "overdue":
             card["badge"] = overdue_label(r["due_at"], now)
             overdue.append(card)
@@ -149,6 +155,36 @@ def today(pr: Current, conn: ConnDep, property: uuid.UUID | None = None) -> dict
         "streak_weeks": streak,
         "properties": [{"id": str(p.id), "name": p.name} for p in props],
     }
+
+
+def _call_points(conn: Connection, property_id: uuid.UUID) -> list[str]:
+    return list(
+        conn.execute(
+            select(location.c.name)
+            .where(location.c.property_id == property_id, location.c.active.is_(True), location.c.type == "call_point")
+            .order_by(location.c.sort)
+        ).scalars()
+    )
+
+
+def _rotate(conn: Connection, register_item_id: uuid.UUID, key: str | None, opts: list[str]) -> str:
+    """The next call point in rotation after the last one recorded (any field holding a call point if no key)."""
+    last = conn.execute(
+        select(submission.c["values"])
+        .join(task, task.c.id == submission.c.task_id)
+        .where(task.c.register_item_id == register_item_id)
+        .order_by(submission.c.server_time.desc())
+        .limit(1)
+    ).scalar()
+    vals = last or {}
+    prev = vals.get(key) if key else next((v for v in vals.values() if v in opts), None)
+    idx = (opts.index(prev) + 1) % len(opts) if prev in opts else 0
+    return opts[idx]
+
+
+def _next_call_point(conn: Connection, register_item_id: uuid.UUID, property_id: uuid.UUID) -> str | None:
+    opts = _call_points(conn, property_id)
+    return _rotate(conn, register_item_id, None, opts) if opts else None
 
 
 def _short_name(name: str) -> str:
@@ -215,16 +251,7 @@ def task_detail(task_id: uuid.UUID, pr: Current, conn: ConnDep) -> dict:
             f["options"] = opts
             if src == "call_point" and opts:
                 # Suggest the next call point in rotation after the last one recorded.
-                last = conn.execute(
-                    select(submission.c["values"])
-                    .join(task, task.c.id == submission.c.task_id)
-                    .where(task.c.register_item_id == t["register_item_id"])
-                    .order_by(submission.c.server_time.desc())
-                    .limit(1)
-                ).scalar()
-                prev = (last or {}).get(f["key"])
-                idx = (opts.index(prev) + 1) % len(opts) if prev in opts else 0
-                f["suggested"] = opts[idx]
+                f["suggested"] = _rotate(conn, t["register_item_id"], f["key"], opts)
         form.append(f)
     now = clock.now()
     status = t["status"]
@@ -254,6 +281,8 @@ def task_detail(task_id: uuid.UUID, pr: Current, conn: ConnDep) -> dict:
         "status": status,
         "status_note": note,
         "guidance": tpl["guidance"],
+        "example_photo_id": str(tpl["example_photo_id"]) if tpl["example_photo_id"] else None,
+        "property_id": str(t["property_id"]),
         "form": form,
         "version": t["version"],
         "due_at": t["due_at"],
@@ -308,8 +337,28 @@ def submit(task_id: uuid.UUID, body: SubmitIn, request: Request, pr: Current, co
             "due_label": "due today" if a["due_on"] == clock.today() else f"due {fmt_day(a['due_on'])}",
             "owner": a["owner"],
             "class_a": a["class_a"],
+            "alerted": _alerted(conn, task_id, pr.person_id),
         }
     return out
+
+
+def _alerted(conn: Connection, task_id: uuid.UUID, me: uuid.UUID) -> list[str]:
+    """First names of the people the failed-check escalation told (the assessor by role), for the result screen."""
+    rec = conn.execute(select(escalation.c.recipients).where(escalation.c.dedupe_key == f"failed:{task_id}")).scalar()
+    ids = {uuid.UUID(x) for x in (rec or [])} - {me}
+    if not ids:
+        return []
+    rows = conn.execute(select(person.c.id, person.c.name, person.c.kind).where(person.c.id.in_(ids))).all()
+    assessors = set(
+        conn.execute(
+            select(role_assignment.c.person_id).where(
+                role_assignment.c.person_id.in_(ids), role_assignment.c.role == "assessor"
+            )
+        ).scalars()
+    )
+    # Placeholder people from the register ("[Site lead, The View]") keep their whole name.
+    named = sorted(r.name if r.name.startswith("[") else r.name.split()[0] for r in rows if r.id not in assessors)
+    return named + (["the assessor"] if assessors else [])
 
 
 class NaIn(BaseModel):
@@ -787,10 +836,28 @@ def documents(pr: Current, conn: ConnDep) -> dict:
                 "detail": r["detail"] or r["property"] or "",
                 "status": st,
                 "label": label,
+                "key": r["key"],
             }
         )
     all_set = all(o["status"] == "ok" for o in out) and bool(out)
-    return {"all_set": all_set, "rows": out}
+    types = conn.execute(
+        select(staff_requirement_type.c.key, staff_requirement_type.c.name, staff_requirement_type.c.renew_months)
+        .where(staff_requirement_type.c.restricted.is_(False))
+        .order_by(staff_requirement_type.c.name)
+    ).mappings()
+    return {"all_set": all_set, "rows": out, "types": [dict(t) for t in types]}
+
+
+@router.get("/locations")
+def locations(pr: Current, conn: ConnDep, property: uuid.UUID) -> list[dict]:  # noqa: A002
+    """Where something happened, for Report something."""
+    pr.require_property(property)
+    rows = conn.execute(
+        select(location.c.id, location.c.name, location.c.type)
+        .where(location.c.property_id == property, location.c.active.is_(True))
+        .order_by(location.c.sort)
+    ).mappings()
+    return [dict(r) | {"id": str(r["id"])} for r in rows]
 
 
 class DocUploadIn(BaseModel):

@@ -1,0 +1,20 @@
+@import "@bide-comply/ui/styles.css";
+@source "../../../packages/ui/src";
+
+/* The staff app: larger type, 16px inputs so iOS doesn't zoom, room for gloved thumbs (PRD §10.8). */
+@layer base {
+  body {
+    font-size: 15px;
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+@utility pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 0px);
+}
