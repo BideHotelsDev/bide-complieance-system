@@ -443,8 +443,14 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
             {d.any_filter ? ` · ${d.summary.replace(/\.$/, "").toLowerCase()}` : ""}
           </p>
           <div className="overflow-x-auto rounded-[10px] border border-divider bg-surface">
-            <table className="w-full min-w-[1120px] border-collapse text-[13.5px]">
+            <table className="w-full min-w-[1080px] table-fixed border-collapse text-[13.5px]">
               <caption className="sr-only">Checks at {d.property} and who does each one</caption>
+              {/* Fixed widths so the pickers can't push Verifier and Setup off the page; Template takes the rest. */}
+              <colgroup>
+                {[60, 72, undefined, 100, 164, 136, 124, 128, 128].map((w, i) => (
+                  <col key={i} style={w ? { width: w } : undefined} />
+                ))}
+              </colgroup>
               <thead>
                 <tr className="text-left text-xs text-muted-foreground">
                   {[
@@ -489,7 +495,7 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
                       key={r.template_id}
                       className={cn("border-b border-divider last:border-0", off && "bg-background/60")}
                     >
-                      <td className="w-[70px] py-2 pl-3">
+                      <td className="py-2 pl-3">
                         <Switch
                           aria-label={`Applies: ${r.template}`}
                           checked={r.applies && r.setup !== "off_requested" ? true : r.applies}
@@ -501,10 +507,8 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
                           onCheckedChange={(v) => (v ? toggle.mutate({ row: r, applies: true }) : setSwitching(r))}
                         />
                       </td>
-                      <td className="mono-id w-[72px] px-2 text-xs whitespace-nowrap text-muted-foreground">
-                        {r.ref ?? "—"}
-                      </td>
-                      <td className="max-w-[270px] px-2">
+                      <td className="mono-id px-2 text-xs whitespace-nowrap text-muted-foreground">{r.ref ?? "—"}</td>
+                      <td className="px-2">
                         <span className="flex items-center gap-2">
                           <ClassBadge klass={r.class} />
                           <span className={cn("truncate", off && "text-muted-foreground")} title={r.template}>
@@ -548,15 +552,15 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
                         </>
                       ) : (
                         <>
-                          <td className="w-[120px] px-2">
+                          <td className="px-2">
                             <button
                               type="button"
                               disabled={!editable}
                               onClick={() => setFreqRow(r)}
-                              className="rounded px-1 py-0.5 text-left hover:bg-hover disabled:hover:bg-transparent"
+                              className="w-full rounded px-1 py-0.5 text-left hover:bg-hover disabled:hover:bg-transparent"
                               title={r.frequency_reason ? `Set by: ${r.frequency_reason}` : "Change how often"}
                             >
-                              <span className="block whitespace-nowrap">{r.frequency_label}</span>
+                              <span className="block truncate">{r.frequency_label}</span>
                               {r.frequency_default && (
                                 <span className="block text-[11.5px] text-muted-foreground">
                                   Default {r.frequency_default}
@@ -564,7 +568,7 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
                               )}
                             </button>
                           </td>
-                          <td className="w-[190px] px-1 py-1.5">
+                          <td className="px-1 py-1.5">
                             <AssigneePicker
                               label={`Done by for ${r.ref}`}
                               value={r.done_by}
@@ -591,7 +595,7 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
                               onFreeText={(t) => freeText(r, "done_by", t)}
                             />
                           </td>
-                          <td className="w-[160px] px-1 py-1.5">
+                          <td className="px-1 py-1.5">
                             <AssigneePicker
                               label={`Accountable for ${r.ref}`}
                               value={r.accountable}
@@ -605,7 +609,7 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
                               onFreeText={(t) => freeText(r, "accountable", t)}
                             />
                           </td>
-                          <td className="w-[160px] px-1 py-1.5">
+                          <td className="px-1 py-1.5">
                             <AssigneePicker
                               label={`Cover for ${r.ref}`}
                               value={r.cover ?? "Add cover"}
@@ -628,7 +632,7 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
                               onFreeText={(t) => freeText(r, "cover", t)}
                             />
                           </td>
-                          <td className="w-[150px] px-1 py-1.5">
+                          <td className="px-1 py-1.5">
                             <AssigneePicker
                               label={`Verifier for ${r.ref}`}
                               value={r.verifier ?? "Spot-check"}

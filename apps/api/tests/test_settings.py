@@ -382,3 +382,61 @@ class TestContractorPortal:
             .status_code
             == 403
         )
+
+
+def test_tone_of_messages_styles_alerts_and_empty_states():
+    from bide_comply.schema import theme_version
+    from bide_comply.services import wording
+
+    values = {"check": "Fire alarm test", "property": "The View", "due_date": "today", "typical_time": "5 minutes"}
+    with engine.begin() as c:
+        live = c.execute(
+            select(theme_version.c.id, theme_version.c.tokens).where(theme_version.c.status == "live")
+        ).first()
+        assert live, "the demo has a live theme"
+        try:
+            plain = wording.message(c, "check_due_soon", values | {"person": "Pamela Mathers"})
+            for tone, expect in (("warm", "Hi Pamela. "), ("brief", None)):
+                c.execute(
+                    update(theme_version)
+                    .where(theme_version.c.id == live.id)
+                    .values(tokens=live.tokens | {"tone": tone})
+                )
+                body, short = wording.message(c, "check_due_soon", values | {"person": "Pamela Mathers"})
+                if expect:
+                    assert body.startswith(expect) and body.endswith("Thank you.")
+                else:
+                    assert body == short == "Fire alarm test due today"
+                # The privacy notice is left exactly as written whatever the tone.
+                assert wording.styled("privacy_notice", "As written.", None, tone, {}) == "As written."
+        finally:
+            c.execute(update(theme_version).where(theme_version.c.id == live.id).values(tokens=live.tokens))
+    assert plain[0] == "Fire alarm test at The View is due today. It usually takes about 5 minutes."
+
+
+def test_empty_state_wording_reaches_the_register_and_today(login):
+    with engine.begin() as c:
+        c.execute(
+            update(content_message)
+            .where(content_message.c.key == "empty_overdue")
+            .values(body="All clear at {property}. Next up: {next_check} on {next_date}.")
+        )
+    try:
+        from bide_comply.services import wording
+
+        with engine.connect() as c:
+            line = wording.empty_overdue(c, "The Hearth", "emergency lighting", "Mon 2 Nov")
+            assert line == "All clear at The Hearth. Next up: emergency lighting on Mon 2 Nov."
+            assert wording.empty_overdue(c, "The Hearth", None, None) == "All clear at The Hearth."
+        # The View has overdue checks in the demo, so the register has no empty-state line there.
+        reg = login(DAVID).get("/api/properties/TM/register").json()
+        assert reg["nothing_overdue"] is None
+        today = login(PAM, "field").get("/api/field/today").json()
+        assert "nothing_overdue" in today
+    finally:
+        with engine.begin() as c:
+            c.execute(
+                update(content_message)
+                .where(content_message.c.key == "empty_overdue")
+                .values(body="Nothing is overdue at {property}. Next check: {next_check}, {next_date}.")
+            )

@@ -172,7 +172,29 @@ def today(pr: Current, conn: ConnDep, property: uuid.UUID | None = None) -> dict
         "upcoming": upcoming[:5],
         "streak_weeks": streak,
         "properties": [{"id": str(p.id), "name": p.name} for p in props],
+        "nothing_overdue": _nothing_overdue(conn, overdue, todays + upcoming, props, property),
     }
+
+
+def _nothing_overdue(conn: Connection, overdue: list, coming: list, props, property_id) -> str | None:
+    """Today's empty state (Settings › Messages and wording › Empty states), when nothing of theirs is overdue."""
+    if overdue:
+        return None
+    nxt = min(coming, key=lambda c: c["due_at"]) if coming else None
+    if nxt:
+        where = nxt["property"]
+    elif property_id is not None:
+        where = next((p.name for p in props if p.id == property_id), None)
+    else:
+        where = props[0].name if len(props) == 1 else None
+    if not where:
+        return None
+    return wording.empty_overdue(
+        conn,
+        where,
+        nxt["title"][:1].lower() + nxt["title"][1:] if nxt else None,
+        fmt_day(clock.london(nxt["due_at"]).date()) if nxt else None,
+    )
 
 
 def _call_points(conn: Connection, property_id: uuid.UUID) -> list[str]:

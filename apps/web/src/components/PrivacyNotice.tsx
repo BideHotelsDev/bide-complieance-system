@@ -1,9 +1,11 @@
 /* Staff privacy notice at first sign-in (§9.7). The wording is edited in Settings › Messages and wording. */
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Dialog as DialogPrimitive } from "radix-ui"
 
 import { api } from "@bide-comply/api-client"
 import { Button } from "@bide-comply/ui/components/button"
+
+import { useWording } from "@/lib/wording"
 
 export const PRIVACY_TEXT =
   "bide Comply records the checks you do, the photos you take, the time, and your location once at the moment you send a check, so inspectors can see the work was done. It never tracks where you are. Your manager and the compliance team can see your own numbers; nobody else can. Ask Samantha for a copy of anything held about you."
@@ -11,11 +13,7 @@ export const PRIVACY_TEXT =
 export function PrivacyNotice() {
   const qc = useQueryClient()
   // The published wording from Settings › Messages and wording; the built-in text until it loads.
-  const words = useQuery({
-    queryKey: ["wording"],
-    queryFn: () => api.get<Record<string, string>>("/api/settings/wording"),
-    staleTime: 5 * 60_000,
-  })
+  const words = useWording()
   const seen = useMutation({
     mutationFn: () => api.post("/api/me/privacy-notice"),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["me"] }),

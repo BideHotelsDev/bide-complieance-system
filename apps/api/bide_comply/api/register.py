@@ -32,9 +32,9 @@ from bide_comply.schema import (
     template,
 )
 from bide_comply.services import actions as action_service
-from bide_comply.services import checks
+from bide_comply.services import checks, wording
 from bide_comply.services import evidence as ev_service
-from bide_comply.services.common import check_named, fmt_date, names, problem
+from bide_comply.services.common import check_named, fmt_date, fmt_day, names, problem
 from bide_comply.services.register import cancel_future, refresh_item, sync_open_tasks
 
 router = APIRouter(prefix="/api", tags=["register"])
@@ -293,7 +293,22 @@ def property_register(
     out = res.dump()
     out["groups"] = groups
     out["of_total"] = len(rows)
+    out["nothing_overdue"] = nothing_overdue(conn, p["name"], rows)
     return out
+
+
+def nothing_overdue(conn, property_name: str, rows: list[dict]) -> str | None:
+    """The empty-state line from Settings › Messages and wording, or None while something is overdue."""
+    if not rows or any(r["status"] == "red" for r in rows):
+        return None
+    upcoming = sorted((r for r in rows if r["status"] != "grey" and r["next_due_on"]), key=lambda r: r["next_due_on"])
+    nxt = upcoming[0] if upcoming else None
+    return wording.empty_overdue(
+        conn,
+        property_name,
+        nxt["check"][:1].lower() + nxt["check"][1:] if nxt else None,
+        fmt_day(nxt["next_due_on"]) if nxt else None,
+    )
 
 
 @router.get("/register/{ref}")

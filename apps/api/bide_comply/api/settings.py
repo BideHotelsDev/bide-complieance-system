@@ -295,6 +295,11 @@ def fill(text: str) -> str:
     return re.sub(r"\{([a-z_]+)\}", lambda m: EXAMPLE.get(m.group(1), m.group(0)), text)
 
 
+def _preview(conn, key: str, body: str, short: str | None) -> str:
+    """The example as people will see it: filled in, in the live Tone of messages (Settings › Appearance)."""
+    return wording.styled(key, fill(body), fill(short) if short else None, wording.tone(conn), EXAMPLE)
+
+
 @router.get("/content")
 def content(pr: Current, conn: ConnDep) -> dict:
     pr.require("settings.view")
@@ -344,7 +349,7 @@ def content_item(key: str, pr: Current, conn: ConnDep) -> dict:
         "published_body": r["body"],
         "edited": r["draft_body"] is not None,
         "placeholders": r["placeholders"],
-        "preview": fill(body),
+        "preview": _preview(conn, key, body, r["short_body"]),
         "short": fill(r["short_body"]) if r["short_body"] else None,
         "tone": tone_check(body, _limit(r)),
         "can_edit": pr.can("content.edit"),
@@ -369,7 +374,7 @@ def save_content(key: str, body: ContentIn, pr: Current, conn: ConnDep) -> dict:
         .where(content_message.c.key == key)
         .values(draft_body=body.body, updated_by=pr.person_id)
     )
-    return {"preview": fill(body.body), "tone": tone_check(body.body, _limit(r))}
+    return {"preview": _preview(conn, key, body.body, r["short_body"]), "tone": tone_check(body.body, _limit(r))}
 
 
 @router.post("/content/publish")
@@ -506,7 +511,7 @@ def validate_tokens(tokens: dict) -> dict:
         "radius": radius,
         "font": font,
         "density": density,
-        "tone": tokens.get("tone", "plain"),
+        "tone": tokens.get("tone", "plain") if tokens.get("tone", "plain") in wording.TONES else "plain",
         "preset": tokens.get("preset"),
     }
 

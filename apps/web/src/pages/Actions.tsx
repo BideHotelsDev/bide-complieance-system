@@ -99,10 +99,10 @@ export function ActionsPage() {
         header: "Description",
         cell: ({ row: { original: r } }) => (
           <div className="min-w-0">
-            <div className="max-w-[300px] truncate xl:max-w-[380px]" title={r.description}>
+            <div className="max-w-[230px] truncate min-[1400px]:max-w-[320px] 2xl:max-w-[440px]" title={r.description}>
               {r.description}
             </div>
-            <div className="text-[12px] text-muted-foreground">
+            <div className="max-w-[230px] truncate text-[12px] text-muted-foreground min-[1400px]:max-w-[320px] 2xl:max-w-[440px]">
               {[r.property, r.source_label, r.gate_ref ? `Gate ${r.gate_ref}` : null].filter(Boolean).join(" · ")}
             </div>
           </div>

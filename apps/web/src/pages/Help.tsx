@@ -7,11 +7,12 @@ import { Link } from "@tanstack/react-router"
 import { ArrowRight, Search } from "lucide-react"
 import * as React from "react"
 
-import { Card, PageHeader } from "@bide-comply/ui/components/page"
+import { Callout, Card, PageHeader } from "@bide-comply/ui/components/page"
 import { ClassBadge, PriorityBadge, RagBadge, TaskBadge } from "@bide-comply/ui/components/status"
 import { cn } from "@bide-comply/ui/lib/utils"
 
 import { navFor, useMe } from "@/lib/session"
+import { useWording } from "@/lib/wording"
 
 const TOUR_KEY = "bc-tour"
 
@@ -104,6 +105,7 @@ const SECTIONS = [
 
 export function HelpPage() {
   const me = useMe().data
+  const tour = useWording().data?.tour
   // This page is the tour: opening it marks the tour as taken, so the sidebar stops offering it.
   React.useEffect(() => {
     try {
@@ -121,6 +123,8 @@ export function HelpPage() {
         title="Help and guides"
         subtitle="A 2-minute tour of where things are and what the colours mean, the five golden rules, and the three journeys the whole system is built around."
       />
+      {/* The short version, edited in Settings › Messages and wording › First-run tour. */}
+      {tour && <Callout tone="blue">{tour}</Callout>}
       <nav aria-label="On this page" className="flex flex-wrap gap-2">
         {SECTIONS.map((s, i) => (
           <a

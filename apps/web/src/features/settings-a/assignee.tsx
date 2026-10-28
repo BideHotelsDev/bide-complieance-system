@@ -166,7 +166,9 @@ export function AssigneePicker({
               open && "border-st-blue bg-surface",
             )}
           >
-            <span className="min-w-0 flex-1 truncate">{value}</span>
+            <span className="min-w-0 flex-1 truncate" title={value}>
+              {value}
+            </span>
             {badge}
             {!disabled && <ChevronDown aria-hidden className="size-3.5 shrink-0 opacity-60" />}
           </button>

@@ -99,7 +99,7 @@ export function LibraryPage() {
       id: "template",
       header: "Template",
       cell: ({ row: { original: r } }) => (
-        <div className="min-w-[260px] py-0.5 xl:min-w-[320px]">
+        <div className="min-w-[220px] py-0.5 2xl:min-w-[320px]">
           <Link
             to="/settings/library/$id"
             params={{ id: r.id }}
@@ -125,7 +125,7 @@ export function LibraryPage() {
     {
       id: "type",
       header: "Type",
-      cell: ({ row }) => <span className="whitespace-nowrap">{row.original.kind_label}</span>,
+      cell: ({ row }) => <span className="block max-w-[110px]">{row.original.kind_label}</span>,
     },
     {
       id: "how_often",

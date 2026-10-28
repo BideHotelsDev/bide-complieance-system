@@ -63,7 +63,10 @@ export function RegisterTab({ property }: { property: PropertyDetail }) {
             id: "check",
             header: "Check",
             cell: ({ row }) => (
-              <span className="block max-w-[360px] truncate" title={row.original.check}>
+              <span
+                className="block max-w-[200px] truncate xl:max-w-[240px] 2xl:max-w-[420px]"
+                title={row.original.check}
+              >
                 {row.original.check}
               </span>
             ),
@@ -77,7 +80,12 @@ export function RegisterTab({ property }: { property: PropertyDetail }) {
           {
             id: "next_due",
             header: "Next due",
-            cell: ({ row }) => <span className="whitespace-nowrap">{row.original.next_due_label}</span>,
+            // Not-applicable rows give their reason here, which can be long.
+            cell: ({ row }) => (
+              <span className="block max-w-[130px] truncate 2xl:max-w-[220px]" title={row.original.next_due_label}>
+                {row.original.next_due_label}
+              </span>
+            ),
             meta: { sortable: true },
           },
           {
@@ -87,13 +95,19 @@ export function RegisterTab({ property }: { property: PropertyDetail }) {
               row.original.done_by === "Needs a name" ? (
                 <span className="text-st-amber">Needs a name</span>
               ) : (
-                <span className="whitespace-nowrap">{row.original.done_by}</span>
+                <span className="block max-w-[150px] truncate 2xl:max-w-[240px]" title={row.original.done_by}>
+                  {row.original.done_by}
+                </span>
               ),
           },
           {
             id: "freq",
             header: "How often",
-            cell: ({ row }) => <span className="whitespace-nowrap">{row.original.frequency_label}</span>,
+            cell: ({ row }) => (
+              <span className="block max-w-[130px] truncate 2xl:max-w-[200px]" title={row.original.frequency_label}>
+                {row.original.frequency_label}
+              </span>
+            ),
           },
           {
             id: "class",
@@ -226,7 +240,9 @@ export function RegisterTab({ property }: { property: PropertyDetail }) {
                   density="compact"
                   caption={`Register at ${property.name}`}
                   empty={
-                    <EmptyState title="No checks match these filters">
+                    <EmptyState
+                      title={d.nothing_overdue && !d.any_filter ? d.nothing_overdue : "No checks match these filters"}
+                    >
                       <button
                         type="button"
                         className="text-link"

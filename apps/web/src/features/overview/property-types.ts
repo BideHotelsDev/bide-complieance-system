@@ -74,6 +74,8 @@ export type RegisterList = {
   summary: string
   any_filter: boolean
   of_total: number
+  /** The empty state from Settings › Messages and wording, set when nothing is overdue. */
+  nothing_overdue: string | null
   groups: { key: string; name: string; count: number; red: number; rows: RegisterRow[] }[]
 }
 

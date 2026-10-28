@@ -105,7 +105,7 @@ export function TodayPage() {
             todays.map((c) => <TaskLink key={c.task_id} card={c} />)
           ) : (
             <p className="m-0 rounded-xl border border-divider bg-surface px-4 py-4 text-[15px] text-muted-foreground">
-              {overdue.length ? "Nothing else due today." : "Nothing due today. Thank you."}
+              {overdue.length ? "Nothing else due today." : (d!.nothing_overdue ?? "Nothing due today. Thank you.")}
             </p>
           )}
           {d!.upcoming.length > 0 && (

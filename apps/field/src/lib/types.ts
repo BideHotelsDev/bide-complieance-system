@@ -25,6 +25,8 @@ export type Today = {
   today: TaskCard[]
   upcoming: TaskCard[]
   streak_weeks: number
+  /** Empty state from Settings › Messages and wording, when nothing of theirs is overdue */
+  nothing_overdue?: string | null
   properties: { id: string; name: string }[]
 }
 
