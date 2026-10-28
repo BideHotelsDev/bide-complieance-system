@@ -67,14 +67,14 @@ export function ContractorPortalPage() {
             <h2 className="m-0 text-[13px] font-semibold text-muted-foreground">Your visits</h2>
             {q.data.items.length === 0 ? (
               <Card className="px-3.5 py-4 text-[14px] text-muted-foreground">
-                Nothing booked with bide right now. When bide books a visit or gives you something to fix, it appears
+                Nothing booked with Bide right now. When Bide books a visit or gives you something to fix, it appears
                 here and we email you.
               </Card>
             ) : (
               q.data.items.map((it) => <ItemCard key={`${it.kind}-${it.id}`} it={it} onSend={() => setSending(it)} />)
             )}
             <Card className="px-3.5 py-3 text-[13px] text-muted-foreground">
-              You can only see visits bide has given you. Your uploads are checked by the site manager before they
+              You can only see visits Bide has given you. Your uploads are checked by the site manager before they
               count.
             </Card>
           </>

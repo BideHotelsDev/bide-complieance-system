@@ -11,6 +11,7 @@ export type DraftTokens = {
   highContrast: ModeTokens
   radius: number
   font: string
+  displayFont?: string | null
   density: "comfortable" | "compact"
   tone: string
   preset?: string | null
@@ -39,7 +40,10 @@ export type AppearanceData = {
   live: ThemeVersion | null
   draft: ThemeVersion | null
   history: ThemeVersion[]
-  presets: Record<string, { light: ModeTokens; dark: ModeTokens; default_mode?: string }>
+  presets: Record<
+    string,
+    { light: ModeTokens; dark: ModeTokens; default_mode?: string; font?: string; displayFont?: string | null }
+  >
   fonts: string[]
   can_publish: boolean
 }
@@ -111,7 +115,19 @@ const VAR: Record<string, string> = {
   blue: "--c-blue",
   blueBg: "--c-blue-bg",
 }
+// The navigation's colours, and the page colour each falls back to when a theme has none (as in styles.css).
+const NAV_VAR: Record<string, [string, string]> = {
+  nav: ["--c-nav", "--c-sidebar"],
+  navForeground: ["--c-nav-foreground", "--c-foreground"],
+  navMuted: ["--c-nav-muted", "--c-muted"],
+  navHover: ["--c-nav-hover", "--c-hover"],
+  navActive: ["--c-nav-active", "--c-surface"],
+  navBorder: ["--c-nav-border", "--c-border"],
+  navPrimary: ["--c-nav-primary", "--c-primary"],
+  navPrimaryForeground: ["--c-nav-primary-foreground", "--c-primary-foreground"],
+}
 const FONT_STACK: Record<string, string> = {
+  Jost: '"Jost Variable", Jost, system-ui, sans-serif',
   Inter: '"Inter Variable", Inter, system-ui, sans-serif',
   "IBM Plex Sans": '"IBM Plex Sans", system-ui, sans-serif',
   "Source Sans 3": '"Source Sans 3", system-ui, sans-serif',
@@ -120,9 +136,16 @@ const FONT_STACK: Record<string, string> = {
 /* CSS variables for one mode of a draft, to put on the preview container's style. */
 export function previewVars(t: DraftTokens, mode: "light" | "dark"): React.CSSProperties {
   const out: Record<string, string> = {}
-  for (const [k, v] of Object.entries(t[mode] ?? {})) if (VAR[k]) out[VAR[k]] = v
+  const m = t[mode] ?? {}
+  for (const [k, v] of Object.entries(m)) if (VAR[k]) out[VAR[k]] = v
+  // Set every navigation colour, so the live theme's never shows through a draft that has none.
+  for (const [k, [name, page]] of Object.entries(NAV_VAR)) out[name] = m[k] ?? `var(${page})`
   out["--radius"] = `${t.radius}px`
   out["--font-sans-family"] = FONT_STACK[t.font] ?? FONT_STACK.Inter
+  out["--font-display-family"] =
+    t.displayFont === "Fraunces"
+      ? '"TT Ramillas", "Fraunces Variable", Fraunces, Georgia, serif'
+      : "var(--font-sans-family)"
   out.fontFamily = out["--font-sans-family"]
   return out as React.CSSProperties
 }

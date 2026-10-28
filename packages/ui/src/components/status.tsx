@@ -136,7 +136,7 @@ export function GateBadge({ status, className }: { status: GateStatus; className
 }
 
 /* Class A / B / C: monochrome square badge with a tooltip-friendly title */
-const CLASS_NAME = { A: "Class A · Life safety", B: "Class B · Statutory", C: "Class C · bide standard" } as const
+const CLASS_NAME = { A: "Class A · Life safety", B: "Class B · Statutory", C: "Class C · Bide standard" } as const
 export function ClassBadge({ klass, className }: { klass: "A" | "B" | "C" | string | null | undefined; className?: string }) {
   if (!klass) return null
   const k = klass as "A" | "B" | "C"

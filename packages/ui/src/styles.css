@@ -6,6 +6,8 @@
  */
 @import "tailwindcss";
 @import "@fontsource-variable/inter";
+@import "@fontsource-variable/jost";
+@import "@fontsource-variable/fraunces";
 @import "@fontsource/jetbrains-mono/400.css";
 @import "@fontsource/jetbrains-mono/500.css";
 
@@ -38,6 +40,16 @@
   --c-blue-bg: #eaf0fd;
   --radius: 6px;
   --font-sans-family: "Inter Variable", Inter, system-ui, sans-serif;
+  --font-display-family: var(--font-sans-family);
+  /* The navigation's colours. A theme without them (the clean themes) keeps the page colours. */
+  --c-nav: var(--c-sidebar);
+  --c-nav-foreground: var(--c-foreground);
+  --c-nav-muted: var(--c-muted);
+  --c-nav-hover: var(--c-hover);
+  --c-nav-active: var(--c-surface);
+  --c-nav-border: var(--c-border);
+  --c-nav-primary: var(--c-primary);
+  --c-nav-primary-foreground: var(--c-primary-foreground);
 }
 
 .dark {
@@ -69,6 +81,7 @@
 
 @theme inline {
   --font-sans: var(--font-sans-family);
+  --font-display: var(--font-display-family);
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   /* shadcn names, so the copied primitives follow the theme */
@@ -143,6 +156,26 @@
   h2,
   h3 {
     letter-spacing: -0.01em;
+  }
+  /* Page titles in the theme's heading face (the brand's serif); everything else stays in the interface font. */
+  h1 {
+    font-family: var(--font-display);
+  }
+  /* The navigation draws with its own colours: everything inside it reads the page tokens, so they're remapped
+     here rather than restyling each item. */
+  [data-nav] {
+    --c-sidebar: var(--c-nav);
+    --c-foreground: var(--c-nav-foreground);
+    --c-ink2: var(--c-nav-foreground);
+    --c-muted: var(--c-nav-muted);
+    --c-subtle: var(--c-nav-muted);
+    --c-hover: var(--c-nav-hover);
+    --c-surface: var(--c-nav-active);
+    --c-border: var(--c-nav-border);
+    --c-divider: var(--c-nav-border);
+    --c-primary: var(--c-nav-primary);
+    --c-primary-foreground: var(--c-nav-primary-foreground);
+    color: var(--c-foreground);
   }
   :focus-visible {
     outline: 2px solid var(--c-focus);

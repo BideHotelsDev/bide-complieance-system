@@ -9,6 +9,7 @@ export type ThemeTokens = {
   radius?: number
   density?: "comfortable" | "compact"
   font?: string
+  displayFont?: string | null
 }
 export type Theme = { version: number; tokens: ThemeTokens; branding: { appName?: string; signinMessage?: string } }
 
@@ -43,6 +44,14 @@ const VAR: Record<string, string> = {
   greyBg: "--c-grey-bg",
   blue: "--c-blue",
   blueBg: "--c-blue-bg",
+  nav: "--c-nav",
+  navForeground: "--c-nav-foreground",
+  navMuted: "--c-nav-muted",
+  navHover: "--c-nav-hover",
+  navActive: "--c-nav-active",
+  navBorder: "--c-nav-border",
+  navPrimary: "--c-nav-primary",
+  navPrimaryForeground: "--c-nav-primary-foreground",
 }
 const HEX = /^#[0-9a-fA-F]{6}$/
 
@@ -55,9 +64,14 @@ function block(sel: string, t: Record<string, string> | undefined): string {
 }
 
 const FONT_STACK: Record<string, string> = {
+  Jost: '"Jost Variable", Jost, system-ui, sans-serif',
   Inter: '"Inter Variable", Inter, system-ui, sans-serif',
   "IBM Plex Sans": '"IBM Plex Sans", system-ui, sans-serif',
   "Source Sans 3": '"Source Sans 3", system-ui, sans-serif',
+}
+// Headings. Fraunces stands in for the brand's TT Ramillas, which is licensed; the stack asks for Ramillas first.
+const DISPLAY_STACK: Record<string, string> = {
+  Fraunces: '"TT Ramillas", "Fraunces Variable", Fraunces, Georgia, serif',
 }
 
 export function applyTheme(theme: Theme, opts: { preview?: boolean } = {}): void {
@@ -66,7 +80,7 @@ export function applyTheme(theme: Theme, opts: { preview?: boolean } = {}): void
     block(":root", t.light),
     block(".dark", t.dark),
     block(".hc", t.highContrast),
-    `:root{--radius:${[4, 6, 8, 10].includes(Number(t.radius)) ? t.radius : 6}px;--font-sans-family:${FONT_STACK[t.font ?? "Inter"] ?? FONT_STACK.Inter}}`,
+    `:root{--radius:${[4, 6, 8, 10].includes(Number(t.radius)) ? t.radius : 6}px;--font-sans-family:${FONT_STACK[t.font ?? "Inter"] ?? FONT_STACK.Inter};--font-display-family:${(t.displayFont && DISPLAY_STACK[t.displayFont]) || "var(--font-sans-family)"}}`,
   ].join("")
   let el = document.getElementById("bc-theme") as HTMLStyleElement | null
   if (!el) {

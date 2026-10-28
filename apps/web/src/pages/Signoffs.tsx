@@ -83,8 +83,8 @@ export function SignoffsPage() {
           )}
           <p className="m-0 mt-1 max-w-[640px] text-muted-foreground">
             {canSign && one
-              ? `As dutyholder for ${one.property}, ${one.dutyholder ?? "the dutyholder"} holds the legal duties. bide does and evidences the work; you sign. Nothing here can be signed by anyone outside ${short(one.dutyholder)}'s directors.`
-              : "What each dutyholder has waiting. bide does and evidences the work; only the property's dutyholder directors can sign."}
+              ? `As dutyholder for ${one.property}, ${one.dutyholder ?? "the dutyholder"} holds the legal duties. Bide does and evidences the work; you sign. Nothing here can be signed by anyone outside ${short(one.dutyholder)}'s directors.`
+              : "What each dutyholder has waiting. Bide does and evidences the work; only the property's dutyholder directors can sign."}
           </p>
           {isAdmin && !canSign && (
             <p className="m-0 mt-2 text-[13px] text-muted-foreground">

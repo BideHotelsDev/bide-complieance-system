@@ -27,7 +27,7 @@ def _record(kind: str, target: str, text: str) -> None:
 
 
 def dm(slack_id: str | None, email: str | None, text: str, link: str | None = None) -> str | None:
-    body = f"{text}\n<{link}|Open in bide Comply>" if link else text
+    body = f"{text}\n<{link}|Open in Bide Comply>" if link else text
     c = _client()
     if c is None:
         log.info("slack dm %s: %s", slack_id or email, body)
@@ -43,7 +43,7 @@ def dm(slack_id: str | None, email: str | None, text: str, link: str | None = No
 
 
 def post(channel: str, text: str, link: str | None = None) -> str | None:
-    body = f"{text}\n<{link}|Open in bide Comply>" if link else text
+    body = f"{text}\n<{link}|Open in Bide Comply>" if link else text
     c = _client()
     if c is None:
         log.info("slack %s: %s", channel, body)

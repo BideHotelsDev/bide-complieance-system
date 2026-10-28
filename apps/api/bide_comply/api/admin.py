@@ -454,7 +454,7 @@ def dsar_export(person_id: uuid.UUID, request: Request, pr: Current, conn: ConnD
         z.writestr("data.json", json.dumps(json.loads(canonical(data)), indent=2, ensure_ascii=False))
         z.writestr(
             "README.txt",
-            "Everything bide Comply holds about this person. Photos are listed by file name and hash; "
+            "Everything Bide Comply holds about this person. Photos are listed by file name and hash; "
             "ask the register keeper for copies.\n",
         )
     audit.record(

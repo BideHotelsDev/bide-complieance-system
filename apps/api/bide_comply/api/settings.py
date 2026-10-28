@@ -420,7 +420,9 @@ def reset_content(key: str, pr: Current, conn: ConnDep) -> dict:
 # ---------------------------------------------------------------------------------------------------------------------
 
 HEX = re.compile(r"^#[0-9A-Fa-f]{6}$")
-FONTS = ["Inter", "IBM Plex Sans", "Source Sans 3"]
+FONTS = ["Jost", "Inter", "IBM Plex Sans", "Source Sans 3"]
+# Headings only. None keeps headings in the body font.
+DISPLAY_FONTS = ["Fraunces"]
 TOKEN_KEYS = [
     "background",
     "surface",
@@ -447,6 +449,17 @@ TOKEN_KEYS = [
     "blue",
     "blueBg",
 ]
+# The navigation's own colours. Optional: without them the navigation uses the page colours (the clean themes).
+NAV_KEYS = [
+    "nav",
+    "navForeground",
+    "navMuted",
+    "navHover",
+    "navActive",
+    "navBorder",
+    "navPrimary",
+    "navPrimaryForeground",
+]
 
 
 def _lum(hex_: str) -> float:
@@ -470,6 +483,13 @@ def contrast_checks(t: dict) -> list[dict]:
     ]
     for s in ("green", "amber", "red", "grey", "blue"):
         pairs.append((f"{s.capitalize()} status text on its tint", t[s], t[f"{s}Bg"], 4.5))
+    if all(k in t for k in NAV_KEYS):
+        pairs += [
+            ("Navigation text", t["navForeground"], t["nav"], 4.5),
+            ("Navigation secondary text", t["navMuted"], t["nav"], 4.5),
+            ("Current page in the navigation", t["navForeground"], t["navActive"], 4.5),
+            ("Navigation button text", t["navPrimaryForeground"], t["navPrimary"], 4.5),
+        ]
     out = [
         {"label": label, "ratio": round(ratio(a, b), 1), "min": m, "ok": ratio(a, b) >= m} for label, a, b, m in pairs
     ]
@@ -497,6 +517,13 @@ def validate_tokens(tokens: dict) -> dict:
             if v is None or not HEX.match(str(v)):
                 raise problem(422, "token", f"{mode} {k}: use a colour like #111113.")
             clean[k] = str(v).upper()
+        for k in NAV_KEYS:
+            v = m.get(k)
+            if v is None:
+                continue
+            if not HEX.match(str(v)):
+                raise problem(422, "token", f"{mode} {k}: use a colour like #172D23.")
+            clean[k] = str(v).upper()
         out[mode] = clean
     radius = tokens.get("radius", 6)
     if radius not in (4, 6, 8, 10):
@@ -504,6 +531,9 @@ def validate_tokens(tokens: dict) -> dict:
     font = tokens.get("font", "Inter")
     if font not in FONTS:
         raise problem(422, "font", "Choose a font from the approved list.")
+    display = tokens.get("displayFont")
+    if display is not None and display not in DISPLAY_FONTS:
+        raise problem(422, "font", "Choose a heading font from the approved list.")
     density = tokens.get("density", "comfortable")
     if density not in ("comfortable", "compact"):
         raise problem(422, "density", "Density must be comfortable or compact.")
@@ -511,6 +541,7 @@ def validate_tokens(tokens: dict) -> dict:
         **out,
         "radius": radius,
         "font": font,
+        "displayFont": display,
         "density": density,
         "tone": tokens.get("tone", "plain") if tokens.get("tone", "plain") in wording.TONES else "plain",
         "preset": tokens.get("preset"),
@@ -540,13 +571,14 @@ def _theme_out(conn, t: dict | None) -> dict | None:
 def appearance(pr: Current, conn: ConnDep) -> dict:
     pr.require("settings.view")
     rows = [dict(r) for r in conn.execute(select(theme_version).order_by(theme_version.c.version.desc())).mappings()]
-    from bide_comply.seed.reference import CLEAN_DARK, CLEAN_LIGHT, HIGH_CONTRAST
+    from bide_comply.seed.reference import BIDE_DARK, BIDE_LIGHT, CLEAN_DARK, CLEAN_LIGHT, HIGH_CONTRAST
 
     return {
         "live": _theme_out(conn, next((r for r in rows if r["status"] == "live"), None)),
         "draft": _theme_out(conn, next((r for r in rows if r["status"] == "draft"), None)),
         "history": [_theme_out(conn, r) for r in rows if r["status"] != "draft"],
         "presets": {
+            "bide": {"light": BIDE_LIGHT, "dark": BIDE_DARK, "font": "Jost", "displayFont": "Fraunces"},
             "clean_light": {"light": CLEAN_LIGHT, "dark": CLEAN_DARK},
             "clean_dark": {"light": CLEAN_LIGHT, "dark": CLEAN_DARK, "default_mode": "dark"},
             "high_contrast": {"light": HIGH_CONTRAST, "dark": CLEAN_DARK},

@@ -40,7 +40,7 @@ from bide_comply.services.register import cancel_future, refresh_item, sync_open
 router = APIRouter(prefix="/api", tags=["register"])
 
 STATUS_LABEL = {"green": "Green", "amber": "Amber", "red": "Red", "grey": "Grey"}
-CLASS_LABEL = {"A": "Life safety", "B": "Statutory", "C": "bide standard"}
+CLASS_LABEL = {"A": "Life safety", "B": "Statutory", "C": "Bide standard"}
 
 
 def resolve_property(conn: Connection, pr: Principal, key: str) -> dict:
@@ -232,7 +232,7 @@ def property_register(
             "class",
             "Class",
             lambda r: r["class"],
-            [("A", "A · Life safety"), ("B", "B · Statutory"), ("C", "C · bide standard")],
+            [("A", "A · Life safety"), ("B", "B · Statutory"), ("C", "C · Bide standard")],
             hint="Show",
         ),
     ]

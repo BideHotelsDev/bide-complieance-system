@@ -91,7 +91,7 @@ const FLOWS: { title: string; steps: Step[] }[] = [
       { who: "Settings", title: "Property set up", body: "Register loaded from the Sheet" },
       { who: "Portal", title: "Opening checklist", body: "56 items in sections A to H" },
       { who: "Portal", title: "All A items done", body: "Status: Ready to open" },
-      { who: "SPV dutyholder", title: "Signs it off", body: "bide does, the SPV signs" },
+      { who: "SPV dutyholder", title: "Signs it off", body: "Bide does, the SPV signs" },
       { who: "Result", title: "Trading", body: "Routine checks start on day one", tone: "result" },
     ],
   },
@@ -199,7 +199,7 @@ export function HelpPage() {
               text="Class A · Life safety. Overdue turns the whole property red."
             />
             <LegendRow badge={<ClassBadge klass="B" />} text="Class B · Statutory. The law requires it." />
-            <LegendRow badge={<ClassBadge klass="C" />} text="Class C · bide standard. Our own good practice." />
+            <LegendRow badge={<ClassBadge klass="C" />} text="Class C · Bide standard. Our own good practice." />
           </Legend>
           <Legend title="Priority of an Action">
             <LegendRow badge={<PriorityBadge priority="high" />} text="Fix within 7 days" />

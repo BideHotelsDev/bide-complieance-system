@@ -159,7 +159,7 @@ function Preferences({ me }: { me: Me }) {
     save.mutate({ muted: next })
   }
   const channels: { key: Channel; label: string; line: string }[] = [
-    { key: "slack", label: "Slack", line: "Direct messages from the bide Comply app" },
+    { key: "slack", label: "Slack", line: "Direct messages from the Bide Comply app" },
     { key: "email", label: "Email", line: me.email ? `To ${me.email}` : "No email address on file" },
   ]
 

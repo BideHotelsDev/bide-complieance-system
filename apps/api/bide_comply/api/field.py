@@ -48,7 +48,7 @@ from bide_comply.services.common import fmt_day, names, overdue_label, problem
 from bide_comply.services.register import refresh_item
 
 router = APIRouter(prefix="/api/field", tags=["staff app"])
-CLASS_LABEL = {"A": "Life safety", "B": "Statutory", "C": "bide standard"}
+CLASS_LABEL = {"A": "Life safety", "B": "Statutory", "C": "Bide standard"}
 
 
 def _my_tasks_query(conn: Connection, pr: Principal, property_id: uuid.UUID | None):

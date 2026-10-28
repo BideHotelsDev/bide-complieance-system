@@ -7,7 +7,7 @@ import { ArrowRight, Check as CheckIcon, Lock } from "lucide-react"
 import * as React from "react"
 
 import { api, upload, type ApiError } from "@bide-comply/api-client"
-import { Callout, ErrorState, NoPermission, PageHeader, Skeleton } from "@bide-comply/ui/components/page"
+import { Callout, ErrorState, Mark, NoPermission, PageHeader, Skeleton } from "@bide-comply/ui/components/page"
 import { Popover, PopoverContent, PopoverTrigger } from "@bide-comply/ui/components/popover"
 import { Pill } from "@bide-comply/ui/components/status"
 import { toast } from "@bide-comply/ui/components/toaster"
@@ -49,6 +49,7 @@ type Overview = {
 }
 
 const PRESETS = [
+  { key: "bide", label: "Bide brand" },
   { key: "clean_light", label: "Clean light" },
   { key: "clean_dark", label: "Clean dark" },
   { key: "high_contrast", label: "High contrast" },
@@ -247,13 +248,17 @@ export function AppearancePage() {
               </Callout>
             )}
             <Section title="Start from a default theme">
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {PRESETS.map((p) => {
                   const on = tokens.preset === p.key
                   const pt = q.data.presets[p.key]
                   const m = pt?.default_mode === "dark" ? pt.dark : pt?.light
                   const strong = p.key === "high_contrast"
-                  const dots = m ? [m.primary, strong ? m.green : m.greenBg, strong ? m.red : m.redBg] : []
+                  const dots = !m
+                    ? []
+                    : m.navPrimary
+                      ? [m.nav, m.navPrimary, m.greenBg, m.redBg]
+                      : [m.primary, strong ? m.green : m.greenBg, strong ? m.red : m.redBg]
                   return (
                     <button
                       key={p.key}
@@ -268,6 +273,8 @@ export function AppearancePage() {
                           dark: pr.dark,
                           highContrast: q.data.presets.high_contrast?.light ?? t.highContrast,
                           preset: p.key,
+                          font: pr.font ?? "Inter",
+                          displayFont: pr.displayFont ?? null,
                         }))
                         setMode(pr.default_mode === "dark" ? "dark" : "light")
                       }}
@@ -294,7 +301,8 @@ export function AppearancePage() {
                 })}
               </div>
               <Hint>
-                All three use Inter, the clean default font. Staff can also follow their phone's light or dark setting.
+                The Bide brand uses Jost, with a serif for page titles; the others use Inter. Staff can also follow
+                their phone's light or dark setting.
               </Hint>
             </Section>
 
@@ -436,7 +444,7 @@ export function AppearancePage() {
                     value={tokens.font}
                     disabled={!canEdit}
                     onChange={(v) => change((t) => ({ ...t, font: v }))}
-                    options={q.data.fonts.map((f) => ({ value: f, label: f === "Inter" ? "Inter (default)" : f }))}
+                    options={q.data.fonts.map((f) => ({ value: f, label: f === "Jost" ? "Jost (Bide brand)" : f }))}
                     className="h-8 w-full"
                   />
                   <Hint className="mt-1 text-[11.5px]">Also: IBM Plex Sans, Source Sans 3</Hint>
@@ -579,13 +587,7 @@ function LogoSlot({
         ) : tone === "icon" ? (
           "Upload"
         ) : (
-          <span
-            aria-hidden
-            className="inline-flex size-[22px] items-center justify-center rounded-md text-[12px] font-bold"
-            style={{ background: colours.primary, color: colours.primaryForeground }}
-          >
-            b
-          </span>
+          <Mark size={22} />
         )}
       </button>
       <input
@@ -694,14 +696,15 @@ function LivePreview({ tokens, branding, mode }: { tokens: DraftTokens; branding
         style={previewVars(tokens, mode)}
         className="flex min-h-[420px] overflow-hidden rounded-xl border border-border bg-background text-foreground"
       >
-        <div className="flex w-[170px] shrink-0 flex-col gap-1 border-r border-divider bg-sidebar px-2.5 py-3.5 max-sm:hidden">
+        <div
+          data-nav
+          className="flex w-[170px] shrink-0 flex-col gap-1 border-r border-divider bg-sidebar px-2.5 py-3.5 max-sm:hidden"
+        >
           <div className="flex items-center gap-2 px-1.5 pt-0.5 pb-2.5">
             {logo.data?.url ? (
               <img src={logo.data.url} alt="" className="size-5 rounded-[5px] object-contain" />
             ) : (
-              <span className="inline-flex size-5 items-center justify-center rounded-[5px] bg-primary text-[11px] font-bold text-primary-foreground">
-                b
-              </span>
+              <Mark size={20} />
             )}
             <span className="truncate text-[13px] font-semibold">{branding.appName || "bide Comply"}</span>
           </div>

@@ -183,9 +183,9 @@ def _send_otp(conn: Connection, p: dict, device_id: uuid.UUID, purpose: str = "n
     )
     emailer.send(
         p["email"],
-        f"Your bide Comply code: {code}",
+        f"Your Bide Comply code: {code}",
         f"Your code is {code}. It works for {settings.otp_minutes} minutes.\n\n"
-        "You're seeing this because someone signed in to bide Comply on a new device. If it wasn't you, tell "
+        "You're seeing this because someone signed in to Bide Comply on a new device. If it wasn't you, tell "
         f"{contact.phrase(conn)} straight away.",
     )
     return cid
@@ -388,7 +388,7 @@ def _verify_id_token(id_token: str, nonce: str) -> dict:
         raise HTTPException(401, detail={"code": "bad_token", "message": "Sign-in failed."})
     hd = (claims.get("hd") or "").lower()
     if hd not in settings.workspace_domains or not claims.get("email_verified"):
-        raise HTTPException(403, detail={"code": "domain", "message": "Use your bide Google account."})
+        raise HTTPException(403, detail={"code": "domain", "message": "Use your Bide Google account."})
     return dict(claims)
 
 
@@ -422,7 +422,7 @@ def google_callback(request: Request, conn: ConnDep, code: str, state: str) -> R
             403,
             detail={
                 "code": "unknown",
-                "message": f"You're not set up in bide Comply yet. Ask {contact.phrase(conn, with_role=False)}.",
+                "message": f"You're not set up in Bide Comply yet. Ask {contact.phrase(conn, with_role=False)}.",
             },
         )
     if not p["google_sub"]:
@@ -563,7 +563,7 @@ def magic_request(body: MagicIn, conn: ConnDep) -> dict:
         link = f"{settings.api_base_url}/api/auth/magic/{tok}"
         emailer.send(
             p["email"],
-            "Your bide Comply sign-in link",
+            "Your Bide Comply sign-in link",
             f"Open this link to sign in. It works for 7 days and only on the device you open it on first.\n\n{link}",
         )
     return {"ok": True}

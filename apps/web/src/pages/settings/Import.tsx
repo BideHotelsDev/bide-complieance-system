@@ -373,7 +373,7 @@ function MapTable({
             <tr className="text-left text-xs text-muted-foreground">
               <th className="h-[34px] bg-background px-4 font-medium whitespace-nowrap">Column in the workbook</th>
               <th className="bg-background px-3 font-medium">Example ({gate.name})</th>
-              <th className="bg-background px-3 font-medium">bide Comply field</th>
+              <th className="bg-background px-3 font-medium">Bide Comply field</th>
               <th className="bg-background px-3 font-medium">Match</th>
             </tr>
           </thead>
@@ -394,7 +394,7 @@ function MapTable({
                 </td>
                 <td className="px-3 py-1.5">
                   <NativeSelect
-                    aria-label={`bide Comply field for ${m.column}`}
+                    aria-label={`Bide Comply field for ${m.column}`}
                     value={m.field ?? ""}
                     disabled={busy}
                     className={cn("w-[200px]", !m.matched && "border-st-amber")}
@@ -479,7 +479,7 @@ function ReviewStep({ job: j, onOwner }: { job: Job; onOwner: (role: string, per
             <thead>
               <tr className="text-left text-xs text-muted-foreground">
                 <th className="h-[34px] bg-background px-4 font-medium">Owner in the workbook</th>
-                <th className="bg-background px-3 font-medium">Person in bide Comply</th>
+                <th className="bg-background px-3 font-medium">Person in Bide Comply</th>
               </tr>
             </thead>
             <tbody>
@@ -655,7 +655,7 @@ function ResultStep({ job: j, result, onAgain }: { job: Job; result?: Result; on
         </Callout>
       )}
       <p className="m-0 text-[13px] text-muted-foreground">
-        Actions whose IDs were already in bide Comply were left alone, so running the import again doesn't duplicate
+        Actions whose IDs were already in Bide Comply were left alone, so running the import again doesn't duplicate
         them.
       </p>
       <div className="flex flex-wrap gap-2">

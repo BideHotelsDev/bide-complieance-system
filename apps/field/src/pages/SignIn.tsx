@@ -32,7 +32,7 @@ export function SignInPage() {
       <Mark size={44} />
       <h1 className="m-0 mt-6 text-[26px] font-semibold">Sign in</h1>
       <p className="m-0 mt-1.5 text-[16px] text-muted-foreground">
-        Use your bide Google account to see today's checks.
+        Use your Bide Google account to see today's checks.
       </p>
       {reason && (
         <p role="alert" className="mt-4 rounded-xl bg-st-red-bg px-3.5 py-2.5 text-[15px] text-st-red">
@@ -46,7 +46,7 @@ export function SignInPage() {
         Sign in with Google
       </a>
       <p className="mt-4 text-[14px] text-muted-foreground">
-        Contractors: use the link bide emailed you. It works for 7 days, no password needed.
+        Contractors: use the link Bide emailed you. It works for 7 days, no password needed.
       </p>
       {dev.data && (
         <section className="mt-6 border-t border-divider pt-4 pb-8">

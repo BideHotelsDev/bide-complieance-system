@@ -216,7 +216,7 @@ async def monday_digest(ctx) -> None:
                 person.c.id.in_(select(dutyholder_director.c.person_id)),
             )
         ).scalars():
-            emailer.send(email, "bide Comply · Monday digest", text)
+            emailer.send(email, "Bide Comply · Monday digest", text)
         conn.execute(
             update(scheduled_report).where(scheduled_report.c.kind == "monday_digest").values(last_run_at=clock.now())
         )

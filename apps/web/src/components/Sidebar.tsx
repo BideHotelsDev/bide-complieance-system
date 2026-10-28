@@ -231,6 +231,7 @@ export function Sidebar({
   return (
     <nav
       aria-label="Main"
+      data-nav
       className={cn(
         "flex shrink-0 flex-col gap-0.5 overflow-y-auto bg-sidebar py-3.5",
         inSheet ? "h-full w-full" : "sticky top-0 h-screen border-r border-divider",
@@ -330,7 +331,7 @@ export function Sidebar({
       <div className="mt-auto" />
       {tour && !collapsed && (
         <div className="mx-0 my-3 flex flex-col gap-1.5 rounded-[10px] border border-border bg-surface p-3">
-          <span className="text-[13px] font-semibold">New to bide Comply?</span>
+          <span className="text-[13px] font-semibold">New to Bide Comply?</span>
           <span className="text-[12.5px] text-muted-foreground">
             A 2-minute tour of where things are and what the colours mean.
           </span>

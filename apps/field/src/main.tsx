@@ -44,7 +44,7 @@ onSent((item, res) => {
   // A check saved offline that turns out Failed still says what happened next (design: AppResult, in short).
   toastSent(
     res.result === "failed" && res.action
-      ? `${item.title} sent. Logged as Failed, and ${res.action.ref} was raised to fix it.`
+      ? `${item.title} sent. Logged as Failed, and we've raised ${res.action.ref} to fix it.`
       : `${item.title} sent. Thank you.`,
   )
   void queryClient.invalidateQueries()

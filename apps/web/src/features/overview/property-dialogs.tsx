@@ -141,7 +141,7 @@ export function RaiseActionDialog({
                 <option value="">Not set</option>
                 <option value="A">A · Life safety</option>
                 <option value="B">B · Statutory</option>
-                <option value="C">C · bide standard</option>
+                <option value="C">C · Bide standard</option>
               </select>
             </Field>
             <Field id="ra-due" label="Due (optional)">

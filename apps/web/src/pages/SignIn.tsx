@@ -61,7 +61,7 @@ export function SignInPage() {
       ) : (
         <>
           <h1 className="m-0 text-[18px] font-semibold">Sign in</h1>
-          <p className="mt-1 text-[13.5px] text-muted-foreground">{signinMessage ?? "Use your bide Google account."}</p>
+          <p className="mt-1 text-[13.5px] text-muted-foreground">{signinMessage ?? "Use your Bide Google account."}</p>
         </>
       )}
       {search.error && (
@@ -78,12 +78,12 @@ export function SignInPage() {
       </Button>
       <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
         <span className="h-px flex-1 bg-divider" />
-        No bide account?
+        No Bide account?
         <span className="h-px flex-1 bg-divider" />
       </div>
       {sent ? (
         <p className="text-[13.5px]">
-          If <strong>{email}</strong> is set up in bide Comply, a sign-in link is on its way. It works for 7 days.
+          If <strong>{email}</strong> is set up in Bide Comply, a sign-in link is on its way. It works for 7 days.
         </p>
       ) : (
         <form

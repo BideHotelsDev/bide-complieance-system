@@ -229,11 +229,11 @@ export function MePage() {
 function deviceHint(s: PushState | null): string | undefined {
   switch (s) {
     case "denied":
-      return "Blocked in this phone's settings. Allow notifications for bide Comply to get them."
+      return "Blocked in this phone's settings. Allow notifications for Bide Comply to get them."
     case "unsupported":
-      return "This phone can't show them yet. Add bide Comply to your Home Screen first."
+      return "This phone can't show them yet. Add Bide Comply to your Home Screen first."
     case "no-key":
-      return "Not switched on for bide Hotels yet. You'll still see everything in the app."
+      return "Not switched on for Bide Hotels yet. You'll still see everything in the app."
     default:
       return undefined
   }

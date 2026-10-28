@@ -4,7 +4,7 @@ theme. Safe to run again: existing rows are left as they are.
 
 import uuid
 
-from sqlalchemy import Connection, select
+from sqlalchemy import Connection, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from bide_comply import clock
@@ -95,19 +95,77 @@ HIGH_CONTRAST = {
     "grey": "#3A3A42",
     "blue": "#173F99",
 }
+# The Bide Hotels brand (docs/bide-brand-guidelines.md in bide-ecosystem): Stone Grey ground, Slate Black text, Fir
+# Green for buttons and the navigation, Gorse Yellow kept for accents (on Fir, or as dark mode's buttons, where it
+# reads; on white it fails contrast). Status colours keep their meaning from the clean theme.
+BIDE_LIGHT = {
+    **CLEAN_LIGHT,
+    "background": "#F9F8F3",
+    "surface": "#FFFFFF",
+    "sidebar": "#F3F1EA",
+    "foreground": "#191D1B",
+    "ink2": "#3A403C",
+    "muted": "#5F6661",
+    "subtle": "#7D847F",
+    "border": "#E2DED2",
+    "divider": "#ECE9E0",
+    "primary": "#172D23",
+    "primaryForeground": "#FFFFFF",
+    "accent": "#2B6447",
+    "focus": "#2B6447",
+    "hover": "#F0EEE6",
+    "greyBg": "#F0EEE6",
+    # The navigation is a reversed brand surface: Stone on Fir Green, with Gorse for its one button.
+    "nav": "#172D23",
+    "navForeground": "#F2EFE7",
+    "navMuted": "#B3C1B8",
+    "navHover": "#203A2D",
+    "navActive": "#284636",
+    "navBorder": "#2F4D3C",
+    "navPrimary": "#FAB30C",
+    "navPrimaryForeground": "#191D1B",
+}
+BIDE_DARK = {
+    **CLEAN_DARK,
+    "background": "#0F1512",
+    "surface": "#16201B",
+    "sidebar": "#131B17",
+    "foreground": "#F2EFE7",
+    "ink2": "#D3D6D0",
+    "muted": "#A3ADA6",
+    "subtle": "#86908A",
+    "border": "#2A3A31",
+    "divider": "#223029",
+    "primary": "#FAB30C",
+    "primaryForeground": "#191D1B",
+    "accent": "#F3C14B",
+    "focus": "#FAB30C",
+    "hover": "#1C2822",
+    "greyBg": "#1E2A24",
+    "nav": "#0B110E",
+    "navForeground": "#F2EFE7",
+    "navMuted": "#A3ADA6",
+    "navHover": "#17221C",
+    "navActive": "#1F2D26",
+    "navBorder": "#22302A",
+    "navPrimary": "#FAB30C",
+    "navPrimaryForeground": "#191D1B",
+}
 DEFAULT_THEME = {
-    "preset": "clean_light",
-    "light": CLEAN_LIGHT,
-    "dark": CLEAN_DARK,
+    "preset": "bide",
+    "light": BIDE_LIGHT,
+    "dark": BIDE_DARK,
     "highContrast": HIGH_CONTRAST,
     "radius": 6,
     "density": "comfortable",
-    "font": "Inter",
+    # Jost is the brand's interface face; Fraunces stands in for TT Ramillas (licensed) in headings.
+    "font": "Jost",
+    "displayFont": "Fraunces",
     "tone": "plain",
 }
 DEFAULT_BRANDING = {
     "appName": "bide Comply",
-    "signinMessage": "Sign in with your bide Google account.",
+    "signinMessage": "Sign in with your Bide Google account.",
 }
 
 MESSAGES = [
@@ -173,9 +231,9 @@ MESSAGES = [
         "screen",
         "Staff privacy notice",
         [],
-        "bide Comply records the checks you do, the photos you take, the time, and your location once at the moment you "
-        "send a check, so inspectors can see the work was done. It never tracks where you are. Your manager and the "
-        "compliance team can see your own numbers; nobody else can. Ask {contact} for a copy of anything held about you.",
+        "Bide Comply records the checks you do, the photos you take, the time, and your location once at the moment you "
+        "send a check, so inspectors can see you did the work. It never tracks where you are. Your manager and the "
+        "compliance team can see your own numbers; nobody else can. Ask {contact} for a copy of anything we hold about you.",
         None,
         ["contact"],
     ),
@@ -317,13 +375,29 @@ def run(conn: Connection) -> None:
     }.items():
         conn.execute(pg_insert(setting).values(key=key, value=value).on_conflict_do_nothing())
 
-    if not conn.execute(select(theme_version.c.id).limit(1)).first():
+    themes = conn.execute(select(theme_version.c.id, theme_version.c.name)).all()
+    if not themes:
         conn.execute(
             theme_version.insert().values(
                 id=uuid.uuid4(),
                 version=1,
                 status="live",
-                name="Default monochrome",
+                name="Bide brand",
+                tokens=DEFAULT_THEME,
+                branding=DEFAULT_BRANDING,
+                published_at=clock.now(),
+            )
+        )
+    elif [t.name for t in themes] == ["Default monochrome"]:
+        # Installs from before the brand theme that never changed their look: publish the brand as version 2. The
+        # monochrome version stays in the history, one click from coming back.
+        conn.execute(update(theme_version).values(status="retired"))
+        conn.execute(
+            theme_version.insert().values(
+                id=uuid.uuid4(),
+                version=2,
+                status="live",
+                name="Bide brand",
                 tokens=DEFAULT_THEME,
                 branding=DEFAULT_BRANDING,
                 published_at=clock.now(),

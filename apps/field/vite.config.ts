@@ -3,9 +3,9 @@ import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 import { VitePWA } from "vite-plugin-pwa"
 
-// Colours from the design tokens (packages/ui/src/styles.css): primary ink and the page background.
-const INK = "#111113"
-const BACKGROUND = "#fbfbfc"
+// Bide brand colours (seed/reference.py BIDE_LIGHT): Fir Green for the phone's status bar, Stone Grey behind the splash.
+const INK = "#172D23"
+const BACKGROUND = "#F9F8F3"
 
 // Built for /app/ (the API serves the staff app there, beside the portal); / in development.
 export default defineConfig(({ command }) => {

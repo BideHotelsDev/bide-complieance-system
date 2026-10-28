@@ -129,7 +129,7 @@ def list_templates(
             "class",
             "Class",
             lambda r: r["class"],
-            [("A", "A · Life safety"), ("B", "B · Statutory"), ("C", "C · bide standard")],
+            [("A", "A · Life safety"), ("B", "B · Statutory"), ("C", "C · Bide standard")],
         ),
         listing.Facet("kind", "Type", lambda r: r["kind"], list(KIND_LABEL.items())),
         listing.Facet("how_often", "How often", lambda r: r["frequency"], [(f, freq.label(f)) for f in freqs]),
@@ -156,7 +156,7 @@ def list_templates(
     if cls:
         parts.append(
             " and ".join(
-                {"A": "life safety (Class A)", "B": "statutory (Class B)", "C": "bide standard (Class C)"}[c]
+                {"A": "life safety (Class A)", "B": "statutory (Class B)", "C": "Bide standard (Class C)"}[c]
                 for c in cls
             )
             + " only"

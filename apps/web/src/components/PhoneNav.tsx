@@ -36,7 +36,10 @@ export function PhoneMenuButton({ className }: { className?: string }) {
 
 export function PhoneTopBar({ onSearch }: { onSearch: () => void }) {
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-divider bg-surface pr-1.5 pl-4 md:hidden">
+    <header
+      data-nav
+      className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-divider bg-sidebar pr-1.5 pl-4 md:hidden"
+    >
       <Link to="/" className="flex min-w-0 flex-1 items-center gap-2 text-foreground no-underline">
         <Mark size={22} />
         <span className="truncate text-[15px] font-semibold">

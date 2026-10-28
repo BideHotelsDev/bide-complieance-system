@@ -189,7 +189,7 @@ export function LibraryPage() {
     <div className="flex flex-col gap-5">
       <PageHeader
         title="Compliance library"
-        subtitle="Every check bide does, and the questions staff answer."
+        subtitle="Every check Bide does, and the questions staff answer."
         actions={
           canEdit && (
             <>
@@ -432,7 +432,7 @@ function NewTemplateDialog({ onClose, defaultArea }: { onClose: () => void; defa
             options={[
               { value: "A", label: "A · Life safety" },
               { value: "B", label: "B · Statutory" },
-              { value: "C", label: "C · bide standard" },
+              { value: "C", label: "C · Bide standard" },
             ]}
           />
         </Labeled>

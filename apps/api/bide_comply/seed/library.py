@@ -76,7 +76,7 @@ DOMAINS = [
     ("data", "Data"),
 ]
 
-CLASSES = [("A", "Life safety", 3), ("B", "Statutory", 2), ("C", "bide standard", 1)]
+CLASSES = [("A", "Life safety", 3), ("B", "Statutory", 2), ("C", "Bide standard", 1)]
 
 # Amber windows per frequency (§4.2): 3 days weekly and monthly, 14 quarterly and 6-monthly, 60 annual and longer
 # and all certificates.
@@ -468,7 +468,7 @@ MASTER: list[tuple] = [
         None,
         {},
         "IET Code of Practice",
-        dict(frequency_note="Annual (bide standard)", form=certificate_form()),
+        dict(frequency_note="Annual (Bide standard)", form=certificate_form()),
     ),
     (
         "electrical",
@@ -994,7 +994,7 @@ GATE_KNOWN: dict[str, tuple] = {
         "FRA section + ARC confirmation",
         "David",
     ),
-    "B06": ("SFRS familiarisation visit invited", "C", "bide standard", "Email to SFRS", "Lynne"),
+    "B06": ("SFRS familiarisation visit invited", "C", "Bide standard", "Email to SFRS", "Lynne"),
     "C01": ("Fire alarm commissioned to BS 5839-1 (L1 for bide)", "A", "BS 5839-1", "Certificates in 05 / 09", "Nova"),
     "C02": (
         "Bedhead sounder levels measured in every bedroom (75 dB(A))",
@@ -1092,7 +1092,7 @@ GATE_KNOWN: dict[str, tuple] = {
     ),
     "G04": ("Assembly point sign fitted and shown on the guest fire information", "A", "FRA", "Photo", "Site lead"),
     "H01": ("Weekly alarm test started and logged at the panel", "A", "BS 5839-1", "Log book entries", "Keyholder"),
-    "H02": ("Recurring checks loaded into the register", "A", "BH-CMP-001", "Register live in bide Comply", "Samantha"),
+    "H02": ("Recurring checks loaded into the register", "A", "BH-CMP-001", "Register live in Bide Comply", "Samantha"),
     "H03": (
         "Compliance folders 01–09 set up; signed weekly and monthly logs filed",
         "B",

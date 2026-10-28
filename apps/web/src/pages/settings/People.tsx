@@ -557,7 +557,7 @@ function OffboardDialog({ person: d, onClose, onDone }: { person: Detail; onClos
     >
       <p className="m-0">This happens straight away:</p>
       <ul className="m-0 flex list-disc flex-col gap-1 pl-5">
-        <li>Ends {d.first_name}'s access to bide Comply and the staff app</li>
+        <li>Ends {d.first_name}'s access to Bide Comply and the staff app</li>
         <li>
           Signs out every device
           {d.devices.length ? ` (${plural(d.devices.length, "trusted device")})` : ""}

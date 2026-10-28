@@ -355,14 +355,32 @@ export function Avatar({ initials, className }: { initials: string; className?: 
 }
 
 export function Mark({ size = 24, className }: { size?: number; className?: string }) {
-  // The bide Comply mark: a single "b" on a rounded square (design: Brand). Replaceable in Settings › Appearance.
+  // The Bide symbol, a spiral inside a location pin, in Gorse on a Fir Green tile (brand guidelines §3.2). Drawn as a
+  // stand-in until the official export is supplied; the same mark the other Bide apps use. Brand colours are fixed,
+  // whatever the theme, because it's the logo.
   return (
     <span
       aria-hidden
-      className={cn("inline-flex shrink-0 items-center justify-center bg-primary font-bold text-primary-foreground", className)}
-      style={{ width: size, height: size, borderRadius: Math.round(size * 0.29), fontSize: Math.round(size * 0.5) }}
+      className={cn("inline-flex shrink-0 items-center justify-center", className)}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: Math.round(size * 0.24),
+        background: "#172D23",
+        boxShadow: "inset 0 0 0 1px rgba(255,255,255,.14)",
+      }}
     >
-      b
+      <svg viewBox="0 0 64 64" width={size * 0.78} height={size * 0.78}>
+        <path d="M32 9c-9.4 0-17 7.4-17 16.6C15 38 32 55 32 55s17-17 17-29.4C49 16.4 41.4 9 32 9z" fill="#FAB30C" />
+        <path
+          d="M32.0 24.5L32.4 24.3L32.8 24.3L33.3 24.5L33.8 24.8L34.2 25.4L34.3 26.1L34.2 26.9L33.8 27.7L33.2 28.4L32.3 28.8L31.2 29.0L30.1 28.8L29.0 28.2L28.1 27.3L27.5 26.1L27.3 24.7L27.6 23.2L28.3 21.8L29.5 20.7L31.0 19.9L32.8 19.7L34.6 19.9L36.3 20.8L37.7 22.2L38.7 24.0L39.0 26.1L38.7 28.3L37.8 30.3L36.2 32.1L34.1 33.2L31.6 33.7L29.1 33.5L26.7 32.4L24.7 30.6L23.3 28.3L22.6 25.5"
+          fill="none"
+          stroke="#172D23"
+          strokeWidth={3.2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
     </span>
   )
 }
