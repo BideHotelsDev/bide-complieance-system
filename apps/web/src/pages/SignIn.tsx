@@ -150,6 +150,85 @@ function CodeBoxes({ value, onChange, length = 6 }: { value: string; onChange: (
   )
 }
 
+// Break-glass sign-in for the one Super Admin set in ADMIN_LOGIN_*, before Google sign-in and email are set up. It
+// isn't linked from the sign-in page; the authenticator app follows the password.
+export function AdminSignInPage() {
+  const [username, setUsername] = React.useState("")
+  const [password, setPassword] = React.useState("")
+  const state = useQuery({
+    queryKey: ["admin-password"],
+    queryFn: () => api.get<{ enabled: boolean }>("/api/auth/admin-password"),
+    retry: false,
+  })
+  const go = useMutation({
+    mutationFn: () => api.post<{ next: string }>("/api/auth/admin-password", { username, password }),
+    onSuccess: (r) => {
+      window.location.href = r.next || "/"
+    },
+  })
+  const err = go.error instanceof ApiError ? go.error.message : go.error ? "Sign-in didn't work. Try again." : null
+  const field = "h-9 rounded-md border border-border bg-surface px-2.5 text-[14px] font-normal text-foreground"
+  return (
+    <Frame>
+      <h1 className="m-0 text-[18px] font-semibold">Admin sign-in</h1>
+      {state.data && !state.data.enabled ? (
+        <>
+          <p className="mt-1 text-[13.5px] text-muted-foreground">Password sign-in is switched off.</p>
+          <a href="/signin" className="mt-4 inline-block text-[13px]">
+            Go to sign-in
+          </a>
+        </>
+      ) : (
+        <>
+          <p className="mt-1 text-[13.5px] text-muted-foreground">
+            For the system's admin account only. You'll confirm with your authenticator app next.
+          </p>
+          <form
+            className="mt-4 flex flex-col gap-3"
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (username && password) go.mutate()
+            }}
+          >
+            <label className="flex flex-col gap-1 text-xs font-medium text-ink2">
+              Username
+              <input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className={field}
+                autoComplete="username"
+                autoCapitalize="none"
+                autoFocus
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs font-medium text-ink2">
+              Password
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={field}
+                autoComplete="current-password"
+              />
+            </label>
+            {err && (
+              <p role="alert" className="m-0 text-[13px] text-st-red">
+                {err}
+              </p>
+            )}
+            <Button type="submit" size="lg" disabled={!username || !password || go.isPending}>
+              Sign in
+            </Button>
+            <a href="/signin" className="text-[13px]">
+              Sign in with Google instead
+            </a>
+          </form>
+        </>
+      )}
+    </Frame>
+  )
+}
+
 export function CodePage({ stage }: { stage: "code" | "totp" | "totp-setup" }) {
   const pending = useQuery({
     queryKey: ["pending"],

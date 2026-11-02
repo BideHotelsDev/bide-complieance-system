@@ -39,6 +39,12 @@ class Settings(BaseSettings):
     # First Super Admins for a new install, as "Name <email>, email". Used at start-up only while nobody is a
     # Super Admin; see seed/admins.py.
     bootstrap_admins: str = ""
+    # Break-glass sign-in with a password for one Super Admin, for before Google sign-in and email are set up.
+    # Off unless all three are set; remove the hash to switch it off. The authenticator app is still required.
+    # Make a password and hash with `python -m bide_comply.passwords`.
+    admin_login_username: str = ""
+    admin_login_email: str = ""
+    admin_login_password_hash: str = ""
 
     # Business logic runs in UK time whatever the viewer's timezone (SCH-04).
     business_timezone: str = "Europe/London"

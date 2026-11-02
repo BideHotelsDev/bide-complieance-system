@@ -1,6 +1,8 @@
 """Sign-in, device trust and sessions (PRD §8, §9.2).
 
 - Staff: Google Workspace OIDC with Authorization Code + PKCE; iss, aud, exp and the hd claim are checked here.
+- Break-glass: one Super Admin can sign in with a username and password (ADMIN_LOGIN_*), for an install that has
+  neither Google sign-in nor email yet. The authenticator app is still required after the password.
 - Outside people (assessor, SPV directors without a bide account, contractors): an emailed magic link, 8-hour sessions.
 - A first sign-in on a device needs an emailed 6-digit code (single use, 10 minutes, 5 attempts). Admin roles also
   need an authenticator app (TOTP).
@@ -27,7 +29,7 @@ from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from pydantic import BaseModel
 from sqlalchemy import Connection, select, update
 
-from bide_comply import audit, clock, emailer
+from bide_comply import audit, clock, emailer, passwords, ratelimit
 from bide_comply.authz import STRONG_AUTH_ROLES, Principal, load_principal
 from bide_comply.config import settings
 from bide_comply.db import ConnDep
@@ -235,8 +237,13 @@ def establish(
     next_: str,
     via: str,
     trust_without_code: bool = False,
+    trust_device: bool = False,
 ) -> dict:
-    """After Google, a magic link or dev sign-in: start a session, or ask for the device code first."""
+    """After Google, a magic link or dev sign-in: start a session, or ask for the device code first.
+
+    trust_without_code skips both the device code and the authenticator app (dev sign-in). trust_device skips only
+    the device code: the admin password sign-in has no email to send one to, but admin roles still need the app.
+    """
     if p["employment_status"] != "active":
         raise HTTPException(403, detail={"code": "inactive", "message": "This account no longer has access."})
     label = _client_label(request, app)
@@ -256,6 +263,11 @@ def establish(
         start_session(conn, response, p, d["id"], totp_ok=True)
         audit.record(conn, actor, category="sign_in", action="sign_in", summary=f"Signed in ({via})")
         return {"next": next_}
+    if trust_device and not _device_trusted(d):
+        now = clock.now()
+        until = now + timedelta(days=settings.device_trust_days)
+        conn.execute(update(device).where(device.c.id == d["id"]).values(trusted_at=now, trusted_until=until))
+        d["trusted_at"], d["trusted_until"] = now, until
     if _device_trusted(d):
         strong = bool(_roles(conn, p["id"]) & STRONG_AUTH_ROLES)
         if strong:
@@ -613,6 +625,63 @@ def dev_signin(body: DevIn, request: Request, response: Response, conn: ConnDep)
     if not p:
         raise HTTPException(404, detail={"code": "not_found", "message": "Not found."})
     return establish(conn, request, response, dict(p), body.app, "/", "development sign-in", trust_without_code=True)
+
+
+class AdminPasswordIn(BaseModel):
+    username: str
+    password: str
+
+
+# Wrong passwords from anywhere: after this many in an hour the password sign-in refuses everyone until the hour ends.
+ADMIN_FAILURES = (10, 3600)
+ADMIN_REFUSED = {"code": "wrong", "message": "That username or password isn't right."}
+
+
+def _admin_login_on() -> bool:
+    return bool(settings.admin_login_username and settings.admin_login_email and settings.admin_login_password_hash)
+
+
+@router.get("/admin-password")
+def admin_password_state() -> dict:
+    return {"enabled": _admin_login_on()}
+
+
+@router.post("/admin-password")
+def admin_password(body: AdminPasswordIn, request: Request, response: Response, conn: ConnDep) -> dict:
+    if not _admin_login_on():
+        raise HTTPException(404, detail={"code": "not_found", "message": "Not found."})
+    limit, window = ADMIN_FAILURES
+    if ratelimit.count("admin-password-failures", window) >= limit:
+        raise HTTPException(
+            429,
+            detail={
+                "code": "locked",
+                "message": "Password sign-in is paused after too many wrong tries. Try again in an hour.",
+            },
+        )
+    user_ok = hmac.compare_digest(
+        body.username.strip().lower().encode(), settings.admin_login_username.lower().encode()
+    )
+    # The hash is checked even for a wrong username, so the answer takes the same time either way.
+    pw_ok = passwords.verify(body.password, settings.admin_login_password_hash)
+    p = (
+        conn.execute(select(person).where(person.c.email == settings.admin_login_email.strip().lower()))
+        .mappings()
+        .first()
+    )
+    ip = request.client.host if request.client else None
+    if not (user_ok and pw_ok and p and "super_admin" in _roles(conn, p["id"])):
+        ratelimit._hit("admin-password-failures", limit, window)
+        audit.record(
+            conn,
+            audit.Actor(None, "Anonymous", ip, _client_label(request, "web")),
+            category="sign_in",
+            action="admin_password_failed",
+            summary="Admin password sign-in refused",
+        )
+        conn.commit()
+        raise HTTPException(400, detail=ADMIN_REFUSED)
+    return establish(conn, request, response, dict(p), "web", "/", "admin password", trust_device=True)
 
 
 @router.post("/refresh")

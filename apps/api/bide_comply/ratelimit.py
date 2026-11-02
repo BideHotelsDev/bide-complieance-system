@@ -21,6 +21,7 @@ RULES: list[tuple[str, tuple[int, int]]] = [
     ("/api/auth/totp", (10, 600)),
     ("/api/auth/magic", (5, 900)),
     ("/api/auth/dev", (60, 60)),
+    ("/api/auth/admin-password", (5, 900)),
     ("/api/auth/google", (30, 600)),
     ("/api/auth/refresh", (120, 600)),
     ("/api/reports/packs", (10, 3600)),
@@ -61,6 +62,18 @@ def _hit(key: str, limit: int, window: int) -> bool:
     q.append(now)
     _local[key] = q
     return len(q) <= limit
+
+
+def count(key: str, window: int) -> int:
+    """How many hits key has in the current window, without adding one."""
+    r = _client()
+    if r is not None:
+        try:
+            return int(r.get(f"rl:{key}:{int(time.time() // window)}") or 0)
+        except Exception as e:  # noqa: BLE001 - as in _hit
+            log.debug("rate limit store unavailable: %s", e)
+    now = time.time()
+    return len([t for t in _local[key] if now - t < window])
 
 
 async def middleware(request: Request, call_next):
