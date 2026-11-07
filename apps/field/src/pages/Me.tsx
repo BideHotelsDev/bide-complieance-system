@@ -78,10 +78,11 @@ export function MePage() {
   const signOut = async () => {
     setLeaving(true)
     await disablePush().catch(() => undefined)
-    await api.post("/api/auth/logout").catch(() => undefined)
+    const out = await api.post<{ redirect?: string }>("/api/auth/logout").catch(() => undefined)
     await wipePhone()
     qc.clear()
-    window.location.href = appPath("/signin")
+    // Signed in through Bide Hub: the Hub signs out too (every Bide system), then sends the phone back here.
+    window.location.href = out?.redirect ?? appPath("/signin")
   }
 
   const m = fm.data?.month

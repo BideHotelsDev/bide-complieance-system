@@ -54,3 +54,13 @@ export function navFor(me: Me) {
     settings: me.can["settings.view"],
   }
 }
+
+/* Sign in with Bide (Bide Hub single sign-on). Off unless the API has BIDE_HUB_* set. */
+export function useBideHub() {
+  return useQuery({
+    queryKey: ["bide-hub"],
+    queryFn: () => api.get<{ enabled: boolean; issuer: string | null }>("/api/auth/bide"),
+    staleTime: Infinity,
+    retry: false,
+  })
+}

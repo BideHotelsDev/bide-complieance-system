@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     google_client_id: str = ""
     google_client_secret: str = ""
     google_workspace_domains: str = "bidehotels.com"
+    # Bide Hub, the group's single sign-on (OIDC). When all three are set, "Sign in with Bide" replaces the Google
+    # step for staff; the device code, authenticator app and session rules after it are unchanged.
+    bide_hub_issuer: str = ""
+    bide_hub_client_id: str = ""
+    bide_hub_client_secret: str = ""
     # Local development and demos only: sign in as any seeded person without Google. Refused in production.
     dev_login: bool = False
     # First Super Admins for a new install, as "Name <email>, email". Used at start-up only while nobody is a
@@ -90,6 +95,10 @@ class Settings(BaseSettings):
     @property
     def workspace_domains(self) -> list[str]:
         return [d.strip().lower() for d in self.google_workspace_domains.split(",") if d.strip()]
+
+    @property
+    def bide_hub_on(self) -> bool:
+        return bool(self.bide_hub_issuer and self.bide_hub_client_id and self.bide_hub_client_secret)
 
     @property
     def is_production(self) -> bool:

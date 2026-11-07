@@ -33,6 +33,7 @@ The rules from the PRD that the code enforces, and where:
 | Escalation ladder (§7), quiet hours, Class A never muted | `services/notify.py`, `services/escalations.py`, `worker.py` |
 | Permission matrix and separation of duties (§2, §9.3) | `authz.py`, tested in `tests/test_authz.py` |
 | Sign-in, device trust, rotating refresh tokens (§9.2) | `auth.py` |
+| Sign in with Bide (Bide Hub SSO) in place of Google; Hub sign-out ends the sessions it started | `hub.py`, `auth.py` |
 | Append-only hash-chained audit log (AUD-01) | `audit.py` and the migration's trigger |
 | Evidence integrity (§9.4) | `storage.py`, `services/evidence.py` |
 
