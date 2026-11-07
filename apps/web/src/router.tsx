@@ -31,7 +31,7 @@ import { PropertyDetailsPage, PropertyListAdmin } from "./pages/settings/Propert
 import { SetupPage } from "./pages/settings/Setup"
 import { TemplateEditorPage } from "./pages/settings/TemplateEditor"
 import { SignoffsPage } from "./pages/Signoffs"
-import { CodePage, SignInPage } from "./pages/SignIn"
+import { AdminSignInPage, CodePage, SignInPage } from "./pages/SignIn"
 
 // Search params are free-form strings; each page reads what it needs with useParams().
 const loose = (s: Record<string, unknown>) => s
@@ -44,6 +44,7 @@ const r = (path: string, component: () => React.ReactNode) =>
 
 const routeTree = root.addChildren([
   createRoute({ getParentRoute: () => root, path: "/signin", component: SignInPage, validateSearch: loose }),
+  createRoute({ getParentRoute: () => root, path: "/admin-signin", component: AdminSignInPage }),
   createRoute({ getParentRoute: () => root, path: "/signin/code", component: () => <CodePage stage="code" /> }),
   createRoute({ getParentRoute: () => root, path: "/signin/totp", component: () => <CodePage stage="totp" /> }),
   createRoute({

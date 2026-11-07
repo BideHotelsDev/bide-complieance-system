@@ -1,6 +1,7 @@
 import { appPath } from "@/lib/base"
 /*
- * Sign-in on the phone (PRD §9.2, design: AppSignin). Staff sign in with Google; the first time on a phone they also
+ * Sign-in on the phone (PRD §9.2, design: AppSignin). Staff sign in with Google (or with Bide, when Bide Hub is
+ * configured); the first time on a phone they also
  * enter the 6-digit code we email, after which the phone is trusted for 90 days. In local development a person picker
  * stands in for Google.
  */
@@ -14,8 +15,21 @@ import * as React from "react"
 
 import { Page, PrimaryButton } from "@/components/kit"
 
+// Codes the sign-in callbacks put in ?error=.
+const ERRORS: Record<string, string> = {
+  unknown: "You're not set up in Bide Comply yet. Ask an Admin of Bide Comply to add you.",
+  denied: "Your Bide account doesn't have access to Bide Comply. Ask an Admin of Bide Comply to add you.",
+  inactive: "This account no longer has access.",
+}
+
 export function SignInPage() {
   const reason = new URLSearchParams(location.search).get("error")
+  const bide = useQuery({
+    queryKey: ["bide-hub"],
+    queryFn: () => api.get<{ enabled: boolean }>("/api/auth/bide"),
+    staleTime: Infinity,
+    retry: false,
+  }).data?.enabled
   const dev = useQuery({
     queryKey: ["dev-people"],
     queryFn: () => api.get<{ id: string; name: string; title: string | null; kind: string }[]>("/api/auth/dev/people"),
@@ -32,18 +46,18 @@ export function SignInPage() {
       <Mark size={44} />
       <h1 className="m-0 mt-6 text-[26px] font-semibold">Sign in</h1>
       <p className="m-0 mt-1.5 text-[16px] text-muted-foreground">
-        Use your Bide Google account to see today's checks.
+        {bide ? "Use your Bide account to see today's checks." : "Use your Bide Google account to see today's checks."}
       </p>
       {reason && (
         <p role="alert" className="mt-4 rounded-xl bg-st-red-bg px-3.5 py-2.5 text-[15px] text-st-red">
-          Sign-in didn't work. Try again.
+          {ERRORS[reason] ?? "Sign-in didn't work. Try again."}
         </p>
       )}
       <a
-        href="/api/auth/google/start?app=field&next=%2F"
+        href={bide ? "/api/auth/bide/login?app=field&next=%2F" : "/api/auth/google/start?app=field&next=%2F"}
         className="mt-6 flex h-[52px] items-center justify-center gap-2 rounded-xl bg-primary text-[17px] font-semibold text-primary-foreground no-underline"
       >
-        Sign in with Google
+        {bide ? "Sign in with Bide" : "Sign in with Google"}
       </a>
       <p className="mt-4 text-[14px] text-muted-foreground">
         Contractors: use the link Bide emailed you. It works for 7 days, no password needed.
@@ -115,7 +129,9 @@ export function CodePage({ stage }: { stage: "code" | "totp" | "totp-setup" }) {
   const pending = useQuery({
     queryKey: ["pending"],
     queryFn: () =>
-      api.get<{ stage: string; name: string; email_masked: string; contact: Contact }>("/api/auth/pending"),
+      api.get<{ stage: string; name: string; email_masked: string; via: "bide" | null; contact: Contact }>(
+        "/api/auth/pending",
+      ),
     retry: false,
   })
   const setup = useQuery({
@@ -208,7 +224,7 @@ export function CodePage({ stage }: { stage: "code" | "totp" | "totp-setup" }) {
           </PrimaryButton>
           {pending.data && (
             <p className="m-0 mt-3 text-center text-[13.5px] text-muted-foreground">
-              Signed in with Google as {pending.data.name} ·{" "}
+              Signed in with {pending.data.via === "bide" ? "Bide" : "Google"} as {pending.data.name} ·{" "}
               <button type="button" className="min-h-10 font-medium text-link" onClick={() => void notYou()}>
                 Not you?
               </button>

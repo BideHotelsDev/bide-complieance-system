@@ -76,11 +76,13 @@ function SignOut() {
   const qc = useQueryClient()
   const navigate = useNavigate()
   const out = useMutation({
-    mutationFn: () => api.post("/api/auth/logout"),
-    onSettled: () => {
-      // Whatever the server said, forget everything cached in this tab and go to sign-in.
+    mutationFn: () => api.post<{ ok: boolean; redirect?: string }>("/api/auth/logout"),
+    onSettled: (r) => {
+      // Whatever the server said, forget everything cached in this tab and go to sign-in. Signed in through Bide
+      // Hub, the Hub signs out too (every Bide system), then sends the browser back here.
       qc.clear()
-      void navigate({ to: "/signin" })
+      if (r?.redirect) window.location.href = r.redirect
+      else void navigate({ to: "/signin" })
     },
   })
   return (

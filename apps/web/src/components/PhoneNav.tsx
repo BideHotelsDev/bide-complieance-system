@@ -11,6 +11,7 @@ import { useBranding } from "@bide-comply/ui/lib/theme"
 import { cn } from "@bide-comply/ui/lib/utils"
 
 import { navFor, useMe } from "@/lib/session"
+import { AppSwitcher } from "./AppSwitcher"
 
 const MenuContext = React.createContext<() => void>(() => {})
 
@@ -46,6 +47,7 @@ export function PhoneTopBar({ onSearch }: { onSearch: () => void }) {
           <AppName />
         </span>
       </Link>
+      <AppSwitcher align="end" />
       <button
         type="button"
         onClick={onSearch}

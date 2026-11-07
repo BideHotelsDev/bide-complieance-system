@@ -17,7 +17,8 @@ void loadTheme(() => api.get<Theme>("/api/theme"))
 configure({
   app: "web",
   onSignedOut: (code) => {
-    if (!location.pathname.startsWith("/signin")) {
+    // The sign-in pages, the admin one included, are where a signed-out person should be.
+    if (!location.pathname.startsWith("/signin") && location.pathname !== "/admin-signin") {
       const q = new URLSearchParams({ next: location.pathname + location.search })
       if (code === "idle") q.set("reason", "idle")
       location.href = `/signin?${q}`

@@ -23,6 +23,11 @@ Before go-live (PRD §9, §13):
   signed in. To add one by hand: `railway ssh -s bide-comply -e production -- python -m bide_comply.seed --admin
   "Name <email>"`.
 - The OAuth redirect URI is `https://<app host>/api/auth/google/callback`.
+- Sign in with Bide (once Bide Hub is live): set `BIDE_HUB_ISSUER`, `BIDE_HUB_CLIENT_ID=comply` and
+  `BIDE_HUB_CLIENT_SECRET`, which switches Google sign-in off for staff. On the Hub, the `comply` app needs redirect URI
+  `https://<app host>/api/auth/bide/callback` (portal and staff app share it), post-logout addresses
+  `https://<app host>/` and `https://<app host>/app/`, and back-channel logout URI
+  `https://<app host>/api/auth/bide/backchannel-logout`.
 - A DPIA, the staff privacy notice (Settings › Messages and wording), DPAs with every sub-processor.
 - Retention defaults signed off by David (Settings shows them; the categories are seeded in `seed/library.py`).
 - An independent penetration test, and a restore test recorded as a compliance task.

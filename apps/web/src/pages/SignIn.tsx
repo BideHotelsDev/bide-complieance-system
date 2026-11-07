@@ -1,7 +1,8 @@
 /*
- * Sign-in (PRD §9.2, design: Dialogs › First sign-in on a new computer, You've been signed out). Staff use Google;
- * outside people (assessor, SPV directors, contractors) get an emailed link. A new device needs the emailed code,
- * and admin roles also confirm with an authenticator app. In local development a person picker stands in for Google.
+ * Sign-in (PRD §9.2, design: Dialogs › First sign-in on a new computer, You've been signed out). Staff use Google,
+ * or Sign in with Bide when Bide Hub is configured; outside people (assessor, SPV directors, contractors) get an
+ * emailed link. A new device needs the emailed code, and admin roles also confirm with an authenticator app. In local
+ * development a person picker stands in for Google.
  */
 import { useNavigate, useSearch } from "@tanstack/react-router"
 import { useMutation, useQuery } from "@tanstack/react-query"
@@ -11,6 +12,16 @@ import { api, ApiError } from "@bide-comply/api-client"
 import { Button } from "@bide-comply/ui/components/button"
 import { Mark } from "@bide-comply/ui/components/page"
 import { useBranding } from "@bide-comply/ui/lib/theme"
+
+import { useBideHub } from "@/lib/session"
+
+// Codes the sign-in callbacks put in ?error=.
+const ERRORS: Record<string, string> = {
+  link: "That sign-in link has expired. Ask for a new one below.",
+  unknown: "You're not set up in Bide Comply yet. Ask an Admin of Bide Comply to add you.",
+  denied: "Your Bide account doesn't have access to Bide Comply. Ask an Admin of Bide Comply to add you.",
+  inactive: "This account no longer has access.",
+}
 
 function Frame({ children }: { children: React.ReactNode }) {
   const { appName } = useBranding()
@@ -31,6 +42,7 @@ export function SignInPage() {
   const search = useSearch({ strict: false }) as { next?: string; error?: string; reason?: string }
   const navigate = useNavigate()
   const { signinMessage } = useBranding()
+  const bide = useBideHub().data?.enabled ?? false
   const [email, setEmail] = React.useState("")
   const [sent, setSent] = React.useState(false)
   const dev = useQuery({
@@ -61,19 +73,21 @@ export function SignInPage() {
       ) : (
         <>
           <h1 className="m-0 text-[18px] font-semibold">Sign in</h1>
-          <p className="mt-1 text-[13.5px] text-muted-foreground">{signinMessage ?? "Use your Bide Google account."}</p>
+          <p className="mt-1 text-[13.5px] text-muted-foreground">
+            {signinMessage ?? (bide ? "Use your Bide account." : "Use your Bide Google account.")}
+          </p>
         </>
       )}
       {search.error && (
         <p role="alert" className="mt-3 rounded-md bg-st-red-bg px-3 py-2 text-[13px] text-st-red">
-          {search.error === "link"
-            ? "That sign-in link has expired. Ask for a new one below."
-            : "Sign-in didn't work. Try again."}
+          {ERRORS[search.error] ?? "Sign-in didn't work. Try again."}
         </p>
       )}
       <Button asChild size="lg" className="mt-4 w-full">
-        <a href={`/api/auth/google/start?app=web&next=${encodeURIComponent(search.next ?? "/")}`}>
-          Sign in with Google
+        <a
+          href={`/api/auth/${bide ? "bide/login" : "google/start"}?app=web&next=${encodeURIComponent(search.next ?? "/")}`}
+        >
+          {bide ? "Sign in with Bide" : "Sign in with Google"}
         </a>
       </Button>
       <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
@@ -147,6 +161,86 @@ function CodeBoxes({ value, onChange, length = 6 }: { value: string; onChange: (
       className="tabular h-14 w-full rounded-lg border border-border bg-surface text-center text-[26px] font-semibold tracking-[0.5em]"
       autoFocus
     />
+  )
+}
+
+// Break-glass sign-in for the one Super Admin set in ADMIN_LOGIN_*, before Google sign-in and email are set up. It
+// isn't linked from the sign-in page; the authenticator app follows the password.
+export function AdminSignInPage() {
+  const bide = useBideHub().data?.enabled ?? false
+  const [username, setUsername] = React.useState("")
+  const [password, setPassword] = React.useState("")
+  const state = useQuery({
+    queryKey: ["admin-password"],
+    queryFn: () => api.get<{ enabled: boolean }>("/api/auth/admin-password"),
+    retry: false,
+  })
+  const go = useMutation({
+    mutationFn: () => api.post<{ next: string }>("/api/auth/admin-password", { username, password }),
+    onSuccess: (r) => {
+      window.location.href = r.next || "/"
+    },
+  })
+  const err = go.error instanceof ApiError ? go.error.message : go.error ? "Sign-in didn't work. Try again." : null
+  const field = "h-9 rounded-md border border-border bg-surface px-2.5 text-[14px] font-normal text-foreground"
+  return (
+    <Frame>
+      <h1 className="m-0 text-[18px] font-semibold">Admin sign-in</h1>
+      {state.data && !state.data.enabled ? (
+        <>
+          <p className="mt-1 text-[13.5px] text-muted-foreground">Password sign-in is switched off.</p>
+          <a href="/signin" className="mt-4 inline-block text-[13px]">
+            Go to sign-in
+          </a>
+        </>
+      ) : (
+        <>
+          <p className="mt-1 text-[13.5px] text-muted-foreground">
+            For the system's admin account only. You'll confirm with your authenticator app next.
+          </p>
+          <form
+            className="mt-4 flex flex-col gap-3"
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (username && password) go.mutate()
+            }}
+          >
+            <label className="flex flex-col gap-1 text-xs font-medium text-ink2">
+              Username
+              <input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className={field}
+                autoComplete="username"
+                autoCapitalize="none"
+                autoFocus
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs font-medium text-ink2">
+              Password
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={field}
+                autoComplete="current-password"
+              />
+            </label>
+            {err && (
+              <p role="alert" className="m-0 text-[13px] text-st-red">
+                {err}
+              </p>
+            )}
+            <Button type="submit" size="lg" disabled={!username || !password || go.isPending}>
+              Sign in
+            </Button>
+            <a href="/signin" className="text-[13px]">
+              {bide ? "Sign in with Bide instead" : "Sign in with Google instead"}
+            </a>
+          </form>
+        </>
+      )}
+    </Frame>
   )
 }
 

@@ -1,6 +1,10 @@
 """Sign-in, device trust and sessions (PRD §8, §9.2).
 
 - Staff: Google Workspace OIDC with Authorization Code + PKCE; iss, aud, exp and the hd claim are checked here.
+  When Bide Hub is configured (BIDE_HUB_*), "Sign in with Bide" takes the place of Google; see hub.py. Everything
+  after the identity step below is the same either way, and a sign-out on the Hub ends the sessions it started.
+- Break-glass: one Super Admin can sign in with a username and password (ADMIN_LOGIN_*), for an install that has
+  neither Google sign-in nor email yet. The authenticator app is still required after the password.
 - Outside people (assessor, SPV directors without a bide account, contractors): an emailed magic link, 8-hour sessions.
 - A first sign-in on a device needs an emailed 6-digit code (single use, 10 minutes, 5 attempts). Admin roles also
   need an authenticator app (TOTP).
@@ -17,17 +21,17 @@ import uuid
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Annotated
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 
 import httpx
 import pyotp
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from pydantic import BaseModel
-from sqlalchemy import Connection, select, update
+from sqlalchemy import Connection, func, select, update
 
-from bide_comply import audit, clock, emailer
+from bide_comply import audit, clock, emailer, hub, passwords, ratelimit
 from bide_comply.authz import STRONG_AUTH_ROLES, Principal, load_principal
 from bide_comply.config import settings
 from bide_comply.db import ConnDep
@@ -39,6 +43,7 @@ REFRESH_COOKIE = "bc_refresh"
 DEVICE_COOKIE = "bc_device"
 PENDING_COOKIE = "bc_pending"
 PKCE_COOKIE = "bc_pkce"
+BIDE_COOKIE = "bc_bide"
 
 GOOGLE_AUTH = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN = "https://oauth2.googleapis.com/token"  # noqa: S105 - a URL, not a secret
@@ -138,7 +143,14 @@ def _roles(conn: Connection, person_id: uuid.UUID) -> set[str]:
     return set(conn.execute(select(role_assignment.c.role).where(role_assignment.c.person_id == person_id)).scalars())
 
 
-def start_session(conn: Connection, response: Response, p: dict, device_id: uuid.UUID, totp_ok: bool = False) -> None:
+def start_session(
+    conn: Connection,
+    response: Response,
+    p: dict,
+    device_id: uuid.UUID,
+    totp_ok: bool = False,
+    hub_sid: str | None = None,
+) -> None:
     raw = secrets.token_urlsafe(48)
     now = clock.now()
     external = p["kind"] == "external"
@@ -155,6 +167,7 @@ def start_session(conn: Connection, response: Response, p: dict, device_id: uuid
             idle_expires_at=now + timedelta(minutes=settings.admin_idle_minutes) if strong else None,
             last_used_at=now,
             totp_ok=totp_ok,
+            hub_sid=hub_sid,
         )
     )
     conn.execute(update(device).where(device.c.id == device_id).values(last_seen_at=now))
@@ -199,6 +212,7 @@ class Pending:
     app: str
     next: str
     stage: str  # otp | totp | totp_setup
+    hub_sid: str | None = None  # signed in through Bide Hub: carried to the session once the steps are done
 
 
 def _set_pending(response: Response, pend: Pending) -> None:
@@ -210,6 +224,7 @@ def _set_pending(response: Response, pend: Pending) -> None:
             "a": pend.app,
             "n": pend.next,
             "s": pend.stage,
+            "h": pend.hub_sid,
         }
     )
     _cookie(response, PENDING_COOKIE, tok, 15 * 60)
@@ -223,7 +238,8 @@ def _get_pending(request: Request) -> Pending:
         d = _serializer("pending").loads(tok, max_age=15 * 60)
     except BadSignature:
         raise HTTPException(401, detail={"code": "no_pending", "message": "Start signing in again."}) from None
-    return Pending(uuid.UUID(d["p"]), uuid.UUID(d["d"]), uuid.UUID(d["c"]) if d["c"] else None, d["a"], d["n"], d["s"])
+    challenge = uuid.UUID(d["c"]) if d["c"] else None
+    return Pending(uuid.UUID(d["p"]), uuid.UUID(d["d"]), challenge, d["a"], d["n"], d["s"], d.get("h"))
 
 
 def establish(
@@ -235,8 +251,15 @@ def establish(
     next_: str,
     via: str,
     trust_without_code: bool = False,
+    trust_device: bool = False,
+    hub_sid: str | None = None,
 ) -> dict:
-    """After Google, a magic link or dev sign-in: start a session, or ask for the device code first."""
+    """After Google or Bide Hub, a magic link or dev sign-in: start a session, or ask for the device code first.
+
+    trust_without_code skips both the device code and the authenticator app (dev sign-in). trust_device skips only
+    the device code: the admin password sign-in has no email to send one to, but admin roles still need the app.
+    hub_sid is the Bide Hub session behind this sign-in; the session (or the pending steps) keeps it.
+    """
     if p["employment_status"] != "active":
         raise HTTPException(403, detail={"code": "inactive", "message": "This account no longer has access."})
     label = _client_label(request, app)
@@ -256,18 +279,23 @@ def establish(
         start_session(conn, response, p, d["id"], totp_ok=True)
         audit.record(conn, actor, category="sign_in", action="sign_in", summary=f"Signed in ({via})")
         return {"next": next_}
+    if trust_device and not _device_trusted(d):
+        now = clock.now()
+        until = now + timedelta(days=settings.device_trust_days)
+        conn.execute(update(device).where(device.c.id == d["id"]).values(trusted_at=now, trusted_until=until))
+        d["trusted_at"], d["trusted_until"] = now, until
     if _device_trusted(d):
         strong = bool(_roles(conn, p["id"]) & STRONG_AUTH_ROLES)
         if strong:
             # Admin roles confirm with the authenticator app on every sign-in, not only on a new device.
             stage = "totp" if _totp_confirmed(conn, p["id"]) else "totp_setup"
-            _set_pending(response, Pending(p["id"], d["id"], None, app, next_, stage))
+            _set_pending(response, Pending(p["id"], d["id"], None, app, next_, stage, hub_sid))
             return {"next": f"/signin/{stage.replace('_', '-')}"}
-        start_session(conn, response, p, d["id"])
+        start_session(conn, response, p, d["id"], hub_sid=hub_sid)
         audit.record(conn, actor, category="sign_in", action="sign_in", summary=f"Signed in ({via})")
         return {"next": next_}
     cid = _send_otp(conn, p, d["id"])
-    _set_pending(response, Pending(p["id"], d["id"], cid, app, next_, "otp"))
+    _set_pending(response, Pending(p["id"], d["id"], cid, app, next_, "otp", hub_sid))
     return {"next": "/signin/code"}
 
 
@@ -349,6 +377,9 @@ def _safe_next(next_: str | None) -> str:
 
 @router.get("/google/start")
 def google_start(app: str = "web", next: str | None = None) -> RedirectResponse:  # noqa: A002 - query name
+    if settings.bide_hub_on:
+        # Bide Hub has taken over the Google step (it signs people in with Google itself); old links still work.
+        return RedirectResponse(f"/api/auth/bide/login?{urlencode({'app': app, 'next': _safe_next(next)})}", 302)
     if not settings.google_client_id:
         raise HTTPException(503, detail={"code": "sso_off", "message": "Google sign-in isn't configured here."})
     verifier = secrets.token_urlsafe(64)
@@ -394,6 +425,8 @@ def _verify_id_token(id_token: str, nonce: str) -> dict:
 
 @router.get("/google/callback")
 def google_callback(request: Request, conn: ConnDep, code: str, state: str) -> RedirectResponse:
+    if settings.bide_hub_on:
+        raise HTTPException(404, detail={"code": "not_found", "message": "Sign in with Bide instead."})
     try:
         pk = _serializer("pkce").loads(request.cookies.get(PKCE_COOKIE, ""), max_age=600)
     except BadSignature:
@@ -437,6 +470,149 @@ def google_callback(request: Request, conn: ConnDep, code: str, state: str) -> R
     return resp
 
 
+# ---------------------------------------------------------------------------------------------------------------------
+# Sign in with Bide (Bide Hub OIDC). Replaces only the Google step; establish() does the rest exactly as before.
+# ---------------------------------------------------------------------------------------------------------------------
+
+
+def _bide_redirect_uri(app: str) -> str:
+    """The callback on the origin the app is served from, as registered on the Hub. Production serves the portal at
+    / and the staff app at /app on one origin, so both share one callback; in development each Vite server proxies
+    /api to the API, so each origin has its own."""
+    base = urlsplit(_app_base(app))
+    return f"{base.scheme}://{base.netloc}/api/auth/bide/callback"
+
+
+def _signin_error(app: str, code: str) -> RedirectResponse:
+    resp = RedirectResponse(f"{_app_base(app)}/signin?{urlencode({'error': code})}", status_code=302)
+    _drop_cookie(resp, BIDE_COOKIE, "/api/auth/bide")
+    return resp
+
+
+@router.get("/bide")
+def bide_state() -> dict:
+    """Whether the sign-in pages show Sign in with Bide, and the Hub the app switcher loads from."""
+    return {"enabled": settings.bide_hub_on, "issuer": hub.issuer() if settings.bide_hub_on else None}
+
+
+@router.get("/bide/login")
+def bide_login(app: str = "web", next: str | None = None) -> RedirectResponse:  # noqa: A002 - query name
+    if not settings.bide_hub_on:
+        raise HTTPException(404, detail={"code": "not_found", "message": "Not found."})
+    app = "field" if app == "field" else "web"
+    verifier = secrets.token_urlsafe(64)
+    challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode()
+    state = secrets.token_urlsafe(24)
+    nonce = secrets.token_urlsafe(24)
+    try:
+        url = hub.authorize_url(
+            response_type="code",
+            client_id=settings.bide_hub_client_id,
+            redirect_uri=_bide_redirect_uri(app),
+            scope="openid email profile",
+            state=state,
+            nonce=nonce,
+            code_challenge=challenge,
+            code_challenge_method="S256",
+        )
+    except hub.HubError:
+        return _signin_error(app, "hub")
+    resp = RedirectResponse(url, status_code=302)
+    tok = _serializer("bide").dumps({"v": verifier, "s": state, "n": nonce, "a": app, "x": _safe_next(next)})
+    _cookie(resp, BIDE_COOKIE, tok, 600, path="/api/auth/bide")
+    return resp
+
+
+def _hub_person(conn: Connection, claims: dict) -> dict:
+    """The Bide Hub sub first, then the email (the Hub only sends verified ones), which links the sub for next time.
+    Bide Comply is invite-only: someone who isn't in Settings › People is refused, as with Google."""
+    sub, email = str(claims["sub"]), str(claims["email"]).strip().lower()
+    p = conn.execute(select(person).where(person.c.bide_hub_sub == sub)).mappings().first()
+    if p:
+        return dict(p)
+    p = conn.execute(select(person).where(func.lower(person.c.email) == email)).mappings().first()
+    if not p:
+        raise HTTPException(403, detail={"code": "unknown", "message": "You're not set up in Bide Comply yet."})
+    if p["bide_hub_sub"] and p["bide_hub_sub"] != sub:
+        # Already linked to a different Hub account: don't let a reused address take this one over.
+        raise HTTPException(403, detail={"code": "mismatch", "message": "Sign-in failed."})
+    conn.execute(update(person).where(person.c.id == p["id"]).values(bide_hub_sub=sub))
+    return dict(p) | {"bide_hub_sub": sub}
+
+
+@router.get("/bide/callback")
+def bide_callback(
+    request: Request,
+    conn: ConnDep,
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+) -> RedirectResponse:
+    if not settings.bide_hub_on:
+        raise HTTPException(404, detail={"code": "not_found", "message": "Not found."})
+    try:
+        pk = _serializer("bide").loads(request.cookies.get(BIDE_COOKIE, ""), max_age=600)
+    except BadSignature:
+        return _signin_error("web", "state")
+    app = pk["a"]
+    if not state or not hmac.compare_digest(pk["s"], state):
+        return _signin_error(app, "state")
+    if error or not code:
+        # access_denied: the Hub says this person may not open Bide Comply. login_required and the rest: try again.
+        return _signin_error(app, "denied" if error == "access_denied" else "hub")
+    try:
+        tokens = hub.exchange_code(code, _bide_redirect_uri(app), pk["v"])
+        claims = hub.verify_id_token(tokens["id_token"], pk["n"])
+    except hub.HubError:
+        return _signin_error(app, "hub")
+    resp = RedirectResponse(_app_base(app), status_code=302)
+    try:
+        p = _hub_person(conn, claims)
+        result = establish(conn, request, resp, p, app, pk["x"], "Bide Hub", hub_sid=claims.get("sid"))
+    except HTTPException as e:
+        return _signin_error(app, e.detail["code"] if isinstance(e.detail, dict) else "hub")
+    resp.headers["location"] = _app_base(app) + result["next"]
+    _drop_cookie(resp, BIDE_COOKIE, "/api/auth/bide")
+    return resp
+
+
+@router.post("/bide/backchannel-logout")
+def bide_backchannel_logout(conn: ConnDep, logout_token: Annotated[str, Form()] = "") -> Response:
+    """The Hub, server to server, when someone signs out anywhere, everywhere, or is switched off. No cookies come
+    with it: the token alone says which sessions end (that Hub sid, or every session of that person)."""
+    if not settings.bide_hub_on:
+        raise HTTPException(404, detail={"code": "not_found", "message": "Not found."})
+    try:
+        claims = hub.verify_logout_token(logout_token)
+    except hub.HubError:
+        raise HTTPException(400, detail={"code": "invalid_request", "message": "Not a valid logout token."}) from None
+    now = clock.now()
+    live = auth_session.c.revoked_at.is_(None)
+    if claims.get("sid"):
+        which = auth_session.c.hub_sid == str(claims["sid"])
+    else:
+        pid = conn.execute(select(person.c.id).where(person.c.bide_hub_sub == str(claims["sub"]))).scalar()
+        which = auth_session.c.person_id == pid
+    ended = conn.execute(
+        update(auth_session).where(which, live).values(revoked_at=now).returning(auth_session.c.person_id)
+    ).scalars()
+    counts: dict[uuid.UUID, int] = {}
+    for pid in ended:
+        counts[pid] = counts.get(pid, 0) + 1
+    for pid, n in counts.items():
+        name = conn.execute(select(person.c.name).where(person.c.id == pid)).scalar() or "Unknown"
+        audit.record(
+            conn,
+            audit.Actor(pid, name, None, "Bide Hub"),
+            category="sign_in",
+            action="sign_out",
+            summary="Signed out from Bide Hub" + (f" ({n} sessions)" if n > 1 else ""),
+            entity_type="person",
+            entity_id=pid,
+        )
+    return Response(status_code=200, headers={"Cache-Control": "no-store"})
+
+
 class CodeIn(BaseModel):
     code: str
     trust: bool = True
@@ -453,6 +629,7 @@ def pending_state(request: Request, conn: ConnDep) -> dict:
         "name": p.name,
         "email_masked": f"{local[:2]}…@{dom}",
         "app": pend.app,
+        "via": "bide" if pend.hub_sid else None,
         "contact": contact.contact(conn),
     }
 
@@ -484,9 +661,9 @@ def verify_code(body: CodeIn, request: Request, response: Response, conn: ConnDe
     p = dict(conn.execute(select(person).where(person.c.id == pend.person_id)).mappings().one())
     if _roles(conn, p["id"]) & STRONG_AUTH_ROLES:
         stage = "totp" if _totp_confirmed(conn, p["id"]) else "totp_setup"
-        _set_pending(response, Pending(pend.person_id, pend.device_id, None, pend.app, pend.next, stage))
+        _set_pending(response, Pending(pend.person_id, pend.device_id, None, pend.app, pend.next, stage, pend.hub_sid))
         return {"next": f"/signin/{stage.replace('_', '-')}"}
-    start_session(conn, response, p, pend.device_id)
+    start_session(conn, response, p, pend.device_id, hub_sid=pend.hub_sid)
     audit.record(
         conn,
         audit.Actor(
@@ -504,7 +681,7 @@ def resend_code(request: Request, response: Response, conn: ConnDep) -> dict:
     pend = _get_pending(request)
     p = dict(conn.execute(select(person).where(person.c.id == pend.person_id)).mappings().one())
     cid = _send_otp(conn, p, pend.device_id)
-    _set_pending(response, Pending(pend.person_id, pend.device_id, cid, pend.app, pend.next, "otp"))
+    _set_pending(response, Pending(pend.person_id, pend.device_id, cid, pend.app, pend.next, "otp", pend.hub_sid))
     return {"ok": True}
 
 
@@ -536,7 +713,7 @@ def totp_verify(body: CodeIn, request: Request, response: Response, conn: ConnDe
             update(totp_secret).where(totp_secret.c.person_id == pend.person_id).values(confirmed_at=clock.now())
         )
     p = dict(conn.execute(select(person).where(person.c.id == pend.person_id)).mappings().one())
-    start_session(conn, response, p, pend.device_id, totp_ok=True)
+    start_session(conn, response, p, pend.device_id, totp_ok=True, hub_sid=pend.hub_sid)
     audit.record(
         conn,
         audit.Actor(
@@ -615,6 +792,63 @@ def dev_signin(body: DevIn, request: Request, response: Response, conn: ConnDep)
     return establish(conn, request, response, dict(p), body.app, "/", "development sign-in", trust_without_code=True)
 
 
+class AdminPasswordIn(BaseModel):
+    username: str
+    password: str
+
+
+# Wrong passwords from anywhere: after this many in an hour the password sign-in refuses everyone until the hour ends.
+ADMIN_FAILURES = (10, 3600)
+ADMIN_REFUSED = {"code": "wrong", "message": "That username or password isn't right."}
+
+
+def _admin_login_on() -> bool:
+    return bool(settings.admin_login_username and settings.admin_login_email and settings.admin_login_password_hash)
+
+
+@router.get("/admin-password")
+def admin_password_state() -> dict:
+    return {"enabled": _admin_login_on()}
+
+
+@router.post("/admin-password")
+def admin_password(body: AdminPasswordIn, request: Request, response: Response, conn: ConnDep) -> dict:
+    if not _admin_login_on():
+        raise HTTPException(404, detail={"code": "not_found", "message": "Not found."})
+    limit, window = ADMIN_FAILURES
+    if ratelimit.count("admin-password-failures", window) >= limit:
+        raise HTTPException(
+            429,
+            detail={
+                "code": "locked",
+                "message": "Password sign-in is paused after too many wrong tries. Try again in an hour.",
+            },
+        )
+    user_ok = hmac.compare_digest(
+        body.username.strip().lower().encode(), settings.admin_login_username.lower().encode()
+    )
+    # The hash is checked even for a wrong username, so the answer takes the same time either way.
+    pw_ok = passwords.verify(body.password, settings.admin_login_password_hash)
+    p = (
+        conn.execute(select(person).where(person.c.email == settings.admin_login_email.strip().lower()))
+        .mappings()
+        .first()
+    )
+    ip = request.client.host if request.client else None
+    if not (user_ok and pw_ok and p and "super_admin" in _roles(conn, p["id"])):
+        ratelimit._hit("admin-password-failures", limit, window)
+        audit.record(
+            conn,
+            audit.Actor(None, "Anonymous", ip, _client_label(request, "web")),
+            category="sign_in",
+            action="admin_password_failed",
+            summary="Admin password sign-in refused",
+        )
+        conn.commit()
+        raise HTTPException(400, detail=ADMIN_REFUSED)
+    return establish(conn, request, response, dict(p), "web", "/", "admin password", trust_device=True)
+
+
 @router.post("/refresh")
 def refresh(request: Request, response: Response, conn: ConnDep) -> dict:
     raw = request.cookies.get(REFRESH_COOKIE)
@@ -668,10 +902,20 @@ def refresh(request: Request, response: Response, conn: ConnDep) -> dict:
 @router.post("/logout")
 def logout(request: Request, response: Response, conn: ConnDep) -> dict:
     raw = request.cookies.get(REFRESH_COOKIE)
+    hub_sid = None
     if raw:
-        conn.execute(update(auth_session).where(auth_session.c.refresh_hash == _h(raw)).values(revoked_at=clock.now()))
+        hub_sid = conn.execute(
+            update(auth_session)
+            .where(auth_session.c.refresh_hash == _h(raw))
+            .values(revoked_at=clock.now())
+            .returning(auth_session.c.hub_sid)
+        ).scalar()
     _drop_cookie(response, ACCESS_COOKIE, "/")
     _drop_cookie(response, REFRESH_COOKIE, "/api/auth")
+    if settings.bide_hub_on and hub_sid:
+        # Signed in through Bide Hub: the browser goes on to end the Hub session too, which signs out every system.
+        app = request.headers.get("x-bide-app", "web")
+        return {"ok": True, "redirect": hub.logout_url(f"{_app_base(app)}/")}
     return {"ok": True}
 
 
