@@ -21,7 +21,11 @@ RULES: list[tuple[str, tuple[int, int]]] = [
     ("/api/auth/totp", (10, 600)),
     ("/api/auth/magic", (5, 900)),
     ("/api/auth/dev", (60, 60)),
+    ("/api/auth/admin-password", (5, 900)),
     ("/api/auth/google", (30, 600)),
+    # Not the back-channel logout: that's the Hub's server, and it only acts on a token the Hub signed.
+    ("/api/auth/bide/login", (30, 600)),
+    ("/api/auth/bide/callback", (30, 600)),
     ("/api/auth/refresh", (120, 600)),
     ("/api/reports/packs", (10, 3600)),
     ("/api/export", (30, 3600)),
@@ -63,8 +67,20 @@ def _hit(key: str, limit: int, window: int) -> bool:
     return len(q) <= limit
 
 
+def count(key: str, window: int) -> int:
+    """How many hits key has in the current window, without adding one."""
+    r = _client()
+    if r is not None:
+        try:
+            return int(r.get(f"rl:{key}:{int(time.time() // window)}") or 0)
+        except Exception as e:  # noqa: BLE001 - as in _hit
+            log.debug("rate limit store unavailable: %s", e)
+    now = time.time()
+    return len([t for t in _local[key] if now - t < window])
+
+
 async def middleware(request: Request, call_next):
-    if request.method != "GET" or request.url.path.startswith("/api/auth/google"):
+    if request.method != "GET" or request.url.path.startswith(("/api/auth/google", "/api/auth/bide/")):
         path = request.url.path
         rule = next((r for p, r in RULES if path.startswith(p)), None)
         if rule:

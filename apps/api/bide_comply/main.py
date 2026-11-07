@@ -2,6 +2,7 @@
 
 import logging
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -59,11 +60,14 @@ app.middleware("http")(ratelimit.middleware)
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
     resp = await call_next(request)
+    # The Bide Hub app switcher is a script from the Hub that reads the Hub's public system list.
+    hub = urlsplit(settings.bide_hub_issuer)
+    hub_origin = f" {hub.scheme}://{hub.netloc}" if settings.bide_hub_on else ""
     # §9.5: strict CSP (no inline scripts), HSTS, no framing, camera and geolocation for our own origin only.
     resp.headers.setdefault(
         "Content-Security-Policy",
         "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-        "font-src 'self' data: https://fonts.gstatic.com; script-src 'self'; connect-src 'self'; "
+        f"font-src 'self' data: https://fonts.gstatic.com; script-src 'self'{hub_origin}; connect-src 'self'{hub_origin}; "
         "frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
     )
     resp.headers.setdefault("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload")

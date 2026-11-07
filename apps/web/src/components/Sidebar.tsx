@@ -32,6 +32,7 @@ import { cn } from "@bide-comply/ui/lib/utils"
 
 import { useProperty } from "@/lib/property"
 import { navFor, useMe } from "@/lib/session"
+import { AppSwitcher } from "./AppSwitcher"
 import { PropertySwitcher } from "./PropertySwitcher"
 
 type Nav = { todo: number; actions: number; reviews: number; signoffs: number }
@@ -245,6 +246,7 @@ export function Sidebar({
             <AppName />
           </span>
         )}
+        {!collapsed && <AppSwitcher className="-my-2 ml-auto" />}
         <button
           type="button"
           onClick={onToggle}

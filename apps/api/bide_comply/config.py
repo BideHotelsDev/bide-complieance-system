@@ -34,11 +34,22 @@ class Settings(BaseSettings):
     google_client_id: str = ""
     google_client_secret: str = ""
     google_workspace_domains: str = "bidehotels.com"
+    # Bide Hub, the group's single sign-on (OIDC). When all three are set, "Sign in with Bide" replaces the Google
+    # step for staff; the device code, authenticator app and session rules after it are unchanged.
+    bide_hub_issuer: str = ""
+    bide_hub_client_id: str = ""
+    bide_hub_client_secret: str = ""
     # Local development and demos only: sign in as any seeded person without Google. Refused in production.
     dev_login: bool = False
     # First Super Admins for a new install, as "Name <email>, email". Used at start-up only while nobody is a
     # Super Admin; see seed/admins.py.
     bootstrap_admins: str = ""
+    # Break-glass sign-in with a password for one Super Admin, for before Google sign-in and email are set up.
+    # Off unless all three are set; remove the hash to switch it off. The authenticator app is still required.
+    # Make a password and hash with `python -m bide_comply.passwords`.
+    admin_login_username: str = ""
+    admin_login_email: str = ""
+    admin_login_password_hash: str = ""
 
     # Business logic runs in UK time whatever the viewer's timezone (SCH-04).
     business_timezone: str = "Europe/London"
@@ -84,6 +95,10 @@ class Settings(BaseSettings):
     @property
     def workspace_domains(self) -> list[str]:
         return [d.strip().lower() for d in self.google_workspace_domains.split(",") if d.strip()]
+
+    @property
+    def bide_hub_on(self) -> bool:
+        return bool(self.bide_hub_issuer and self.bide_hub_client_id and self.bide_hub_client_secret)
 
     @property
     def is_production(self) -> bool:

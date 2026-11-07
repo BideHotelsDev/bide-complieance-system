@@ -76,6 +76,7 @@ person = Table(
     Column("employment_status", String(20), nullable=False, server_default="active"),  # active | leaver
     Column("slack_id", String(40), nullable=True),
     Column("google_sub", String(64), nullable=True, unique=True),
+    Column("bide_hub_sub", String(64), nullable=True, unique=True),  # the person's id on Bide Hub, once linked
     Column("phone", String(40), nullable=True),
     Column("left_on", Date, nullable=True),
     Column("onboarded_at", DateTime(timezone=True), nullable=True),
@@ -143,8 +144,11 @@ auth_session = Table(
     Column("last_used_at", DateTime(timezone=True), nullable=True),
     Column("revoked_at", DateTime(timezone=True), nullable=True),
     Column("totp_ok", Boolean, nullable=False, server_default="false"),
+    # The Bide Hub session this one started from (its sid claim), so a sign-out on the Hub can end it.
+    Column("hub_sid", String(64), nullable=True),
     created(),
 )
+Index("ix_auth_session_hub_sid", auth_session.c.hub_sid)
 
 totp_secret = Table(
     "totp_secret",
