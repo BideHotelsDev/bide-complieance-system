@@ -12,7 +12,7 @@ from sqlalchemy import func, select, update
 from bide_comply import audit, clock
 from bide_comply.api import listing
 from bide_comply.auth import Current, actor_for, revoke_device, revoke_person
-from bide_comply.authz import ROLES, scope_filter
+from bide_comply.authz import ADMIN_ROLES, ROLES, Principal, scope_filter
 from bide_comply.db import ConnDep
 from bide_comply.schema import (
     auth_session,
@@ -274,13 +274,26 @@ class RoleIn(BaseModel):
     property_id: uuid.UUID | None = None
 
 
+def _may_change_role(pr: Principal, person_id: uuid.UUID, role: str) -> None:
+    """Who may give or take away a role (no self-escalation). Nobody changes their own roles. A Super Admin may change
+    any role; only a Super Admin may give or take away Super Admin or System owner. The other admin roles can only be
+    changed by someone who holds that role. Non-admin roles stay with anyone who has people.manage."""
+    if person_id == pr.person_id:
+        raise problem(403, "forbidden", "You can't change your own roles. Ask another Admin of Bide Comply.")
+    if pr.has_role("super_admin"):
+        return
+    if role in ("super_admin", "system_owner"):
+        raise problem(403, "forbidden", f"Only a Super Admin can change who is {ROLES[role]}.")
+    if role in ADMIN_ROLES and not pr.has_role(role):
+        raise problem(403, "forbidden", f"Only someone who is {ROLES[role]} can change who has that role.")
+
+
 @router.post("/{person_id}/roles")
 def add_role(person_id: uuid.UUID, body: RoleIn, request: Request, pr: Current, conn: ConnDep) -> dict:
     pr.require("people.manage")
     if body.role not in ROLES:
         raise problem(422, "role", "Unknown role.")
-    if body.role == "super_admin" and not pr.has_role("super_admin"):
-        raise problem(403, "forbidden", "Only a Super Admin can make someone a Super Admin.")
+    _may_change_role(pr, person_id, body.role)
     if not conn.execute(select(person.c.id).where(person.c.id == person_id)).first():
         raise problem(404, "not_found", "Not found.")
     dupe = conn.execute(
@@ -340,6 +353,7 @@ def remove_role(person_id: uuid.UUID, role_id: uuid.UUID, request: Request, pr: 
     )
     if not r:
         raise problem(404, "not_found", "Not found.")
+    _may_change_role(pr, person_id, r["role"])
     if (
         r["role"] == "super_admin"
         and conn.execute(select(func.count()).where(role_assignment.c.role == "super_admin")).scalar() <= 1
