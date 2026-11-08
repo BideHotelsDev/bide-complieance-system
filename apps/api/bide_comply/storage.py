@@ -10,7 +10,9 @@ the CSP.
 import hashlib
 import io
 import time
+import unicodedata
 from pathlib import Path
+from urllib.parse import quote
 
 from itsdangerous import BadSignature, URLSafeTimedSerializer
 from PIL import Image, ImageDraw, ImageFont, ImageOps
@@ -48,6 +50,23 @@ def sniff(data: bytes) -> str | None:
 
 def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def _ascii_char(c: str) -> str:
+    if c in '"\\':
+        return ""
+    folded = unicodedata.normalize("NFKD", c).encode("ascii", "ignore").decode()
+    return folded if folded and all(32 <= ord(x) < 127 for x in folded) else "_"
+
+
+def content_disposition(file_name: str, inline: bool = True) -> str:
+    """A header that survives any file name: an ASCII filename= for old clients (accents folded, quotes and
+    backslashes dropped, anything else "_") plus the real name as RFC 5987 filename*=UTF-8''. A header value is
+    Latin-1, so an en dash or an emoji in a bare filename= fails the response."""
+    name = file_name or "file"
+    ascii_name = "".join(_ascii_char(c) for c in name).strip() or "file"
+    disp = "inline" if inline else "attachment"
+    return f"{disp}; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(name, safe='')}"
 
 
 class _Signer:
@@ -186,7 +205,7 @@ class S3Storage(_ApiUrls):
     def download_url(self, key: str, file_name: str, inline: bool = True) -> str:
         if not settings.s3_direct_urls:
             return super().download_url(key, file_name, inline)
-        disposition = f'{"inline" if inline else "attachment"}; filename="{file_name}"'
+        disposition = content_disposition(file_name, inline)
         return self.client.generate_presigned_url(
             "get_object",
             Params={"Bucket": self.bucket, "Key": key, "ResponseContentDisposition": disposition},
@@ -232,6 +251,7 @@ def sanitise_svg(data: bytes) -> bytes:
     text = data.decode("utf-8", "replace")
     text = re.sub(r"<script\b.*?</script\s*>", "", text, flags=re.S | re.I)
     text = re.sub(r"<foreignObject\b.*?</foreignObject\s*>", "", text, flags=re.S | re.I)
-    text = re.sub(r"\son\w+\s*=\s*(\"[^\"]*\"|'[^']*')", "", text, flags=re.I)
-    text = re.sub(r"(href|xlink:href)\s*=\s*(\"(?!#)[^\"]*\"|'(?!#)[^']*')", "", text, flags=re.I)
+    text = re.sub(r"<script\b.*?(>|$)", "", text, flags=re.S | re.I)  # an unclosed one too
+    text = re.sub(r"\son\w+\s*=\s*(\"[^\"]*\"|'[^']*'|[^\s>]+)", "", text, flags=re.I)
+    text = re.sub(r"(href|xlink:href)\s*=\s*(\"(?!#)[^\"]*\"|'(?!#)[^']*'|(?![\"'#])[^\s>]+)", "", text, flags=re.I)
     return text.encode()

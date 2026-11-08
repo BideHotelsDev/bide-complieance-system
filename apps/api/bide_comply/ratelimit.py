@@ -36,6 +36,17 @@ _local: dict[str, list[float]] = defaultdict(list)
 _redis = None
 
 
+def client_ip(request: Request) -> str | None:
+    """The address the nearest trusted proxy saw. Entries to the left of it are whatever the client sent, so they're
+    never used: a spoofed X-Forwarded-For can't dodge a per-IP limit or put another address in the audit log."""
+    hops = settings.trusted_proxy_hops
+    if hops > 0:
+        entries = [e.strip() for h in request.headers.getlist("x-forwarded-for") for e in h.split(",") if e.strip()]
+        if len(entries) >= hops:
+            return entries[-hops]
+    return request.client.host if request.client else None
+
+
 def _client():
     global _redis
     if _redis is None:
@@ -84,7 +95,7 @@ async def middleware(request: Request, call_next):
         path = request.url.path
         rule = next((r for p, r in RULES if path.startswith(p)), None)
         if rule:
-            ip = request.client.host if request.client else "?"
+            ip = client_ip(request) or "?"
             who = request.cookies.get("bc_refresh", "")[:16] or request.cookies.get("bc_device", "")[:16]
             prefix = next(p for p, _ in RULES if path.startswith(p))
             for key in (f"ip:{ip}:{prefix}", f"who:{who}:{prefix}" if who else None):

@@ -19,4 +19,6 @@ until alembic upgrade head; do
 done
 # SEED_DEMO=true (staging) also loads the demo properties and people; it skips itself once they exist.
 python -m bide_comply.seed ${SEED_DEMO:+--demo}
-exec uvicorn bide_comply.main:app --host 0.0.0.0 --port "${PORT:-8000}" --proxy-headers --forwarded-allow-ips '*'
+# No proxy headers here: the left-most X-Forwarded-For is whatever the client sent. The app reads the entry Railway's
+# edge appends instead (ratelimit.client_ip, TRUSTED_PROXY_HOPS).
+exec uvicorn bide_comply.main:app --host 0.0.0.0 --port "${PORT:-8000}" --no-proxy-headers

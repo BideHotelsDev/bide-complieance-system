@@ -16,7 +16,17 @@ from bide_comply import clock
 from bide_comply.config import settings
 from bide_comply.schema import evidence, person, property_, register_item, task
 from bide_comply.services.common import problem
-from bide_comply.storage import DOC_TYPES, IMAGE_TYPES, LOGO_TYPES, SHEET_TYPES, display_copy, sha256, sniff, storage
+from bide_comply.storage import (
+    DOC_TYPES,
+    IMAGE_TYPES,
+    LOGO_TYPES,
+    SHEET_TYPES,
+    display_copy,
+    sanitise_svg,
+    sha256,
+    sniff,
+    storage,
+)
 
 ALLOWED = {**IMAGE_TYPES, **DOC_TYPES, **SHEET_TYPES}
 
@@ -120,6 +130,11 @@ def complete(
     if real != ev["content_type"] and not (real == "image/svg+xml" and ev["content_type"] == "image/svg+xml"):
         storage.delete(ev["storage_key"])
         raise problem(415, "type", "That file isn't what it says it is. Upload a photo or a PDF.")
+    if real == "image/svg+xml":
+        # Only logos are SVG, and they're shown inline: what's kept and served is the sanitised file, not the upload.
+        data = sanitise_svg(data)
+        storage.delete(ev["storage_key"])
+        storage.put(ev["storage_key"], data, real)
     vals: dict = {"sha256": sha256(data), "size_bytes": len(data), "status": "stored"}
     if real in IMAGE_TYPES and real != "image/heic":
         disp, thumb = display_copy(data, _stamp_text(conn, dict(ev), task_id))

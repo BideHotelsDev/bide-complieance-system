@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     environment: str = "development"  # development | staging | production
     database_url: str = "postgresql+psycopg://postgres@localhost:5432/bide_comply"
     redis_url: str = "redis://localhost:6379/0"
+    # Proxies in front of the API that each append the address they saw to X-Forwarded-For (Railway's edge: 1). The
+    # client IP for rate limits and the audit log is that many entries from the right; 0 uses the socket address.
+    trusted_proxy_hops: int = 1
 
     # Public URLs the browser uses. Magic links, Slack deep links and OIDC redirects point here.
     web_base_url: str = "http://localhost:5180"

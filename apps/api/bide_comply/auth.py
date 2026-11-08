@@ -18,6 +18,7 @@ import base64
 import hashlib
 import hmac
 import secrets
+import time
 import uuid
 from dataclasses import dataclass
 from datetime import timedelta
@@ -30,7 +31,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from pydantic import BaseModel
-from sqlalchemy import Connection, func, select, update
+from sqlalchemy import Connection, func, or_, select, update
 
 from bide_comply import audit, clock, emailer, hub, passwords, ratelimit
 from bide_comply.authz import STRONG_AUTH_ROLES, Principal, load_principal
@@ -101,7 +102,7 @@ def _client_label(request: Request, app: str) -> str:
 
 
 def actor_for(request: Request, principal: "Principal | None") -> audit.Actor:
-    ip = request.client.host if request.client else None
+    ip = ratelimit.client_ip(request)
     app = request.headers.get("x-bide-app", "web")
     if principal is None:
         return audit.Actor(None, "Anonymous", ip, _client_label(request, app))
@@ -270,7 +271,7 @@ def establish(
         conn.execute(update(device).where(device.c.id == d["id"]).values(revoked_at=None, trusted_at=None))
         d["trusted_at"] = None
         d["revoked_at"] = None
-    actor = audit.Actor(p["id"], p["name"], request.client.host if request.client else None, label)
+    actor = audit.Actor(p["id"], p["name"], ratelimit.client_ip(request), label)
     if trust_without_code:
         conn.execute(
             update(device)
@@ -290,7 +291,8 @@ def establish(
         if strong:
             # Admin roles confirm with the authenticator app on every sign-in, not only on a new device.
             stage = "totp" if _totp_confirmed(conn, p["id"]) else "totp_setup"
-            _set_pending(response, Pending(p["id"], d["id"], None, app, next_, stage, hub_sid))
+            cid = _totp_challenge(conn, p["id"], d["id"])
+            _set_pending(response, Pending(p["id"], d["id"], cid, app, next_, stage, hub_sid))
             return {"next": f"/signin/{stage.replace('_', '-')}"}
         start_session(conn, response, p, d["id"], hub_sid=hub_sid)
         audit.record(conn, actor, category="sign_in", action="sign_in", summary=f"Signed in ({via})")
@@ -298,6 +300,36 @@ def establish(
     cid = _send_otp(conn, p, d["id"])
     _set_pending(response, Pending(p["id"], d["id"], cid, app, next_, "otp", hub_sid))
     return {"next": "/signin/code"}
+
+
+TOTP_ATTEMPTS = 5
+
+
+def _totp_challenge(conn: Connection, person_id: uuid.UUID, device_id: uuid.UUID) -> uuid.UUID:
+    """The authenticator-app step of one sign-in. It counts wrong codes: after TOTP_ATTEMPTS it's spent, and signing in
+    starts again from the top. Lives as long as the pending cookie."""
+    cid = uuid.uuid4()
+    conn.execute(
+        otp_challenge.insert().values(
+            id=cid,
+            person_id=person_id,
+            device_id=device_id,
+            purpose="totp",
+            code_hash=_h(f"{cid}:totp"),  # unused: the code comes from the authenticator app
+            expires_at=clock.now() + timedelta(minutes=15),
+        )
+    )
+    return cid
+
+
+def _totp_step(secret: str, code: str) -> int | None:
+    """The 30-second time step the code belongs to (this one, or one either side for clock drift), or None."""
+    totp = pyotp.TOTP(secret)
+    current = int(time.time() // totp.interval)
+    for step in (current - 1, current, current + 1):
+        if hmac.compare_digest(totp.generate_otp(step), code):
+            return step
+    return None
 
 
 def _totp_confirmed(conn: Connection, person_id: uuid.UUID) -> bool:
@@ -525,12 +557,15 @@ def bide_login(app: str = "web", next: str | None = None) -> RedirectResponse:  
 
 
 def _hub_person(conn: Connection, claims: dict) -> dict:
-    """The Bide Hub sub first, then the email (the Hub only sends verified ones), which links the sub for next time.
+    """The Bide Hub sub first, then the email, which links the sub for next time. Linking by email needs the Hub to say
+    the address is verified (email_verified true), so an unverified address can't claim someone's account.
     Bide Comply is invite-only: someone who isn't in Settings › People is refused, as with Google."""
     sub, email = str(claims["sub"]), str(claims["email"]).strip().lower()
     p = conn.execute(select(person).where(person.c.bide_hub_sub == sub)).mappings().first()
     if p:
         return dict(p)
+    if claims.get("email_verified") is not True:
+        raise HTTPException(403, detail={"code": "unverified", "message": "Sign-in failed."})
     p = conn.execute(select(person).where(func.lower(person.c.email) == email)).mappings().first()
     if not p:
         raise HTTPException(403, detail={"code": "unknown", "message": "You're not set up in Bide Comply yet."})
@@ -580,13 +615,29 @@ def bide_callback(
 @router.post("/bide/backchannel-logout")
 def bide_backchannel_logout(conn: ConnDep, logout_token: Annotated[str, Form()] = "") -> Response:
     """The Hub, server to server, when someone signs out anywhere, everywhere, or is switched off. No cookies come
-    with it: the token alone says which sessions end (that Hub sid, or every session of that person)."""
+    with it: the token alone says which sessions end (that Hub sid, or every session of that person).
+
+    Switched off by a Hub admin, the events also carry urn:bide:hub:account-disabled: the person linked to that sub
+    (by sub only, never by email) is offboarded as an admin would offboard them in Settings › People. Nobody linked:
+    nothing to do."""
     if not settings.bide_hub_on:
         raise HTTPException(404, detail={"code": "not_found", "message": "Not found."})
     try:
         claims = hub.verify_logout_token(logout_token)
     except hub.HubError:
         raise HTTPException(400, detail={"code": "invalid_request", "message": "Not a valid logout token."}) from None
+    if hub.ACCOUNT_DISABLED_EVENT in claims["events"] and claims.get("sub"):
+        disabled = conn.execute(
+            select(person.c.id).where(
+                person.c.bide_hub_sub == str(claims["sub"]), person.c.employment_status == "active"
+            )
+        ).scalar()
+        if disabled:
+            from bide_comply.services import offboarding  # imports this module
+
+            offboarding.offboard(
+                conn, disabled, audit.Actor(None, "Bide Hub", None, "Bide Hub"), via=" (switched off in Bide Hub)"
+            )
     now = clock.now()
     live = auth_session.c.revoked_at.is_(None)
     if claims.get("sid"):
@@ -662,14 +713,13 @@ def verify_code(body: CodeIn, request: Request, response: Response, conn: ConnDe
     p = dict(conn.execute(select(person).where(person.c.id == pend.person_id)).mappings().one())
     if _roles(conn, p["id"]) & STRONG_AUTH_ROLES:
         stage = "totp" if _totp_confirmed(conn, p["id"]) else "totp_setup"
-        _set_pending(response, Pending(pend.person_id, pend.device_id, None, pend.app, pend.next, stage, pend.hub_sid))
+        cid = _totp_challenge(conn, p["id"], pend.device_id)
+        _set_pending(response, Pending(pend.person_id, pend.device_id, cid, pend.app, pend.next, stage, pend.hub_sid))
         return {"next": f"/signin/{stage.replace('_', '-')}"}
     start_session(conn, response, p, pend.device_id, hub_sid=pend.hub_sid)
     audit.record(
         conn,
-        audit.Actor(
-            p["id"], p["name"], request.client.host if request.client else None, _client_label(request, pend.app)
-        ),
+        audit.Actor(p["id"], p["name"], ratelimit.client_ip(request), _client_label(request, pend.app)),
         category="sign_in",
         action="new_device",
         summary="Signed in on a new device (email code confirmed)",
@@ -680,6 +730,9 @@ def verify_code(body: CodeIn, request: Request, response: Response, conn: ConnDe
 @router.post("/code/resend")
 def resend_code(request: Request, response: Response, conn: ConnDep) -> dict:
     pend = _get_pending(request)
+    if pend.stage != "otp":
+        # Not from the authenticator step: a new code there would start a fresh set of tries at the app.
+        raise HTTPException(400, detail={"code": "stage", "message": "Start signing in again."})
     p = dict(conn.execute(select(person).where(person.c.id == pend.person_id)).mappings().one())
     cid = _send_otp(conn, p, pend.device_id)
     _set_pending(response, Pending(pend.person_id, pend.device_id, cid, pend.app, pend.next, "otp", pend.hub_sid))
@@ -706,9 +759,54 @@ def totp_verify(body: CodeIn, request: Request, response: Response, conn: ConnDe
     pend = _get_pending(request)
     if pend.stage not in ("totp", "totp_setup"):
         raise HTTPException(400, detail={"code": "stage", "message": "Start signing in again."})
+    restart = HTTPException(401, detail={"code": "no_pending", "message": "Start signing in again."})
+    if not pend.challenge_id:
+        raise restart
+    now = clock.now()
+    # Count the try before checking the code, in one statement, so parallel guesses can't get past the limit.
+    tries = conn.execute(
+        update(otp_challenge)
+        .where(
+            otp_challenge.c.id == pend.challenge_id,
+            otp_challenge.c.person_id == pend.person_id,
+            otp_challenge.c.purpose == "totp",
+            otp_challenge.c.used_at.is_(None),
+            otp_challenge.c.expires_at > now,
+            otp_challenge.c.attempts < TOTP_ATTEMPTS,
+        )
+        .values(attempts=otp_challenge.c.attempts + 1)
+        .returning(otp_challenge.c.attempts)
+    ).scalar()
+    if tries is None:
+        raise restart
     row = conn.execute(select(totp_secret).where(totp_secret.c.person_id == pend.person_id)).mappings().first()
-    if not row or not pyotp.TOTP(row["secret"]).verify(body.code.strip(), valid_window=1):
-        raise HTTPException(400, detail={"code": "wrong", "message": "That code isn't right."})
+    step = _totp_step(row["secret"], body.code.strip()) if row else None
+    # A code works once: the step it belongs to must be later than the last one used, so a code seen over someone's
+    # shoulder (or replayed) can't be used again while it's still valid.
+    fresh = (
+        step is not None
+        and conn.execute(
+            update(totp_secret)
+            .where(
+                totp_secret.c.person_id == pend.person_id,
+                or_(totp_secret.c.last_step.is_(None), totp_secret.c.last_step < step),
+            )
+            .values(last_step=step)
+        ).rowcount
+        == 1
+    )
+    if not fresh:
+        left = TOTP_ATTEMPTS - tries
+        if left <= 0:
+            conn.execute(update(otp_challenge).where(otp_challenge.c.id == pend.challenge_id).values(used_at=now))
+        # Commit the try (and a spent step) even though the request fails.
+        conn.commit()
+        if left <= 0:
+            raise HTTPException(
+                429, detail={"code": "locked", "message": "Too many wrong codes. Start signing in again."}
+            )
+        raise HTTPException(400, detail={"code": "wrong", "message": f"That code isn't right. {left} tries left."})
+    conn.execute(update(otp_challenge).where(otp_challenge.c.id == pend.challenge_id).values(used_at=now))
     if not row["confirmed_at"]:
         conn.execute(
             update(totp_secret).where(totp_secret.c.person_id == pend.person_id).values(confirmed_at=clock.now())
@@ -717,9 +815,7 @@ def totp_verify(body: CodeIn, request: Request, response: Response, conn: ConnDe
     start_session(conn, response, p, pend.device_id, totp_ok=True, hub_sid=pend.hub_sid)
     audit.record(
         conn,
-        audit.Actor(
-            p["id"], p["name"], request.client.host if request.client else None, _client_label(request, pend.app)
-        ),
+        audit.Actor(p["id"], p["name"], ratelimit.client_ip(request), _client_label(request, pend.app)),
         category="sign_in",
         action="sign_in",
         summary="Signed in (authenticator app confirmed)",
@@ -877,7 +973,7 @@ def admin_password(body: AdminPasswordIn, request: Request, response: Response, 
         .mappings()
         .first()
     )
-    ip = request.client.host if request.client else None
+    ip = ratelimit.client_ip(request)
     if not (user_ok and pw_ok and p and "super_admin" in _roles(conn, p["id"])):
         ratelimit._hit("admin-password-failures", limit, window)
         audit.record(

@@ -37,6 +37,11 @@ def create_upload(body: SlotIn, pr: Current, conn: ConnDep) -> dict:
         pr.require_property(body.property_id)
     if body.captured_with not in ("camera", "upload"):
         raise problem(422, "captured_with", "Unknown capture method.")
+    if body.purpose not in ("evidence", "logo"):
+        raise problem(422, "purpose", "Unknown upload purpose.")
+    if body.purpose == "logo":
+        # Logos may be SVG and are shown to everyone: only those who can publish a theme upload them.
+        pr.require("theme.publish")
     return ev_service.create_slot(
         conn,
         uploader=pr.person_id,
@@ -118,12 +123,14 @@ def local_download(token: str) -> Response:
     if d.get("op") != "get":
         raise problem(403, "expired", "This link has expired.")
     data = storage.get(d["k"])
-    from bide_comply.storage import sniff
+    from bide_comply.storage import content_disposition, sniff
 
     ctype = sniff(data) or "application/octet-stream"
-    disp = "inline" if d.get("i") else "attachment"
     return Response(
         data,
         media_type=ctype,
-        headers={"Content-Disposition": f'{disp}; filename="{d["n"]}"', "Cache-Control": "private, max-age=300"},
+        headers={
+            "Content-Disposition": content_disposition(d["n"], bool(d.get("i"))),
+            "Cache-Control": "private, max-age=300",
+        },
     )

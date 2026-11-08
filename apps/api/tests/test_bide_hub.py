@@ -498,3 +498,126 @@ def test_break_glass_admin_login_still_works_when_on(app, fake, monkeypatch):
     r = c.post("/api/auth/admin-password", json={"username": "bidesuperadmin", "password": "Pw-for-the-test-only-123"})
     assert r.status_code == 200 and r.json()["next"] == "/signin/totp-setup"
     ratelimit._local.clear()
+
+
+# --- email_verified --------------------------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("verified", [False, None], ids=["false", "missing"])
+def test_unverified_email_does_not_link_an_account(app, fake, verified):
+    p = _person()
+    assert _sign_in(TestClient(app), fake, p, email_verified=verified) == f"{WEB}/signin?error=unverified"
+    assert _sessions(p["id"]) == []
+    with engine.connect() as conn:
+        assert conn.execute(select(person.c.bide_hub_sub).where(person.c.id == p["id"])).scalar() is None
+
+
+def test_already_linked_sub_does_not_need_the_email_again(app, fake):
+    p = _person()
+    _sign_in(TestClient(app), fake, p)  # linked by a verified email
+    assert _sign_in(TestClient(app), fake, p, email_verified=False) == f"{WEB}/signin/code"
+
+
+# --- account disabled (urn:bide:hub:account-disabled) ----------------------------------------------------------------
+
+DISABLED_EVENTS = {hub.BACKCHANNEL_EVENT: {}, hub.ACCOUNT_DISABLED_EVENT: {}}
+
+
+def _offboard_events(pid) -> list[dict]:
+    with engine.connect() as conn:
+        q = select(audit_event).where(audit_event.c.action == "people.offboard", audit_event.c.entity_id == pid)
+        return [dict(r) for r in conn.execute(q).mappings()]
+
+
+def test_account_disabled_offboards_the_linked_person(app, fake):
+    from bide_comply import audit
+    from bide_comply.schema import device, register_item
+
+    p = _person()
+    c = _signed_in(app, fake, p)
+    with engine.begin() as conn:
+        cover = conn.execute(select(person.c.id).where(person.c.email == "david@demo.invalid")).scalar_one()
+        it = conn.execute(select(register_item).limit(1)).mappings().one()
+        conn.execute(
+            update(register_item).where(register_item.c.id == it["id"]).values(accountable_id=p["id"], cover_id=cover)
+        )
+    try:
+        token = fake.logout_token(sub=p["sub"], events=DISABLED_EVENTS)
+        r = TestClient(app).post("/api/auth/bide/backchannel-logout", data={"logout_token": token})
+        assert r.status_code == 200
+        assert c.get("/api/me").status_code == 401
+        assert c.post("/api/auth/refresh").status_code == 401
+        with engine.connect() as conn:
+            row = conn.execute(select(person).where(person.c.id == p["id"])).mappings().one()
+            assert row["employment_status"] == "leaver" and row["left_on"] is not None
+            assert all(conn.execute(select(device.c.revoked_at).where(device.c.person_id == p["id"])).scalars())
+            # As an admin offboard: their check moved to the cover.
+            moved = conn.execute(select(register_item).where(register_item.c.id == it["id"])).mappings().one()
+            assert moved["accountable_id"] == cover
+            assert audit.verify_chain(conn)[0]
+        assert all(s["revoked_at"] for s in _sessions(p["id"]))
+        (ev,) = _offboard_events(p["id"])
+        assert ev["actor_label"] == "Bide Hub" and ev["actor_id"] is None
+        assert ev["summary"].startswith(f"Offboarded Hub Test {p['id'].hex[:4]} (switched off in Bide Hub)")
+        # Signing in again is refused, and a repeat of the token changes nothing.
+        assert _sign_in(TestClient(app), fake, p) == f"{WEB}/signin?error=inactive"
+        r = TestClient(app).post("/api/auth/bide/backchannel-logout", data={"logout_token": token})
+        assert r.status_code == 200 and len(_offboard_events(p["id"])) == 1
+    finally:
+        with engine.begin() as conn:
+            conn.execute(
+                update(register_item)
+                .where(register_item.c.id == it["id"])
+                .values(
+                    accountable_id=it["accountable_id"],
+                    cover_id=it["cover_id"],
+                    done_by_person_id=it["done_by_person_id"],
+                    done_by_kind=it["done_by_kind"],
+                    needs_owner=it["needs_owner"],
+                )
+            )
+
+
+def test_account_disabled_for_nobody_linked_does_nothing(app, fake):
+    p = _person()  # same address the Hub has, but never linked: matched by sub only, never by email
+    with engine.connect() as conn:
+        before = conn.execute(select(audit_event.c.id).where(audit_event.c.action == "people.offboard")).all()
+    token = fake.logout_token(sub=str(uuid.uuid4()), email=p["email"], events=DISABLED_EVENTS)
+    r = TestClient(app).post("/api/auth/bide/backchannel-logout", data={"logout_token": token})
+    assert r.status_code == 200
+    with engine.connect() as conn:
+        assert conn.execute(select(person.c.employment_status).where(person.c.id == p["id"])).scalar() == "active"
+        after = conn.execute(select(audit_event.c.id).where(audit_event.c.action == "people.offboard")).all()
+    assert len(after) == len(before)
+
+
+def test_plain_logout_does_not_offboard(app, fake):
+    p = _person()
+    _signed_in(app, fake, p)
+    r = TestClient(app).post(
+        "/api/auth/bide/backchannel-logout", data={"logout_token": fake.logout_token(sub=p["sub"])}
+    )
+    assert r.status_code == 200
+    with engine.connect() as conn:
+        assert conn.execute(select(person.c.employment_status).where(person.c.id == p["id"])).scalar() == "active"
+    assert _offboard_events(p["id"]) == []
+
+
+def test_account_disabled_needs_a_valid_token(app, fake):
+    p = _person()
+    c = _signed_in(app, fake, p)
+    other = JsonWebKey.generate_key("RSA", 2048, is_private=True, options={"kid": "test-1"})
+    body = {
+        "iss": ISSUER,
+        "aud": CLIENT_ID,
+        "iat": int(time.time()),
+        "exp": int(time.time()) + 120,
+        "sub": p["sub"],
+        "events": DISABLED_EVENTS,
+    }
+    for token in (fake.sign(body, key=other), fake.sign(body | {"aud": "linen-tracker"})):
+        r = TestClient(app).post("/api/auth/bide/backchannel-logout", data={"logout_token": token})
+        assert r.status_code == 400
+    assert c.get("/api/me").status_code == 200
+    with engine.connect() as conn:
+        assert conn.execute(select(person.c.employment_status).where(person.c.id == p["id"])).scalar() == "active"

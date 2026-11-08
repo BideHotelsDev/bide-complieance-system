@@ -122,7 +122,7 @@ otp_challenge = Table(
     pk(),
     fk("person_id", "person", nullable=False, ondelete="CASCADE"),
     fk("device_id", "device", ondelete="CASCADE"),
-    Column("purpose", String(20), nullable=False),  # new_device | magic_link
+    Column("purpose", String(20), nullable=False),  # new_device | magic_link | totp
     Column("code_hash", String(64), nullable=False),
     Column("expires_at", DateTime(timezone=True), nullable=False),
     Column("attempts", Integer, nullable=False, server_default="0"),
@@ -156,6 +156,8 @@ totp_secret = Table(
     Column("person_id", UUID(as_uuid=True), ForeignKey("person.id", ondelete="CASCADE"), primary_key=True),
     Column("secret", String(64), nullable=False),
     Column("confirmed_at", DateTime(timezone=True), nullable=True),
+    # The time step of the last code accepted: a code is refused unless its step is later (no reuse).
+    Column("last_step", BigInteger, nullable=True),
 )
 
 # ---------------------------------------------------------------------------------------------------------------------

@@ -18,6 +18,8 @@ from authlib.jose.errors import JoseError
 from bide_comply.config import settings
 
 BACKCHANNEL_EVENT = "http://schemas.openid.net/event/backchannel-logout"
+# Shared Bide contract: alongside BACKCHANNEL_EVENT (with a sub, no sid) when a Hub admin switches someone off.
+ACCOUNT_DISABLED_EVENT = "urn:bide:hub:account-disabled"
 # The Hub signs with RS256 only; refusing every other algorithm rules out alg-confusion tricks.
 _jwt = JsonWebToken(["RS256"])
 _CACHE_SECONDS = 3600
