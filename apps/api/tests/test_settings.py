@@ -31,6 +31,7 @@ DAVID = "David Liddell"
 SAM = "Samantha Kirkland"
 PAM = "Pamela Mathers"
 SL_VIEW = "[Site lead, The View]"
+LYNNE = "Lynne McCann"
 
 ACTIVE = ("scheduled", "open", "overdue")
 
@@ -171,6 +172,43 @@ class TestPeople:
         assert david.delete(f"/api/people/{pid}/roles/{role_id}").status_code == 200
         assert login(SL_VIEW).get("/api/properties/TV").status_code == 404
 
+    def test_nobody_changes_their_own_roles(self, login, people):
+        for name, role in ((LYNNE, "system_owner"), (LYNNE, "keyholder"), (SAM, "super_admin"), (DAVID, "staff")):
+            r = login(name).post(f"/api/people/{people[name]}/roles", json={"role": role, "property_id": _prop("TV")})
+            assert r.status_code == 403, (name, role, r.text)
+        david = login(DAVID)
+        own = next(
+            r["id"] for r in david.get(f"/api/people/{people[DAVID]}").json()["roles"] if r["role"] == "keyholder"
+        )
+        assert david.delete(f"/api/people/{people[DAVID]}/roles/{own}").status_code == 403
+
+    def test_admin_roles_only_from_someone_who_holds_them(self, login):
+        david, sam, lynne = login(DAVID), login(SAM), login(LYNNE)
+        r = david.post(
+            "/api/people",
+            json={"name": "Role Test", "email": f"roles-{uuid.uuid4().hex[:6]}@example.com", "role": "staff"},
+        )
+        assert r.status_code == 200, r.text
+        pid = r.json()["id"]
+
+        def grant(who, role):
+            return who.post(f"/api/people/{pid}/roles", json={"role": role}).status_code
+
+        # Only a Super Admin makes a System owner (approval.decide, submission.amend).
+        assert grant(lynne, "system_owner") == 403
+        assert grant(sam, "system_owner") == 403
+        # Other admin roles need the giver to hold them; non-admin roles need only people.manage.
+        assert grant(lynne, "systems") == 403
+        assert grant(lynne, "register_keeper") == 200
+        assert grant(lynne, "keyholder") == 200
+        assert grant(david, "system_owner") == 200
+        roles = {r["role"]: r["id"] for r in david.get(f"/api/people/{pid}").json()["roles"]}
+        # Taking a role away follows the same rules.
+        assert lynne.delete(f"/api/people/{pid}/roles/{roles['system_owner']}").status_code == 403
+        assert sam.delete(f"/api/people/{pid}/roles/{roles['system_owner']}").status_code == 403
+        assert lynne.delete(f"/api/people/{pid}/roles/{roles['register_keeper']}").status_code == 200
+        assert david.delete(f"/api/people/{pid}/roles/{roles['system_owner']}").status_code == 200
+
     def test_offboarding_moves_unfinished_tasks_to_the_cover(self, login):
         david = login(DAVID)
         r = david.post(
@@ -251,17 +289,19 @@ class TestAlertsAndWording:
         # A draft isn't used.
         it = _class_b_item("AR") or _class_b_item("TH") or _class_b_item("TV")
         assert sam.post("/api/settings/content/publish").status_code == 200
+        due = clock.today() - timedelta(days=2)
         with engine.begin() as c:
             c.execute(
                 update(register_item)
                 .where(register_item.c.id == it)
-                .values(status="red", status_reason="overdue", next_due_on=clock.today() - timedelta(days=2))
+                .values(status="red", status_reason="overdue", next_due_on=due)
             )
             escalations.run(c)
+            # Only this escalation: an earlier test may have fired one for the same item under the old wording.
             bodies = c.execute(
                 select(notification.c.body, notification.c.title)
                 .join(escalation, escalation.c.id == notification.c.escalation_id)
-                .where(escalation.c.register_item_id == it, escalation.c.trigger == "red_day1")
+                .where(escalation.c.dedupe_key == f"red1:{it}:{due.isoformat()}")
             ).all()
         assert bodies
         assert all(b.body.endswith(".") and "Open it to do it now, or tell" in b.body for b in bodies)

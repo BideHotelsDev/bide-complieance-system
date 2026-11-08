@@ -15,7 +15,7 @@ from authlib.jose import JsonWebKey, jwt
 from fastapi.testclient import TestClient
 from sqlalchemy import select, update
 
-from bide_comply import emailer, hub, ratelimit
+from bide_comply import auth, emailer, hub, ratelimit
 from bide_comply.config import settings
 from bide_comply.db import engine
 from bide_comply.schema import audit_event, auth_session, person, property_, role_assignment, totp_secret
@@ -168,6 +168,16 @@ def test_off_unless_all_three_are_set(app, monkeypatch):
     # Google sign-in is what it was (not configured in tests), not a hand-over to the Hub.
     assert c.get("/api/auth/google/start", follow_redirects=False).status_code == 503
     assert "hub.test" not in c.get("/api/health").headers["content-security-policy"]
+
+
+def test_off_staff_keep_the_magic_link(app):
+    ratelimit._local.clear()
+    p = _person(("site_lead",))
+    c = TestClient(app)
+    assert c.post("/api/auth/magic", json={"email": p["email"], "app": "web"}).status_code == 200
+    (link,) = _magic_links(p["email"])
+    assert c.get(link, follow_redirects=False).headers["location"] == f"{WEB}/signin/code"
+    ratelimit._local.clear()
 
 
 def test_off_sign_out_stays_local(app, login):
@@ -341,6 +351,48 @@ def test_magic_link_still_works_when_on(app, fake):
     link = re.search(r"(http\S+/api/auth/magic/\S+)", [m for m in emailer.outbox if m["to"] == p["email"]][-1]["text"])
     r = c.get(urlsplit(link.group(1)).path, follow_redirects=False)
     assert r.headers["location"] == f"{WEB}/signin/code"
+
+
+def _magic_links(email: str) -> list[str]:
+    return [
+        urlsplit(re.search(r"(http\S+/api/auth/magic/\S+)", m["text"]).group(1)).path
+        for m in emailer.outbox
+        if m["to"] == email and "/api/auth/magic/" in m["text"]
+    ]
+
+
+def test_magic_link_refused_to_staff_when_on(app, fake):
+    """Staff sign in through the Hub, which can switch them off; an emailed link must not get round that."""
+    p = _person(("site_lead",))
+    c = TestClient(app)
+    r = c.post("/api/auth/magic", json={"email": p["email"], "app": "web"})
+    assert r.status_code == 200 and r.json() == {"ok": True}  # the same answer as for anyone else
+    assert _magic_links(p["email"]) == []
+
+
+def test_magic_link_from_before_the_hub_stops_working_for_staff(app, fake, monkeypatch):
+    p = _person(("site_lead",))
+    c = TestClient(app)
+    with monkeypatch.context() as m:
+        m.setattr(settings, "bide_hub_client_secret", "")  # Hub off when the link was sent
+        assert c.post("/api/auth/magic", json={"email": p["email"], "app": "web"}).status_code == 200
+    (link,) = _magic_links(p["email"])
+    r = c.get(link, follow_redirects=False)
+    assert r.status_code == 302 and r.headers["location"] == f"{WEB}/signin?error=staff"
+    assert _sessions(p["id"]) == []
+
+
+def test_magic_link_works_once(app, fake):
+    p = _person(("assessor",), kind="external")
+    c = TestClient(app)
+    assert c.post("/api/auth/magic", json={"email": p["email"], "app": "web"}).status_code == 200
+    (link,) = _magic_links(p["email"])
+    assert c.get(link, follow_redirects=False).headers["location"] == f"{WEB}/signin/code"
+    again = TestClient(app).get(link, follow_redirects=False)
+    assert again.headers["location"] == f"{WEB}/signin?error=link"
+    # A link in the format sent before links became single-use (no challenge) is refused too.
+    legacy = auth._serializer("magic").dumps({"p": str(p["id"]), "a": "web"})
+    assert c.get(f"/api/auth/magic/{legacy}", follow_redirects=False).headers["location"] == f"{WEB}/signin?error=link"
 
 
 # --- sign-out --------------------------------------------------------------------------------------------------------

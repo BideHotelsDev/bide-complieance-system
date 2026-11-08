@@ -6,6 +6,7 @@
 - Break-glass: one Super Admin can sign in with a username and password (ADMIN_LOGIN_*), for an install that has
   neither Google sign-in nor email yet. The authenticator app is still required after the password.
 - Outside people (assessor, SPV directors without a bide account, contractors): an emailed magic link, 8-hour sessions.
+  Each link works once. With Bide Hub on, only outside people (kind external) can use one; staff go through the Hub.
 - A first sign-in on a device needs an emailed 6-digit code (single use, 10 minutes, 5 attempts). Admin roles also
   need an authenticator app (TOTP).
 - Access tokens last 15 minutes. Refresh tokens rotate on use; presenting an old one again revokes the device.
@@ -731,30 +732,72 @@ class MagicIn(BaseModel):
     app: str = "web"
 
 
+MAGIC_DAYS = 7
+
+
+def _magic_allowed(p) -> bool:
+    """With Bide Hub on, staff sign in through the Hub, which can switch them off or refuse them Bide Comply; an emailed
+    link would get round that. Outside people (kind external) have no Bide account and keep the link."""
+    return not settings.bide_hub_on or p["kind"] == "external"
+
+
 @router.post("/magic")
 def magic_request(body: MagicIn, conn: ConnDep) -> dict:
-    """Outside people sign in with an emailed link. The answer is the same whether or not the address is known."""
+    """Outside people sign in with an emailed link. The answer is the same whether or not the address is known, and
+    whether or not a link was sent."""
     p = conn.execute(select(person).where(person.c.email == body.email.strip().lower())).mappings().first()
-    if p and p["employment_status"] == "active":
-        tok = _serializer("magic").dumps({"p": str(p["id"]), "a": body.app})
+    if p and p["employment_status"] == "active" and _magic_allowed(p):
+        # Each link works once: its challenge row is marked used when it's opened.
+        cid, nonce = uuid.uuid4(), secrets.token_urlsafe(16)
+        conn.execute(
+            otp_challenge.insert().values(
+                id=cid,
+                person_id=p["id"],
+                purpose="magic_link",
+                code_hash=_h(f"{cid}:{nonce}"),
+                expires_at=clock.now() + timedelta(days=MAGIC_DAYS),
+            )
+        )
+        tok = _serializer("magic").dumps({"p": str(p["id"]), "a": body.app, "c": str(cid), "n": nonce})
         link = f"{settings.api_base_url}/api/auth/magic/{tok}"
         emailer.send(
             p["email"],
             "Your Bide Comply sign-in link",
-            f"Open this link to sign in. It works for 7 days and only on the device you open it on first.\n\n{link}",
+            f"Open this link to sign in. It works once, within {MAGIC_DAYS} days.\n\n{link}",
         )
     return {"ok": True}
 
 
 @router.get("/magic/{token}")
 def magic_open(token: str, request: Request, conn: ConnDep) -> RedirectResponse:
+    expired = RedirectResponse(f"{settings.web_base_url}/signin?error=link", status_code=302)
     try:
-        d = _serializer("magic").loads(token, max_age=7 * 24 * 3600)
-    except BadSignature:
-        return RedirectResponse(f"{settings.web_base_url}/signin?error=link", status_code=302)
-    p = conn.execute(select(person).where(person.c.id == uuid.UUID(d["p"]))).mappings().first()
+        d = _serializer("magic").loads(token, max_age=MAGIC_DAYS * 24 * 3600)
+        pid, cid, nonce = uuid.UUID(d["p"]), uuid.UUID(d["c"]), str(d["n"])
+    except (BadSignature, KeyError, ValueError):
+        # Links sent before they became single-use have no challenge: ask for a new one.
+        return expired
+    p = conn.execute(select(person).where(person.c.id == pid)).mappings().first()
     if not p:
-        return RedirectResponse(f"{settings.web_base_url}/signin?error=link", status_code=302)
+        return expired
+    if p["employment_status"] != "active":
+        return RedirectResponse(f"{settings.web_base_url}/signin?error=inactive", status_code=302)
+    if not _magic_allowed(p):
+        return RedirectResponse(f"{settings.web_base_url}/signin?error=staff", status_code=302)
+    used = conn.execute(
+        update(otp_challenge)
+        .where(
+            otp_challenge.c.id == cid,
+            otp_challenge.c.person_id == pid,
+            otp_challenge.c.purpose == "magic_link",
+            otp_challenge.c.code_hash == _h(f"{cid}:{nonce}"),
+            otp_challenge.c.used_at.is_(None),
+            otp_challenge.c.expires_at > clock.now(),
+        )
+        .values(used_at=clock.now())
+    )
+    if used.rowcount != 1:
+        return expired
     app = d["a"]
     resp = RedirectResponse(_app_base(app), status_code=302)
     result = establish(conn, request, resp, dict(p), app, "/", "email link")
