@@ -60,7 +60,7 @@ export function SignInPage() {
         {bide ? "Sign in with Bide" : "Sign in with Google"}
       </a>
       <p className="mt-4 text-[14px] text-muted-foreground">
-        Contractors: use the link Bide emailed you. It works for 7 days, no password needed.
+        Contractors: use the link Bide emailed you. It works once, within 7 days, no password needed.
       </p>
       {dev.data && (
         <section className="mt-6 border-t border-divider pt-4 pb-8">

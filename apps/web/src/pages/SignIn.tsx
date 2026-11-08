@@ -17,7 +17,8 @@ import { useBideHub } from "@/lib/session"
 
 // Codes the sign-in callbacks put in ?error=.
 const ERRORS: Record<string, string> = {
-  link: "That sign-in link has expired. Ask for a new one below.",
+  link: "That sign-in link has expired or has already been used. Ask for a new one below.",
+  staff: "Bide staff sign in with Bide, not with an emailed link.",
   unknown: "You're not set up in Bide Comply yet. Ask an Admin of Bide Comply to add you.",
   denied: "Your Bide account doesn't have access to Bide Comply. Ask an Admin of Bide Comply to add you.",
   inactive: "This account no longer has access.",
@@ -92,12 +93,14 @@ export function SignInPage() {
       </Button>
       <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
         <span className="h-px flex-1 bg-divider" />
-        No Bide account?
+        {bide ? "Not Bide staff?" : "No Bide account?"}
         <span className="h-px flex-1 bg-divider" />
       </div>
       {sent ? (
         <p className="text-[13.5px]">
-          If <strong>{email}</strong> is set up in Bide Comply, a sign-in link is on its way. It works for 7 days.
+          If <strong>{email}</strong> is set up in Bide Comply
+          {bide ? " as a contractor or other outside person" : ""}, a sign-in link is on its way. It works once, within
+          7 days.
         </p>
       ) : (
         <form
@@ -108,7 +111,9 @@ export function SignInPage() {
           }}
         >
           <label className="flex flex-col gap-1 text-xs font-medium text-ink2">
-            Email address (assessors, SPV directors and contractors)
+            {bide
+              ? "Email address (contractors and other people outside Bide only)"
+              : "Email address (assessors, SPV directors and contractors)"}
             <input
               type="email"
               value={email}
