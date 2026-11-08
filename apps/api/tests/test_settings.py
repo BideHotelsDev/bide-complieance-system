@@ -289,17 +289,19 @@ class TestAlertsAndWording:
         # A draft isn't used.
         it = _class_b_item("AR") or _class_b_item("TH") or _class_b_item("TV")
         assert sam.post("/api/settings/content/publish").status_code == 200
+        due = clock.today() - timedelta(days=2)
         with engine.begin() as c:
             c.execute(
                 update(register_item)
                 .where(register_item.c.id == it)
-                .values(status="red", status_reason="overdue", next_due_on=clock.today() - timedelta(days=2))
+                .values(status="red", status_reason="overdue", next_due_on=due)
             )
             escalations.run(c)
+            # Only this escalation: an earlier test may have fired one for the same item under the old wording.
             bodies = c.execute(
                 select(notification.c.body, notification.c.title)
                 .join(escalation, escalation.c.id == notification.c.escalation_id)
-                .where(escalation.c.register_item_id == it, escalation.c.trigger == "red_day1")
+                .where(escalation.c.dedupe_key == f"red1:{it}:{due.isoformat()}")
             ).all()
         assert bodies
         assert all(b.body.endswith(".") and "Open it to do it now, or tell" in b.body for b in bodies)
