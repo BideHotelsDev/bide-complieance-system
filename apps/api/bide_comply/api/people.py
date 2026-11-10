@@ -4,6 +4,7 @@ offboarding; plus groups (pools), contractors and dutyholders.
 
 import uuid
 from datetime import date, timedelta
+from typing import Literal
 
 from fastapi import APIRouter, Query, Request
 from pydantic import BaseModel, EmailStr
@@ -11,7 +12,7 @@ from sqlalchemy import func, select, update
 
 from bide_comply import audit, clock
 from bide_comply.api import listing
-from bide_comply.auth import Current, actor_for, revoke_device
+from bide_comply.auth import Current, actor_for, revoke_device, revoke_person
 from bide_comply.authz import ADMIN_ROLES, ROLES, Principal, scope_filter
 from bide_comply.db import ConnDep
 from bide_comply.schema import (
@@ -30,8 +31,9 @@ from bide_comply.schema import (
     staff_requirement,
     staff_requirement_type,
 )
-from bide_comply.services import notify, offboarding
+from bide_comply.services import notify
 from bide_comply.services.common import fmt_date, initials, problem
+from bide_comply.services.register import sync_open_tasks
 
 router = APIRouter(prefix="/api/people", tags=["people"])
 
@@ -273,6 +275,18 @@ class RoleIn(BaseModel):
     property_id: uuid.UUID | None = None
 
 
+def _active_super_admins(conn, other_than: uuid.UUID | None = None) -> int:
+    """Active people who hold Super Admin, leaving out other_than. Leavers keep their role rows, so they're not counted."""
+    q = (
+        select(func.count(func.distinct(role_assignment.c.person_id)))
+        .select_from(role_assignment.join(person, person.c.id == role_assignment.c.person_id))
+        .where(role_assignment.c.role == "super_admin", person.c.employment_status == "active")
+    )
+    if other_than is not None:
+        q = q.where(role_assignment.c.person_id != other_than)
+    return conn.execute(q).scalar() or 0
+
+
 def _may_change_role(pr: Principal, person_id: uuid.UUID, role: str) -> None:
     """Who may give or take away a role (no self-escalation). Nobody changes their own roles. A Super Admin may change
     any role; only a Super Admin may give or take away Super Admin or System owner. The other admin roles can only be
@@ -353,10 +367,7 @@ def remove_role(person_id: uuid.UUID, role_id: uuid.UUID, request: Request, pr: 
     if not r:
         raise problem(404, "not_found", "Not found.")
     _may_change_role(pr, person_id, r["role"])
-    if (
-        r["role"] == "super_admin"
-        and conn.execute(select(func.count()).where(role_assignment.c.role == "super_admin")).scalar() <= 1
-    ):
+    if r["role"] == "super_admin" and _active_super_admins(conn, other_than=person_id) == 0:
         raise problem(409, "last_admin", "There must always be at least one Super Admin.")
     conn.execute(role_assignment.delete().where(role_assignment.c.id == role_id))
     audit.record(
@@ -376,7 +387,7 @@ def remove_role(person_id: uuid.UUID, role_id: uuid.UUID, request: Request, pr: 
 class InviteIn(BaseModel):
     name: str
     email: EmailStr
-    kind: str = "staff"
+    kind: Literal["staff", "external"] = "staff"
     title: str | None = None
     role: str = "staff"
     property_id: uuid.UUID | None = None
@@ -419,6 +430,50 @@ def revoke(person_id: uuid.UUID, device_id: uuid.UUID, request: Request, pr: Cur
     return {"ok": True}
 
 
+def end_access(conn, p) -> tuple[int, int]:
+    """Marks someone a leaver, signs out every device, and hands their checks to the cover or flags them "needs owner".
+    Used by offboard and by Bide Hub switching someone off. Returns (moved to cover, need a new owner)."""
+    person_id = p["id"]
+    conn.execute(
+        update(person).where(person.c.id == person_id).values(employment_status="leaver", left_on=clock.today())
+    )
+    revoke_person(conn, person_id)
+    moved, flagged = 0, 0
+    for it in conn.execute(
+        select(register_item).where(
+            (register_item.c.accountable_id == person_id) | (register_item.c.done_by_person_id == person_id)
+        )
+    ).mappings():
+        vals: dict = {}
+        if it["cover_id"] and it["cover_id"] != person_id:
+            if it["accountable_id"] == person_id:
+                vals["accountable_id"] = it["cover_id"]
+            if it["done_by_person_id"] == person_id:
+                vals["done_by_person_id"] = it["cover_id"]
+            moved += 1
+        else:
+            if it["accountable_id"] == person_id:
+                vals["accountable_id"] = None
+            if it["done_by_person_id"] == person_id:
+                vals |= {"done_by_person_id": None, "done_by_kind": None}
+            flagged += 1
+        vals["needs_owner"] = not (vals.get("accountable_id", it["accountable_id"]))
+        conn.execute(update(register_item).where(register_item.c.id == it["id"]).values(**vals))
+        # Their unfinished tasks go with the check: to the cover, or to nobody until a new owner is named.
+        sync_open_tasks(conn, it["id"])
+    conn.execute(update(register_item).where(register_item.c.cover_id == person_id).values(cover_id=None))
+    conn.execute(pool_member.delete().where(pool_member.c.person_id == person_id))
+    if flagged:
+        notify.notify(
+            conn,
+            notify.resolve(conn, [{"kind": "role", "role": "system_owner"}], None),
+            kind="people.needs_owner",
+            title=f"{flagged} checks need a new owner after {p['name']} left",
+            link="/settings/setup",
+        )
+    return moved, flagged
+
+
 @router.post("/{person_id}/offboard")
 def offboard(person_id: uuid.UUID, request: Request, pr: Current, conn: ConnDep) -> dict:
     """Ends access straight away, signs out every device, and flags their checks "needs owner" (SCH-06)."""
@@ -428,7 +483,22 @@ def offboard(person_id: uuid.UUID, request: Request, pr: Current, conn: ConnDep)
     p = conn.execute(select(person).where(person.c.id == person_id)).mappings().first()
     if not p:
         raise problem(404, "not_found", "Not found.")
-    moved, flagged = offboarding.offboard(conn, person_id, actor_for(request, pr))
+    # Offboarding takes away every role they hold, so the same rules as taking each one away (no going over someone's head).
+    held = set(conn.execute(select(role_assignment.c.role).where(role_assignment.c.person_id == person_id)).scalars())
+    for role in held:
+        _may_change_role(pr, person_id, role)
+    if "super_admin" in held and p["employment_status"] == "active" and _active_super_admins(conn, person_id) == 0:
+        raise problem(409, "last_admin", "There must always be at least one Super Admin.")
+    moved, flagged = end_access(conn, p)
+    audit.record(
+        conn,
+        actor_for(request, pr),
+        category="settings",
+        action="people.offboard",
+        summary=f"Offboarded {p['name']}: access ended, {moved} checks moved to cover, {flagged} need a new owner",
+        entity_type="person",
+        entity_id=person_id,
+    )
     return {"moved_to_cover": moved, "needs_owner": flagged}
 
 

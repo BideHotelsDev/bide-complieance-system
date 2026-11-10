@@ -20,6 +20,7 @@ const ERRORS: Record<string, string> = {
   unknown: "You're not set up in Bide Comply yet. Ask an Admin of Bide Comply to add you.",
   denied: "Your Bide account doesn't have access to Bide Comply. Ask an Admin of Bide Comply to add you.",
   inactive: "This account no longer has access.",
+  unverified: "Your Bide account's email address isn't verified yet. Verify it on Bide Hub, then sign in again.",
 }
 
 export function SignInPage() {

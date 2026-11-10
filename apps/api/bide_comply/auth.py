@@ -21,7 +21,7 @@ import secrets
 import time
 import uuid
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 from urllib.parse import urlencode, urlsplit
 
@@ -37,7 +37,7 @@ from bide_comply import audit, clock, emailer, hub, passwords, ratelimit
 from bide_comply.authz import STRONG_AUTH_ROLES, Principal, load_principal
 from bide_comply.config import settings
 from bide_comply.db import ConnDep
-from bide_comply.schema import auth_session, device, otp_challenge, person, role_assignment, totp_secret
+from bide_comply.schema import auth_session, device, hub_logout, otp_challenge, person, role_assignment, totp_secret
 from bide_comply.services import contact
 
 ACCESS_COOKIE = "bc_access"
@@ -152,7 +152,11 @@ def start_session(
     device_id: uuid.UUID,
     totp_ok: bool = False,
     hub_sid: str | None = None,
+    hub_since: float | None = None,
 ) -> None:
+    """hub_since: when the Hub sign-in behind this began (the pending steps' start), for _hub_signed_out."""
+    if hub_sid and _hub_signed_out(conn, hub_sid, p, hub_since):
+        raise HTTPException(401, detail={"code": "hub_signed_out", "message": "You signed out of Bide. Sign in again."})
     raw = secrets.token_urlsafe(48)
     now = clock.now()
     external = p["kind"] == "external"
@@ -170,12 +174,26 @@ def start_session(
             last_used_at=now,
             totp_ok=totp_ok,
             hub_sid=hub_sid,
+            created_at=now,  # the app clock, as the Hub's logout_at is compared with it
         )
     )
     conn.execute(update(device).where(device.c.id == device_id).values(last_seen_at=now))
     _set_access(response, sid, p["id"])
     _cookie(response, REFRESH_COOKIE, raw, int(life.total_seconds()), path="/api/auth")
     _drop_cookie(response, PENDING_COOKIE, "/")
+
+
+def _hub_signed_out(conn: Connection, hub_sid: str, p: dict, since: float | None) -> bool:
+    """The Hub ended this sid, or signed this person out everywhere after their sign-in began, while the sign-in was
+    still on its device-code or authenticator step (no session row then for the back-channel logout to revoke)."""
+    ended = hub_logout.c.sid == hub_sid
+    if p.get("bide_hub_sub") and since is not None:
+        ended = ended | (
+            (hub_logout.c.sub == p["bide_hub_sub"])
+            & hub_logout.c.sid.is_(None)
+            & (hub_logout.c.logout_at >= datetime.fromtimestamp(since, UTC))
+        )
+    return conn.execute(select(hub_logout.c.id).where(ended).limit(1)).first() is not None
 
 
 def _set_access(response: Response, sid: uuid.UUID, pid: uuid.UUID) -> None:
@@ -215,6 +233,7 @@ class Pending:
     next: str
     stage: str  # otp | totp | totp_setup
     hub_sid: str | None = None  # signed in through Bide Hub: carried to the session once the steps are done
+    started: float | None = None  # when these steps began (seconds since 1970), set by the first _set_pending
 
 
 def _set_pending(response: Response, pend: Pending) -> None:
@@ -227,6 +246,7 @@ def _set_pending(response: Response, pend: Pending) -> None:
             "n": pend.next,
             "s": pend.stage,
             "h": pend.hub_sid,
+            "t": pend.started if pend.started is not None else clock.now().timestamp(),
         }
     )
     _cookie(response, PENDING_COOKIE, tok, 15 * 60)
@@ -241,7 +261,7 @@ def _get_pending(request: Request) -> Pending:
     except BadSignature:
         raise HTTPException(401, detail={"code": "no_pending", "message": "Start signing in again."}) from None
     challenge = uuid.UUID(d["c"]) if d["c"] else None
-    return Pending(uuid.UUID(d["p"]), uuid.UUID(d["d"]), challenge, d["a"], d["n"], d["s"], d.get("h"))
+    return Pending(uuid.UUID(d["p"]), uuid.UUID(d["d"]), challenge, d["a"], d["n"], d["s"], d.get("h"), d.get("t"))
 
 
 def establish(
@@ -516,6 +536,13 @@ def _bide_redirect_uri(app: str) -> str:
     return f"{base.scheme}://{base.netloc}/api/auth/bide/callback"
 
 
+def _app_from_origin(request: Request) -> str:
+    """Which app a callback with no state cookie was for. In development the staff app has its own origin (and
+    callback); in production both share one origin, so the web app's sign-in page is the answer."""
+    web, field = urlsplit(settings.web_base_url).netloc, urlsplit(settings.field_base_url).netloc
+    return "field" if field != web and request.headers.get("host", "") == field else "web"
+
+
 def _signin_error(app: str, code: str) -> RedirectResponse:
     resp = RedirectResponse(f"{_app_base(app)}/signin?{urlencode({'error': code})}", status_code=302)
     _drop_cookie(resp, BIDE_COOKIE, "/api/auth/bide")
@@ -589,7 +616,7 @@ def bide_callback(
     try:
         pk = _serializer("bide").loads(request.cookies.get(BIDE_COOKIE, ""), max_age=600)
     except BadSignature:
-        return _signin_error("web", "state")
+        return _signin_error(_app_from_origin(request), "state")
     app = pk["a"]
     if not state or not hmac.compare_digest(pk["s"], state):
         return _signin_error(app, "state")
@@ -626,25 +653,28 @@ def bide_backchannel_logout(conn: ConnDep, logout_token: Annotated[str, Form()] 
         claims = hub.verify_logout_token(logout_token)
     except hub.HubError:
         raise HTTPException(400, detail={"code": "invalid_request", "message": "Not a valid logout token."}) from None
-    if hub.ACCOUNT_DISABLED_EVENT in claims["events"] and claims.get("sub"):
-        disabled = conn.execute(
-            select(person.c.id).where(
-                person.c.bide_hub_sub == str(claims["sub"]), person.c.employment_status == "active"
-            )
-        ).scalar()
-        if disabled:
-            from bide_comply.services import offboarding  # imports this module
-
-            offboarding.offboard(
-                conn, disabled, audit.Actor(None, "Bide Hub", None, "Bide Hub"), via=" (switched off in Bide Hub)"
-            )
     now = clock.now()
+    try:
+        # When the sign-out really happened: the Hub retries for up to 30 days, each time with a new iat.
+        logout_at = min(datetime.fromtimestamp(float(claims["logout_at"]), UTC), now)
+    except (KeyError, TypeError, ValueError, OverflowError, OSError):
+        logout_at = now
     live = auth_session.c.revoked_at.is_(None)
     if claims.get("sid"):
         which = auth_session.c.hub_sid == str(claims["sid"])
     else:
         pid = conn.execute(select(person.c.id).where(person.c.bide_hub_sub == str(claims["sub"]))).scalar()
-        which = auth_session.c.person_id == pid
+        # Only sessions started before the sign-out: a late delivery mustn't end ones started since.
+        which = (auth_session.c.person_id == pid) & (auth_session.c.created_at <= logout_at)
+    # Kept for sign-ins still on their device-code or authenticator step (_hub_signed_out).
+    conn.execute(hub_logout.delete().where(hub_logout.c.created_at < now - timedelta(days=1)))
+    conn.execute(
+        hub_logout.insert().values(
+            sid=str(claims["sid"]) if claims.get("sid") else None,
+            sub=None if claims.get("sid") else str(claims["sub"]),
+            logout_at=logout_at,
+        )
+    )
     ended = conn.execute(
         update(auth_session).where(which, live).values(revoked_at=now).returning(auth_session.c.person_id)
     ).scalars()
@@ -662,7 +692,35 @@ def bide_backchannel_logout(conn: ConnDep, logout_token: Annotated[str, Form()] 
             entity_type="person",
             entity_id=pid,
         )
+    if hub.ACCOUNT_DISABLED_EVENT in claims["events"] and claims.get("sub"):
+        _hub_switch_off(conn, str(claims["sub"]))
     return Response(status_code=200, headers={"Cache-Control": "no-store"})
+
+
+def _hub_switch_off(conn: Connection, sub: str) -> None:
+    """A Hub Admin switched this person off: they leave Bide Comply too, matched by bide_hub_sub only, never by email.
+    Nobody with that sub, or already a leaver (the Hub retries): nothing to do. Bringing them back stays an admin action
+    here."""
+    from bide_comply.api.people import end_access  # people imports from this module
+
+    p = (
+        conn.execute(select(person).where(person.c.bide_hub_sub == sub, person.c.employment_status == "active"))
+        .mappings()
+        .first()
+    )
+    if not p:
+        return
+    moved, flagged = end_access(conn, p)
+    audit.record(
+        conn,
+        audit.Actor(None, "Bide Hub"),
+        category="settings",
+        action="people.offboard",
+        summary=f"{p['name']} was switched off on Bide Hub: access ended, {moved} checks moved to cover, "
+        f"{flagged} need a new owner",
+        entity_type="person",
+        entity_id=p["id"],
+    )
 
 
 class CodeIn(BaseModel):
@@ -714,9 +772,12 @@ def verify_code(body: CodeIn, request: Request, response: Response, conn: ConnDe
     if _roles(conn, p["id"]) & STRONG_AUTH_ROLES:
         stage = "totp" if _totp_confirmed(conn, p["id"]) else "totp_setup"
         cid = _totp_challenge(conn, p["id"], pend.device_id)
-        _set_pending(response, Pending(pend.person_id, pend.device_id, cid, pend.app, pend.next, stage, pend.hub_sid))
+        _set_pending(
+            response,
+            Pending(pend.person_id, pend.device_id, cid, pend.app, pend.next, stage, pend.hub_sid, pend.started),
+        )
         return {"next": f"/signin/{stage.replace('_', '-')}"}
-    start_session(conn, response, p, pend.device_id, hub_sid=pend.hub_sid)
+    start_session(conn, response, p, pend.device_id, hub_sid=pend.hub_sid, hub_since=pend.started)
     audit.record(
         conn,
         audit.Actor(p["id"], p["name"], ratelimit.client_ip(request), _client_label(request, pend.app)),
@@ -735,7 +796,9 @@ def resend_code(request: Request, response: Response, conn: ConnDep) -> dict:
         raise HTTPException(400, detail={"code": "stage", "message": "Start signing in again."})
     p = dict(conn.execute(select(person).where(person.c.id == pend.person_id)).mappings().one())
     cid = _send_otp(conn, p, pend.device_id)
-    _set_pending(response, Pending(pend.person_id, pend.device_id, cid, pend.app, pend.next, "otp", pend.hub_sid))
+    _set_pending(
+        response, Pending(pend.person_id, pend.device_id, cid, pend.app, pend.next, "otp", pend.hub_sid, pend.started)
+    )
     return {"ok": True}
 
 
@@ -812,7 +875,7 @@ def totp_verify(body: CodeIn, request: Request, response: Response, conn: ConnDe
             update(totp_secret).where(totp_secret.c.person_id == pend.person_id).values(confirmed_at=clock.now())
         )
     p = dict(conn.execute(select(person).where(person.c.id == pend.person_id)).mappings().one())
-    start_session(conn, response, p, pend.device_id, totp_ok=True, hub_sid=pend.hub_sid)
+    start_session(conn, response, p, pend.device_id, totp_ok=True, hub_sid=pend.hub_sid, hub_since=pend.started)
     audit.record(
         conn,
         audit.Actor(p["id"], p["name"], ratelimit.client_ip(request), _client_label(request, pend.app)),
@@ -833,8 +896,9 @@ MAGIC_DAYS = 7
 
 def _magic_allowed(p) -> bool:
     """With Bide Hub on, staff sign in through the Hub, which can switch them off or refuse them Bide Comply; an emailed
-    link would get round that. Outside people (kind external) have no Bide account and keep the link."""
-    return not settings.bide_hub_on or p["kind"] == "external"
+    link would get round that. Outside people (kind external) have no Bide account and keep the link, unless they have
+    signed in with Bide (bide_hub_sub is set): then the Hub decides for them too, and the link would get round it."""
+    return not settings.bide_hub_on or (p["kind"] == "external" and not p["bide_hub_sub"])
 
 
 @router.post("/magic")

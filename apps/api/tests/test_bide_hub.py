@@ -382,6 +382,20 @@ def test_magic_link_from_before_the_hub_stops_working_for_staff(app, fake, monke
     assert _sessions(p["id"]) == []
 
 
+def test_magic_link_refused_to_outside_people_with_a_bide_account(app, fake):
+    """An outside person who has signed in with Bide is the Hub's to switch off; an emailed link must not get round it,
+    whether asked for after linking or sent before."""
+    p = _person(("assessor",), kind="external")
+    c = TestClient(app)
+    assert c.post("/api/auth/magic", json={"email": p["email"], "app": "web"}).status_code == 200
+    (old,) = _magic_links(p["email"])
+    _signed_in(app, fake, p)  # links bide_hub_sub
+    assert c.post("/api/auth/magic", json={"email": p["email"], "app": "web"}).json() == {"ok": True}
+    assert _magic_links(p["email"]) == [old]  # no new link sent
+    r = c.get(old, follow_redirects=False)
+    assert r.status_code == 302 and r.headers["location"] == f"{WEB}/signin?error=staff"
+
+
 def test_magic_link_works_once(app, fake):
     p = _person(("assessor",), kind="external")
     c = TestClient(app)
@@ -558,7 +572,7 @@ def test_account_disabled_offboards_the_linked_person(app, fake):
         assert all(s["revoked_at"] for s in _sessions(p["id"]))
         (ev,) = _offboard_events(p["id"])
         assert ev["actor_label"] == "Bide Hub" and ev["actor_id"] is None
-        assert ev["summary"].startswith(f"Offboarded Hub Test {p['id'].hex[:4]} (switched off in Bide Hub)")
+        assert ev["summary"].startswith(f"Hub Test {p['id'].hex[:4]} was switched off on Bide Hub")
         # Signing in again is refused, and a repeat of the token changes nothing.
         assert _sign_in(TestClient(app), fake, p) == f"{WEB}/signin?error=inactive"
         r = TestClient(app).post("/api/auth/bide/backchannel-logout", data={"logout_token": token})
@@ -621,3 +635,72 @@ def test_account_disabled_needs_a_valid_token(app, fake):
     assert c.get("/api/me").status_code == 200
     with engine.connect() as conn:
         assert conn.execute(select(person.c.employment_status).where(person.c.id == p["id"])).scalar() == "active"
+
+
+# --- review follow-ups -------------------------------------------------------------------------------------------------
+
+
+def test_late_logout_spares_sessions_started_after_it(app, fake):
+    p = _person()
+    before = _signed_in(app, fake, p)
+    signed_out_at = time.time()
+    after = _signed_in(app, fake, p)  # signed in again after signing out on the Hub
+    token = fake.logout_token(sub=p["sub"], logout_at=signed_out_at)  # delivered late (a retry)
+    assert TestClient(app).post("/api/auth/bide/backchannel-logout", data={"logout_token": token}).status_code == 200
+    assert before.get("/api/me").status_code == 401
+    assert after.get("/api/me").status_code == 200
+
+
+def _pending(app, fake, p: dict, sid: str) -> TestClient:
+    """Through the Hub and waiting on the device code: no session yet."""
+    c = TestClient(app)
+    c.headers.update({"X-Requested-With": "bide-comply", "X-Bide-App": "web"})
+    assert _sign_in(c, fake, p, sid=sid) == f"{WEB}/signin/code"
+    return c
+
+
+@pytest.mark.parametrize("by", ["sid", "sub"])
+def test_hub_sign_out_cancels_a_sign_in_still_on_the_code_step(app, fake, by):
+    p = _person()
+    sid = str(uuid.uuid4())
+    c = _pending(app, fake, p, sid)
+    token = fake.logout_token(sub=p["sub"], sid=sid if by == "sid" else None)
+    assert TestClient(app).post("/api/auth/bide/backchannel-logout", data={"logout_token": token}).status_code == 200
+    r = c.post("/api/auth/code", json={"code": _emailed_code(p["email"])})
+    assert r.status_code == 401 and r.json()["code"] == "hub_signed_out", r.text
+    assert _sessions(p["id"]) == []
+
+
+def test_an_older_hub_sign_out_does_not_cancel_a_new_sign_in(app, fake):
+    p = _person()
+    _signed_in(app, fake, p)  # links the sub
+    token = fake.logout_token(sub=p["sub"], logout_at=time.time() - 60)
+    assert TestClient(app).post("/api/auth/bide/backchannel-logout", data={"logout_token": token}).status_code == 200
+    c = _pending(app, fake, p, str(uuid.uuid4()))
+    assert c.post("/api/auth/code", json={"code": _emailed_code(p["email"])}).status_code == 200
+
+
+def test_callback_without_state_goes_back_to_the_app_it_came_from(app, fake):
+    r = TestClient(app).get(
+        "/api/auth/bide/callback",
+        params={"code": "x", "state": "y"},
+        headers={"host": urlsplit(FIELD).netloc},
+        follow_redirects=False,
+    )
+    assert r.headers["location"] == f"{FIELD}/signin?error=state"
+    r = TestClient(app).get("/api/auth/bide/callback", params={"code": "x", "state": "y"}, follow_redirects=False)
+    assert r.headers["location"] == f"{WEB}/signin?error=state"
+
+
+def test_subject_access_export_leaves_out_the_hub_id(app, fake):
+    import io
+    import json
+    import zipfile
+
+    p = _person()
+    c = _signed_in(app, fake, p)  # links bide_hub_sub
+    r = c.get(f"/api/privacy/export/{p['id']}")
+    assert r.status_code == 200, r.text
+    data = json.loads(zipfile.ZipFile(io.BytesIO(r.content)).read("data.json"))
+    assert data["person"]["email"] == p["email"]
+    assert "bide_hub_sub" not in data["person"] and p["sub"] not in r.content.decode("latin-1")
