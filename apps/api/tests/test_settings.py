@@ -235,6 +235,45 @@ class TestPeople:
         assert left and all(t["owner_id"] == cover and t["doer_id"] == cover for t in left)
 
 
+class TestPeopleGuards:
+    def _new(self, david, role: str = "staff", **extra) -> str:
+        email = f"guard-{uuid.uuid4().hex[:6]}@example.com"
+        r = david.post("/api/people", json={"name": "Guard Test", "email": email, "role": role} | extra)
+        assert r.status_code == 200, r.text
+        return r.json()["id"]
+
+    def test_offboarding_follows_the_role_rules(self, login):
+        david, lynne = login(DAVID), login(LYNNE)
+        boss = self._new(david)
+        assert david.post(f"/api/people/{boss}/roles", json={"role": "super_admin"}).status_code == 200
+        # Someone who may not take away Super Admin may not offboard a Super Admin either.
+        assert lynne.post(f"/api/people/{boss}/offboard").status_code == 403
+        assert david.post(f"/api/people/{boss}/offboard").status_code == 200
+        plain = self._new(david)
+        assert lynne.post(f"/api/people/{plain}/offboard").status_code == 200
+
+    def test_leavers_dont_count_as_super_admins(self, login):
+        from bide_comply.api.people import _active_super_admins
+
+        david = login(DAVID)
+        with engine.connect() as c:
+            before = _active_super_admins(c)
+        gone = self._new(david)
+        assert david.post(f"/api/people/{gone}/roles", json={"role": "super_admin"}).status_code == 200
+        assert david.post(f"/api/people/{gone}/offboard").status_code == 200
+        with engine.connect() as c:
+            assert _active_super_admins(c) == before
+
+    def test_invite_keeps_who_they_are(self, login):
+        david = login(DAVID)
+        pid = self._new(david, kind="external")
+        with engine.connect() as c:
+            assert c.execute(select(person.c.kind).where(person.c.id == pid)).scalar() == "external"
+        email = f"guard-{uuid.uuid4().hex[:6]}@example.com"
+        bad = david.post("/api/people", json={"name": "Bad Kind", "email": email, "role": "staff", "kind": "admin"})
+        assert bad.status_code == 422
+
+
 def _prop(code: str) -> str:
     with engine.connect() as c:
         return str(c.execute(select(property_.c.id).where(property_.c.code == code)).scalar())
