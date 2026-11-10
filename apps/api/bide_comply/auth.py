@@ -611,7 +611,35 @@ def bide_backchannel_logout(conn: ConnDep, logout_token: Annotated[str, Form()] 
             entity_type="person",
             entity_id=pid,
         )
+    if hub.ACCOUNT_DISABLED_EVENT in claims["events"] and claims.get("sub"):
+        _hub_switch_off(conn, str(claims["sub"]))
     return Response(status_code=200, headers={"Cache-Control": "no-store"})
+
+
+def _hub_switch_off(conn: Connection, sub: str) -> None:
+    """A Hub Admin switched this person off: they leave Bide Comply too, matched by bide_hub_sub only, never by email.
+    Nobody with that sub, or already a leaver (the Hub retries): nothing to do. Bringing them back stays an admin action
+    here."""
+    from bide_comply.api.people import end_access  # people imports from this module
+
+    p = (
+        conn.execute(select(person).where(person.c.bide_hub_sub == sub, person.c.employment_status == "active"))
+        .mappings()
+        .first()
+    )
+    if not p:
+        return
+    moved, flagged = end_access(conn, p)
+    audit.record(
+        conn,
+        audit.Actor(None, "Bide Hub"),
+        category="settings",
+        action="people.offboard",
+        summary=f"{p['name']} was switched off on Bide Hub: access ended, {moved} checks moved to cover, "
+        f"{flagged} need a new owner",
+        entity_type="person",
+        entity_id=p["id"],
+    )
 
 
 class CodeIn(BaseModel):
@@ -737,8 +765,9 @@ MAGIC_DAYS = 7
 
 def _magic_allowed(p) -> bool:
     """With Bide Hub on, staff sign in through the Hub, which can switch them off or refuse them Bide Comply; an emailed
-    link would get round that. Outside people (kind external) have no Bide account and keep the link."""
-    return not settings.bide_hub_on or p["kind"] == "external"
+    link would get round that. Outside people (kind external) have no Bide account and keep the link, unless they have
+    signed in with Bide (bide_hub_sub is set): then the Hub decides for them too, and the link would get round it."""
+    return not settings.bide_hub_on or (p["kind"] == "external" and not p["bide_hub_sub"])
 
 
 @router.post("/magic")

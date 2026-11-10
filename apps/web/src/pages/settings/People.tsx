@@ -29,7 +29,7 @@ import { AssigneePicker, useAssignees } from "../../features/settings-a/assignee
 import { ActionDialog, errMsg, Labeled, NativeSelect, TextInput } from "../../features/settings-a/ui"
 import { fmtDate, fmtDay, plural } from "../../lib/format"
 import { list, useParams } from "../../lib/params"
-import { useMe } from "../../lib/session"
+import { useBideHub, useMe } from "../../lib/session"
 
 type PersonRow = {
   id: string
@@ -689,7 +689,15 @@ function InviteDialog({ onClose, onDone }: { onClose: () => void; onDone: (id: s
   const [email, setEmail] = React.useState("")
   const [title, setTitle] = React.useState("")
   const [role, setRole] = React.useState("staff")
+  const [kind, setKind] = React.useState<"staff" | "external">("staff")
   const [prop, setProp] = React.useState(props[0]?.id ?? "")
+  const bide = useBideHub().data?.enabled ?? false
+  const how =
+    kind === "external"
+      ? "with a link emailed to"
+      : bide
+        ? "with their Bide account, once Bide Hub gives them Bide Comply, using"
+        : "with Google using"
   const [error, setError] = React.useState<string | null>(null)
   const group = ROLES.find((r) => r.key === role)?.group
   const m = useMutation({
@@ -697,13 +705,14 @@ function InviteDialog({ onClose, onDone }: { onClose: () => void; onDone: (id: s
       api.post<{ id: string }>("/api/people", {
         name,
         email,
+        kind,
         title: title || null,
         role,
         property_id: group ? null : prop || null,
       }),
     onSuccess: (r) => {
       void qc.invalidateQueries({ queryKey: ["people"] })
-      toast(`Added ${name.trim()}. They can sign in with Google using ${email.trim()}.`)
+      toast(`Added ${name.trim()}. They can sign in ${how} ${email.trim()}.`)
       onClose()
       onDone(r.id)
     },
@@ -721,7 +730,11 @@ function InviteDialog({ onClose, onDone }: { onClose: () => void; onDone: (id: s
       onOpenChange={(o) => !o && onClose()}
       busy={m.isPending}
       title="Invite someone"
-      subtitle="They sign in with their Google Workspace account. Required training follows the role."
+      subtitle={
+        kind === "external"
+          ? "Outside people (assessors, SPV directors) sign in with an emailed link. Required training follows the role."
+          : `Bide staff sign in with their ${bide ? "Bide account" : "Google Workspace account"}. Required training follows the role.`
+      }
       footer={
         <>
           <Button variant="outline" onClick={onClose}>
@@ -753,6 +766,17 @@ function InviteDialog({ onClose, onDone }: { onClose: () => void; onDone: (id: s
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="name@bidehotels.com"
+        />
+      </Labeled>
+      <Labeled label="Who they are" htmlFor="iv-kind">
+        <NativeSelect
+          id="iv-kind"
+          value={kind}
+          onChange={(e) => setKind(e.target.value as "staff" | "external")}
+          options={[
+            { value: "staff", label: bide ? "Bide staff (signs in with Bide)" : "Bide staff (signs in with Google)" },
+            { value: "external", label: "Outside person (signs in with an emailed link)" },
+          ]}
         />
       </Labeled>
       <div className="grid grid-cols-2 gap-3">

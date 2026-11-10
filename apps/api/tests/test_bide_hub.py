@@ -382,6 +382,20 @@ def test_magic_link_from_before_the_hub_stops_working_for_staff(app, fake, monke
     assert _sessions(p["id"]) == []
 
 
+def test_magic_link_refused_to_outside_people_with_a_bide_account(app, fake):
+    """An outside person who has signed in with Bide is the Hub's to switch off; an emailed link must not get round it,
+    whether asked for after linking or sent before."""
+    p = _person(("assessor",), kind="external")
+    c = TestClient(app)
+    assert c.post("/api/auth/magic", json={"email": p["email"], "app": "web"}).status_code == 200
+    (old,) = _magic_links(p["email"])
+    _signed_in(app, fake, p)  # links bide_hub_sub
+    assert c.post("/api/auth/magic", json={"email": p["email"], "app": "web"}).json() == {"ok": True}
+    assert _magic_links(p["email"]) == [old]  # no new link sent
+    r = c.get(old, follow_redirects=False)
+    assert r.status_code == 302 and r.headers["location"] == f"{WEB}/signin?error=staff"
+
+
 def test_magic_link_works_once(app, fake):
     p = _person(("assessor",), kind="external")
     c = TestClient(app)
@@ -463,6 +477,58 @@ def test_backchannel_logout_by_sub_ends_every_session(app, fake):
     assert r.status_code == 200
     assert one.get("/api/me").status_code == 401 and two.get("/api/me").status_code == 401
     assert all(s["revoked_at"] for s in _sessions(p["id"]))
+
+
+def _disabled_token(fake: FakeHub, sub: str) -> str:
+    return fake.logout_token(sub=sub, events={hub.BACKCHANNEL_EVENT: {}, hub.ACCOUNT_DISABLED_EVENT: {}})
+
+
+def _status(pid) -> str:
+    with engine.connect() as conn:
+        return conn.execute(select(person.c.employment_status).where(person.c.id == pid)).scalar_one()
+
+
+def test_switched_off_on_the_hub_becomes_a_leaver(app, fake):
+    p = _person()
+    c = _signed_in(app, fake, p)  # links bide_hub_sub
+    for _ in range(2):  # the Hub retries until it gets a 2xx: the second delivery must be harmless
+        r = TestClient(app).post(
+            "/api/auth/bide/backchannel-logout", data={"logout_token": _disabled_token(fake, p["sub"])}
+        )
+        assert r.status_code == 200
+    assert c.get("/api/me").status_code == 401
+    assert _status(p["id"]) == "leaver"
+    with engine.connect() as conn:
+        ev = (
+            conn.execute(
+                select(audit_event.c.summary).where(
+                    audit_event.c.action == "people.offboard", audit_event.c.entity_id == str(p["id"])
+                )
+            )
+            .scalars()
+            .all()
+        )
+    assert len(ev) == 1 and "switched off on Bide Hub" in ev[0]
+    assert _sign_in(TestClient(app), fake, p) == f"{WEB}/signin?error=inactive"
+
+
+def test_switch_off_matches_by_sub_never_by_email(app, fake):
+    p = _person()  # never signed in through the Hub, so no bide_hub_sub
+    r = TestClient(app).post(
+        "/api/auth/bide/backchannel-logout", data={"logout_token": _disabled_token(fake, p["sub"])}
+    )
+    assert r.status_code == 200
+    assert _status(p["id"]) == "active"
+
+
+def test_a_plain_hub_logout_does_not_offboard(app, fake):
+    p = _person()
+    _signed_in(app, fake, p)
+    r = TestClient(app).post(
+        "/api/auth/bide/backchannel-logout", data={"logout_token": fake.logout_token(sub=p["sub"])}
+    )
+    assert r.status_code == 200
+    assert _status(p["id"]) == "active"
 
 
 @pytest.mark.parametrize(
