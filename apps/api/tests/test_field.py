@@ -322,14 +322,20 @@ class TestNotifications:
                 .where(task.c.id == uuid.UUID(t["task_id"]))
                 .values(status="open", due_at=clock.now() + timedelta(minutes=30))
             )
+
+            def sent() -> int:
+                return c.execute(
+                    select(func.count()).where(
+                        notification.c.kind == "task.reminder", notification.c.link == f"/task/{t['task_id']}"
+                    )
+                ).scalar()
+
             first = checks.due_reminders(c)
+            n = sent()
             second = checks.due_reminders(c)
-            n = c.execute(
-                select(func.count()).where(
-                    notification.c.kind == "task.reminder", notification.c.link == f"/task/{t['task_id']}"
-                )
-            ).scalar()
-        assert first >= 1 and second == 0 and n == first
+            # first counts every task due within the hour (other demo tasks too, depending on the time of day), so
+            # only this task's reminders are compared: some went, and a second run sends none.
+            assert first >= 1 and n >= 1 and second == 0 and sent() == n
 
 
 class TestDocuments:
