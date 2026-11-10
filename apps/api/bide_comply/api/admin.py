@@ -430,7 +430,7 @@ def dsar_export(person_id: uuid.UUID, request: Request, pr: Current, conn: ConnD
         return [dict(r) for r in conn.execute(q).mappings()]
 
     data = {
-        "person": {k: v for k, v in dict(p).items() if k not in ("google_sub",)},
+        "person": {k: v for k, v in dict(p).items() if k not in ("google_sub", "bide_hub_sub")},
         "roles": rows(select(role_assignment).where(role_assignment.c.person_id == person_id)),
         "staff_requirements": rows(select(staff_requirement).where(staff_requirement.c.person_id == person_id)),
         "submissions": rows(select(submission).where(submission.c.submitter_id == person_id)),

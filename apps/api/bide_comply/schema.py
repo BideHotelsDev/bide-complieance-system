@@ -150,6 +150,21 @@ auth_session = Table(
 )
 Index("ix_auth_session_hub_sid", auth_session.c.hub_sid)
 
+# Sign-outs Bide Hub sent (back-channel logout): a Hub session (sid) that ended, or everything for a person (sub) up to
+# logout_at. A sign-in still on its device-code or authenticator step when this arrives has no session row to revoke
+# yet, so it checks here before its session starts. Rows older than a day are pruned (a pending sign-in lasts 15 min).
+hub_logout = Table(
+    "hub_logout",
+    metadata,
+    pk(),
+    Column("sid", String(64), nullable=True),
+    Column("sub", String(64), nullable=True),
+    Column("logout_at", DateTime(timezone=True), nullable=False),
+    created(),
+)
+Index("ix_hub_logout_sid", hub_logout.c.sid)
+Index("ix_hub_logout_sub", hub_logout.c.sub)
+
 totp_secret = Table(
     "totp_secret",
     metadata,
