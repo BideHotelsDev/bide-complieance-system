@@ -14,6 +14,7 @@ import { refreshPush } from "./lib/push"
 import { pruneDrafts } from "./lib/drafts"
 import { onSent, startSync } from "./lib/queue"
 import { PropertyProvider } from "./lib/session"
+import type { SubmitResult } from "./lib/types"
 import { router } from "./router"
 
 // Theme first, so the first paint already has the published colours (CMS-13).
@@ -43,12 +44,23 @@ const queryClient = new QueryClient({
 startSync()
 void pruneDrafts()
 onSent((item, res) => {
-  // A check saved offline that turns out Failed still says what happened next (design: AppResult, in short).
-  toastSent(
-    res.result === "failed" && res.action
-      ? `${item.title} sent. Logged as Failed, and we've raised ${res.action.ref} to fix it.`
-      : `${item.title} sent. Thank you.`,
-  )
+  if (item.kind === "post") {
+    // A report or visit saved offline: the server's own words (who has been told, Actions raised).
+    const n = "actions" in res ? (res.actions?.length ?? 0) : 0
+    toastSent(
+      "message" in res && res.message
+        ? `${item.title}: ${res.message}`
+        : `${item.title} saved.${n ? ` ${n} Action${n === 1 ? "" : "s"} raised.` : " Thank you."}`,
+    )
+  } else {
+    // A check saved offline that turns out Failed still says what happened next (design: AppResult, in short).
+    const r = res as SubmitResult
+    toastSent(
+      r.result === "failed" && r.action
+        ? `${item.title} sent. Logged as Failed, and we've raised ${r.action.ref} to fix it.`
+        : `${item.title} sent. Thank you.`,
+    )
+  }
   void queryClient.invalidateQueries()
 })
 

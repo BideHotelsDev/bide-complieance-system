@@ -12,6 +12,9 @@ from bide_comply.schema import (
     action,
     action_comment,
     action_evidence,
+    alarm_event,
+    contractor_visit,
+    incident,
     leave,
     notification,
     person,
@@ -206,6 +209,48 @@ class TestReport:
             ).scalar()
         assert n >= 1
 
+    def test_a_report_sent_later_from_the_queue_keeps_when_it_happened(self, login):
+        """Reported with no signal, sent when the phone found signal: dated when it happened, not when it arrived. A
+        wrong phone clock (future, or more than a week back) falls back to now."""
+        pam = login(PAM, "field")
+        prop = pam.get("/api/field/today").json()["properties"][0]["id"]
+        happened = clock.now() - timedelta(hours=3)
+        r = pam.post(
+            "/api/field/reports",
+            json={
+                "kind": "near_miss",
+                "property_id": prop,
+                "location_text": "Back stairs",
+                "description": "Guest slipped on a wet step, didn't fall.",
+                "riddor": False,
+                "occurred_at": happened.isoformat(),
+            },
+        )
+        assert r.status_code == 200, r.text
+        ref = r.json()["action"]
+        for wrong in (clock.now() + timedelta(days=2), clock.now() - timedelta(days=30)):
+            r = pam.post(
+                "/api/field/reports",
+                json={
+                    "kind": "alarm",
+                    "property_id": prop,
+                    "description": "",
+                    "cause": "Not known",
+                    "occurred_at": wrong.isoformat(),
+                },
+            )
+            assert r.status_code == 200, r.text
+        with engine.connect() as c:
+            iid = c.execute(select(action.c.incident_id).where(action.c.ref == ref)).scalar()
+            at = c.execute(select(incident.c.occurred_at).where(incident.c.id == iid)).scalar()
+            assert abs((at - happened).total_seconds()) < 1
+            latest = (
+                c.execute(select(alarm_event.c.occurred_at).order_by(alarm_event.c.created_at.desc()).limit(2))
+                .scalars()
+                .all()
+            )
+        assert all(abs((x - clock.now()).total_seconds()) < 120 for x in latest)
+
 
 class TestContractorVisit:
     def test_visit_with_certificate_counts_the_linked_check_done_and_fails_become_actions(self, login):
@@ -265,6 +310,26 @@ class TestContractorVisit:
                 st = c.execute(select(task.c.status).where(task.c.id == tid)).scalar()
                 assert st == "failed"
                 assert c.execute(select(func.count()).where(submission.c.task_id == tid)).scalar() == 1
+
+    def test_a_visit_sent_later_from_the_queue_is_dated_the_day_it_happened(self, login):
+        pam = login(PAM, "field")
+        prop = pam.get("/api/field/today").json()["properties"][0]["id"]
+        yesterday = clock.now() - timedelta(days=1)
+        r = pam.post(
+            "/api/field/contractor-visits",
+            json={
+                "new_contractor": "Late Signal Electrical (test)",
+                "property_id": prop,
+                "purpose": "Other",
+                "fails": [{"text": "Socket in the bar loose.", "priority": "med"}],
+                "occurred_at": yesterday.isoformat(),
+            },
+        )
+        assert r.status_code == 200, r.text
+        with engine.connect() as c:
+            assert c.execute(
+                select(contractor_visit.c.visit_on).where(contractor_visit.c.id == r.json()["id"])
+            ).scalar() == (clock.london(yesterday).date())
 
 
 class TestMe:

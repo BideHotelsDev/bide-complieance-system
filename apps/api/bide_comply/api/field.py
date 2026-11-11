@@ -525,6 +525,20 @@ class ReportIn(BaseModel):
     false_alarm: bool = True
     arc_response: str | None = None
     attended_minutes: int | None = None
+    # Set when the report was made with no signal and sent later from the phone's queue: when it really happened.
+    occurred_at: datetime | None = None
+
+
+# How far back a report or visit sent later from a phone's queue may be dated. Anything older, or in the future
+# (a wrong phone clock), is dated when it arrives.
+QUEUED_MAX_AGE = timedelta(days=7)
+
+
+def when_it_happened(device_time: datetime | None) -> datetime:
+    now = clock.now()
+    if device_time is None or device_time.tzinfo is None:
+        return now
+    return device_time if now - QUEUED_MAX_AGE <= device_time <= now else now
 
 
 LIFE_SAFETY_WORDS = (
@@ -546,6 +560,7 @@ def report(body: ReportIn, request: Request, pr: Current, conn: ConnDep) -> dict
     pr.require_property(body.property_id)
     pr.require("action.raise", body.property_id)
     actor = actor_for(request, pr)
+    at = when_it_happened(body.occurred_at)
     photos = [e["id"] for e in ev_service.stored(conn, body.photos, pr.person_id)]
     loc = (
         conn.execute(select(location.c.name).where(location.c.id == body.location_id)).scalar()
@@ -559,7 +574,7 @@ def report(body: ReportIn, request: Request, pr: Current, conn: ConnDep) -> dict
             alarm_event.insert().values(
                 id=aid,
                 property_id=body.property_id,
-                occurred_at=clock.now(),
+                occurred_at=at,
                 zone=body.zone or loc,
                 cause=body.cause,
                 false_alarm=body.false_alarm,
@@ -588,7 +603,7 @@ def report(body: ReportIn, request: Request, pr: Current, conn: ConnDep) -> dict
                     alarm_event.c.cause == body.cause,
                     alarm_event.c.false_alarm.is_(True),
                     alarm_event.c.action_id.is_(None),
-                    alarm_event.c.occurred_at >= clock.now() - timedelta(days=90),
+                    alarm_event.c.occurred_at >= at - timedelta(days=90),
                 )
             ).scalar()
             if n >= 3:
@@ -640,7 +655,7 @@ def report(body: ReportIn, request: Request, pr: Current, conn: ConnDep) -> dict
                 id=iid,
                 property_id=body.property_id,
                 kind=body.kind,
-                occurred_at=clock.now(),
+                occurred_at=at,
                 location_id=body.location_id,
                 location_text=body.location_text,
                 description=body.description,
@@ -732,6 +747,7 @@ class VisitIn(BaseModel):
     evidence_id: uuid.UUID | None = None
     photo_id: uuid.UUID | None = None
     fails: list[dict] = []  # [{text, priority}]
+    occurred_at: datetime | None = None  # logged with no signal, sent later from the phone's queue
 
 
 @router.get("/contractor-visit")
@@ -787,6 +803,7 @@ def log_visit(body: VisitIn, request: Request, pr: Current, conn: ConnDep) -> di
     pr.require_property(body.property_id)
     pr.require("task.complete", body.property_id)
     actor = actor_for(request, pr)
+    visit_on = clock.london(when_it_happened(body.occurred_at)).date()
     fails = [{"text": str(f.get("text") or "").strip(), "priority": f.get("priority") or "med"} for f in body.fails]
     if any(not f["text"] for f in fails):
         raise problem(422, "fails", "Say what needs fixing for each one.")
@@ -815,7 +832,7 @@ def log_visit(body: VisitIn, request: Request, pr: Current, conn: ConnDep) -> di
             contractor_id=cid,
             property_id=body.property_id,
             register_item_id=body.register_item_id,
-            visit_on=clock.today(),
+            visit_on=visit_on,
             status="done",
             purpose=body.purpose,
             fails_found=fails,
@@ -842,7 +859,7 @@ def log_visit(body: VisitIn, request: Request, pr: Current, conn: ConnDep) -> di
             .one()
         )
         f = freq.get(ri["default_frequency"])
-        expires = (clock.today() + f.interval) if f.interval else None
+        expires = (visit_on + f.interval) if f.interval else None
         cert_id = uuid.uuid4()
         conn.execute(
             certificate.insert().values(
@@ -853,7 +870,7 @@ def log_visit(body: VisitIn, request: Request, pr: Current, conn: ConnDep) -> di
                 title=ri["name"],
                 issuer=cname,
                 contractor_id=cid,
-                issued_on=clock.today(),
+                issued_on=visit_on,
                 expires_on=expires,
                 evidence_id=body.evidence_id,
                 contractor_visit_id=vid,
@@ -868,7 +885,7 @@ def log_visit(body: VisitIn, request: Request, pr: Current, conn: ConnDep) -> di
             actor,
             property_id=body.property_id,
             source="contractor_visit",
-            source_ref=f"{cname} visit {clock.today():%-d %b}",
+            source_ref=f"{cname} visit {visit_on:%-d %b}",
             description=f["text"],
             priority=f["priority"],
             register_item_id=body.register_item_id,
@@ -898,6 +915,7 @@ def log_visit(body: VisitIn, request: Request, pr: Current, conn: ConnDep) -> di
             evidence_id=body.evidence_id,
             visit_id=vid,
             fails=[f["text"] for f in fails],
+            done_on=visit_on,
         )
         refresh_item(conn, body.register_item_id)
     return {"id": str(vid), "actions": refs, "task_done": str(done_task) if done_task else None}

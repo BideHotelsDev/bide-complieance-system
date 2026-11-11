@@ -372,6 +372,7 @@ def complete_from_visit(
     evidence_id: uuid.UUID | None,
     visit_id: uuid.UUID,
     fails: list[str],
+    done_on: date | None = None,
 ) -> uuid.UUID | None:
     """A contractor visit with its certificate or report counts as the linked check done (DOC-05: "Links to the
     6-monthly fire alarm service check, so it counts as done"). The item's open occurrence is recorded with the
@@ -390,7 +391,7 @@ def complete_from_visit(
         .order_by(task.c.due_at)
         .limit(1)
     ).first()
-    today = clock.today()
+    today = done_on or clock.today()
     conn.execute(
         update(register_item)
         .where(

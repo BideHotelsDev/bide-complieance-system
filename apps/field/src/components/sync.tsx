@@ -46,7 +46,7 @@ export function OfflineBanner() {
     >
       <CloudOff aria-hidden className="size-4 shrink-0" />
       <span>
-        You're offline. Checks are saved on this phone
+        You're offline. Checks and reports are saved on this phone
         {queue.length ? ` (${queue.length} waiting)` : ""} and send when you're back online.
       </span>
     </div>
@@ -92,7 +92,12 @@ function itemStatus(q: QueuedCheck, online: boolean): { text: string; tone: "amb
   if (q.status === "sending") {
     const done = q.photos.filter((p) => p.evidence_id).length
     return {
-      text: done < q.photos.length ? `Sending photo ${done + 1} of ${q.photos.length}` : "Sending the check",
+      text:
+        done < q.photos.length
+          ? `Sending photo ${done + 1} of ${q.photos.length}`
+          : q.kind === "post"
+            ? "Sending"
+            : "Sending the check",
       tone: "blue",
     }
   }

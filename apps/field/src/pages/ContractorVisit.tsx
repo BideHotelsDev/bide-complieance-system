@@ -22,8 +22,10 @@ import {
   Spinner,
   TextInput,
 } from "@/components/kit"
-import { toastCouldntSave, toastSent } from "@/components/sync"
+import { toastSaved, toastSent } from "@/components/sync"
+import { cachedGet } from "@/lib/cache"
 import { fmtSize } from "@/lib/format"
+import { enqueue } from "@/lib/queue"
 import { useMe, useProperty } from "@/lib/session"
 import type { VisitForm } from "@/lib/types"
 
@@ -36,7 +38,7 @@ export function ContractorVisitPage() {
   const qc = useQueryClient()
   const form = useQuery({
     queryKey: ["visit-form", propertyId],
-    queryFn: () => api.get<VisitForm>("/api/field/contractor-visit", { property: propertyId }),
+    queryFn: () => cachedGet<VisitForm>("/api/field/contractor-visit", { property: propertyId }),
     enabled: Boolean(propertyId),
   })
   const [who, setWho] = React.useState("")
@@ -67,9 +69,11 @@ export function ContractorVisitPage() {
     try {
       setUploaded(await upload(f, { captured_with: "upload", property_id: propertyId }))
     } catch (e) {
-      setFile(null)
-      if (e instanceof ApiError && e.status === 0) toastCouldntSave()
-      else toastError(e instanceof Error ? e.message : "The upload didn't finish. Try again.")
+      // With no signal the file stays on the phone and goes up with the visit.
+      if (!(e instanceof ApiError && e.status === 0)) {
+        setFile(null)
+        toastError(e instanceof Error ? e.message : "The upload didn't finish. Try again.")
+      }
     } finally {
       setUploading(false)
     }
@@ -78,18 +82,58 @@ export function ContractorVisitPage() {
   const save = async () => {
     if (!propertyId || !purpose) return
     setSaving(true)
+    const deviceTime = new Date().toISOString()
+    const body = {
+      contractor_id: adding ? null : who,
+      new_contractor: adding ? newName.trim() : null,
+      property_id: propertyId,
+      purpose,
+      register_item_id: chosen?.register_item_id ?? null,
+      fails: anyWrong === "yes" ? realFixes.map((f) => ({ text: f.text.trim(), priority: f.priority })) : [],
+    }
+    // With no signal the visit (and its file) is kept on the phone and sends by itself, dated today.
+    const keep = async (evidenceId: string | null) => {
+      const company = adding ? newName.trim() : form.data?.contractors.find((c) => c.id === who)?.name
+      await enqueue({
+        kind: "post",
+        post: {
+          url: "/api/field/contractor-visits",
+          body,
+          photo_fields: { evidence: { field: "evidence_id", many: false } },
+        },
+        task_id: "",
+        ref: "",
+        title: company ? `Contractor visit: ${company}` : "Contractor visit",
+        property: propName ?? "",
+        property_id: propertyId,
+        values: {},
+        photos: file
+          ? [
+              {
+                key: "evidence",
+                blob: file,
+                captured_at: deviceTime,
+                via: "upload",
+                evidence_id: evidenceId ?? undefined,
+              },
+            ]
+          : [],
+        device_time: deviceTime,
+      })
+      toastSaved()
+      void navigate({ to: "/" })
+    }
+    let evidenceId = uploaded?.id ?? null
     try {
+      if (file && !evidenceId) {
+        if (!navigator.onLine) return await keep(null)
+        const up = await upload(file, { captured_with: "upload", property_id: propertyId })
+        evidenceId = up.id
+        setUploaded(up)
+      }
       const res = await api.post<{ id: string; actions: string[]; task_done: string | null }>(
         "/api/field/contractor-visits",
-        {
-          contractor_id: adding ? null : who,
-          new_contractor: adding ? newName.trim() : null,
-          property_id: propertyId,
-          purpose,
-          register_item_id: chosen?.register_item_id ?? null,
-          evidence_id: uploaded?.id ?? null,
-          fails: anyWrong === "yes" ? realFixes.map((f) => ({ text: f.text.trim(), priority: f.priority })) : [],
-        },
+        { ...body, evidence_id: evidenceId },
       )
       const done = res.task_done ? " The check counts as done." : ""
       toastSent(
@@ -100,7 +144,7 @@ export function ContractorVisitPage() {
       void qc.invalidateQueries()
       void navigate({ to: "/" })
     } catch (e) {
-      if (e instanceof ApiError && e.status === 0) toastCouldntSave(() => void save())
+      if (e instanceof ApiError && e.status === 0) await keep(evidenceId)
       else toastError(e instanceof Error ? e.message : "Couldn't save. Try again.")
     } finally {
       setSaving(false)
@@ -199,16 +243,19 @@ export function ContractorVisitPage() {
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[15.5px]">{file.name}</div>
                   <div className="text-[13px] text-muted-foreground">
-                    {fmtSize(file.size)} · {uploading ? "uploading" : "uploaded"}
+                    {fmtSize(file.size)} ·{" "}
+                    {uploading ? "uploading" : uploaded ? "uploaded" : "on this phone, goes up with the visit"}
                   </div>
                 </div>
                 {uploading ? (
                   <Spinner />
                 ) : (
                   <>
-                    <span className="flex size-7 items-center justify-center rounded-full bg-st-green-bg text-st-green">
-                      <Check aria-label="Uploaded" className="size-4" />
-                    </span>
+                    {uploaded && (
+                      <span className="flex size-7 items-center justify-center rounded-full bg-st-green-bg text-st-green">
+                        <Check aria-label="Uploaded" className="size-4" />
+                      </span>
+                    )}
                     <button
                       type="button"
                       aria-label="Remove file"

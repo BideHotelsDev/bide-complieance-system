@@ -21,10 +21,12 @@ import {
   TextArea,
   TextInput,
 } from "@/components/kit"
-import { toastCouldntSave, toastSent } from "@/components/sync"
+import { toastSaved, toastSent } from "@/components/sync"
+import { cachedGet } from "@/lib/cache"
 import { shortName } from "@/lib/format"
+import { enqueue } from "@/lib/queue"
 import { useMe, useProperty } from "@/lib/session"
-import { useShots } from "@/lib/shots"
+import { useShots, type Shot } from "@/lib/shots"
 import type { Location } from "@/lib/types"
 
 type Kind = "hazard" | "hurt" | "alarm"
@@ -74,6 +76,13 @@ const LIFE = ["fire door", "door doesn't close", "exit", "escape", "alarm", "smo
 
 const OTHER = "__other__"
 
+// How a report waiting on the phone is listed on Today.
+const KIND_TITLE: Record<Kind, string> = {
+  hazard: "Report: something broken or unsafe",
+  hurt: "Report: someone hurt",
+  alarm: "Report: fire alarm",
+}
+
 export function ReportPage() {
   const me = useMe()
   const { propertyId } = useProperty()
@@ -97,7 +106,7 @@ export function ReportPage() {
   const { shots, add, remove, ensureUploaded } = useShots({ property_id: propertyId, ref: property?.code })
   const locations = useQuery({
     queryKey: ["locations", propertyId],
-    queryFn: () => api.get<Location[]>("/api/field/locations", { property: propertyId }),
+    queryFn: () => cachedGet<Location[]>("/api/field/locations", { property: propertyId }),
     enabled: Boolean(propertyId),
   })
   const locName = where === OTHER ? whereText : (locations.data?.find((l) => l.id === where)?.name ?? "")
@@ -111,33 +120,62 @@ export function ReportPage() {
   const send = async () => {
     if (!propertyId) return
     setSending(true)
+    const deviceTime = new Date().toISOString()
+    const body = {
+      kind: kind === "hurt" ? hurt : kind,
+      property_id: propertyId,
+      location_id: where && where !== OTHER ? where : null,
+      location_text: where === OTHER ? whereText : null,
+      description: text,
+      riddor: riddor === "yes",
+      people_involved: people || null,
+      zone: zone || locName || null,
+      cause: cause || null,
+      false_alarm: falseAlarm !== "no",
+      arc_response: arc || null,
+      attended_minutes: minutes ? Number(minutes) : null,
+    }
+    // With no signal the report is kept on the phone and sends by itself, dated when it was made.
+    const keep = async (taken: Shot[]) => {
+      await enqueue({
+        kind: "post",
+        post: { url: "/api/field/reports", body, photo_fields: { report: { field: "photos", many: true } } },
+        task_id: "",
+        ref: property?.code ?? "",
+        title: KIND_TITLE[kind],
+        property: property?.name ?? "",
+        property_id: propertyId,
+        values: {},
+        photos: taken.map((s) => ({
+          key: "report",
+          blob: s.blob,
+          captured_at: s.captured_at,
+          via: s.via,
+          evidence_id: s.evidence_id,
+        })),
+        device_time: deviceTime,
+      })
+      toastSaved()
+      void navigate({ to: "/" })
+    }
+    let taken: Shot[] = shots
     try {
       const up = await ensureUploaded()
-      if (up.status !== "done") {
-        if (up.status === "offline") toastCouldntSave(() => void send())
-        else toastError("A photo didn't finish uploading. Take it again.")
+      taken = up.shots
+      if (up.status === "offline") return await keep(taken)
+      if (up.status === "error") {
+        toastError("A photo didn't finish uploading. Take it again.")
         return
       }
       const res = await api.post<{ message: string }>("/api/field/reports", {
-        kind: kind === "hurt" ? hurt : kind,
-        property_id: propertyId,
-        location_id: where && where !== OTHER ? where : null,
-        location_text: where === OTHER ? whereText : null,
-        description: text,
-        photos: up.shots.map((s) => s.evidence_id).filter(Boolean),
-        riddor: riddor === "yes",
-        people_involved: people || null,
-        zone: zone || locName || null,
-        cause: cause || null,
-        false_alarm: falseAlarm !== "no",
-        arc_response: arc || null,
-        attended_minutes: minutes ? Number(minutes) : null,
+        ...body,
+        photos: taken.map((s) => s.evidence_id).filter(Boolean),
       })
       toastSent(res.message)
       void qc.invalidateQueries({ queryKey: ["today"] })
       void navigate({ to: "/" })
     } catch (e) {
-      if (e instanceof ApiError && e.status === 0) toastCouldntSave(() => void send())
+      if (e instanceof ApiError && e.status === 0) await keep(taken)
       else toastError(e instanceof Error ? e.message : "Couldn't send. Try again.")
     } finally {
       setSending(false)

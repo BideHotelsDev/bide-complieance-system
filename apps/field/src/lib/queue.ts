@@ -3,6 +3,10 @@
  * bytes are kept in IndexedDB on the phone. When the phone is back online they send by themselves: photos first (each
  * one's evidence id is saved as soon as it is uploaded, so a dropped connection never uploads a photo twice), then the
  * check itself, marked captured offline so a life-safety check goes to verification.
+ *
+ * Reports (something broken, someone hurt, the fire alarm) and contractor visits made with no signal queue the same
+ * way as a "post": the request body as it would have been sent, which photo goes in which field, and the time it
+ * really happened, so the server dates it then rather than when the phone found signal.
  */
 import * as React from "react"
 import { api, ApiError, upload } from "@bide-comply/api-client"
@@ -20,9 +24,20 @@ export type QueuedPhoto = {
   evidence_id?: string
 }
 
+/* A report or visit to send later: `photo_fields` says which body field each photo key fills. */
+export type QueuedPost = {
+  url: string
+  body: Record<string, unknown>
+  photo_fields: Record<string, { field: string; many: boolean }>
+}
+
+export type PostResult = { message?: string; actions?: string[]; task_done?: string | null }
+
 export type QueuedCheck = {
   id: string
-  task_id: string
+  kind?: "check" | "post" // missing on items queued before reports could be queued: a check
+  post?: QueuedPost
+  task_id: string // "" for a post
   ref: string
   title: string
   property: string
@@ -42,7 +57,7 @@ export type QueuedCheck = {
 let items: QueuedCheck[] = []
 let loaded = false
 const listeners = new Set<() => void>()
-const sentListeners = new Set<(item: QueuedCheck, result: SubmitResult) => void>()
+const sentListeners = new Set<(item: QueuedCheck, result: SubmitResult | PostResult) => void>()
 
 function emit() {
   items = [...items]
@@ -85,7 +100,7 @@ export async function clearQueue(): Promise<void> {
   await clear(store)
 }
 
-export function onSent(fn: (item: QueuedCheck, result: SubmitResult) => void): () => void {
+export function onSent(fn: (item: QueuedCheck, result: SubmitResult | PostResult) => void): () => void {
   sentListeners.add(fn)
   return () => sentListeners.delete(fn)
 }
@@ -128,7 +143,7 @@ export async function syncQueue(opts: { includeFailed?: boolean } = {}): Promise
           const up = await upload(p.blob, {
             captured_with: p.via ?? "camera",
             property_id: item.property_id,
-            task_id: item.task_id,
+            task_id: item.task_id || null,
             captured_at: p.captured_at,
             file_name: p.blob instanceof File ? p.blob.name : `${item.ref}-${p.key}.jpg`,
           })
@@ -138,6 +153,15 @@ export async function syncQueue(opts: { includeFailed?: boolean } = {}): Promise
         }
         const grouped: Record<string, string[]> = {}
         for (const p of item.photos) (grouped[p.key] ??= []).push(p.evidence_id!)
+        if (item.kind === "post" && item.post) {
+          const body: Record<string, unknown> = { ...item.post.body, occurred_at: item.device_time }
+          for (const [key, { field, many }] of Object.entries(item.post.photo_fields))
+            body[field] = many ? (grouped[key] ?? []) : (grouped[key]?.[0] ?? null)
+          const res = await api.post<PostResult>(item.post.url, body)
+          await removeQueued(item.id)
+          sentListeners.forEach((fn) => fn(item, res))
+          continue
+        }
         const res = await api.post<SubmitResult>(`/api/field/tasks/${item.task_id}/submit`, {
           values: item.values,
           signature: item.signature ?? null,
