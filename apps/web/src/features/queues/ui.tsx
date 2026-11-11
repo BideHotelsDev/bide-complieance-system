@@ -4,8 +4,9 @@
  */
 import * as React from "react"
 import { Dialog as DialogPrimitive } from "radix-ui"
-import { Upload, X } from "lucide-react"
+import { ArrowLeft, Upload, X } from "lucide-react"
 
+import { useNarrow } from "@bide-comply/ui/components/page"
 import { cn } from "@bide-comply/ui/lib/utils"
 
 /* Header stat card (design: .sc) */
@@ -476,4 +477,100 @@ export function rowCls(on: boolean) {
 export function isTyping(e: KeyboardEvent) {
   const t = e.target as HTMLElement
   return ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName) || t.isContentEditable
+}
+
+/*
+ * The detail side of a queue (Evidence review, Approvals, Sign-offs, Actions). From lg up it sits beside the list, as
+ * before. Below lg there's no room, so an opened item covers the screen with "Back to the list" (Back and Escape close
+ * it too) instead of landing under the whole list, where a tap looked like it did nothing. Focus moves in when it
+ * opens and back when it closes; `focusSignal` moves focus to the next item after a decision.
+ */
+export function QueueDetail({
+  open,
+  label,
+  onClose,
+  focusSignal = 0,
+  backBar = true,
+  hideWhenClosed = false,
+  className,
+  children,
+}: {
+  open: boolean
+  label: string
+  onClose: () => void
+  focusSignal?: number
+  backBar?: boolean
+  /* Side by side, take no room at all while nothing is open (Actions, Sign-offs) rather than show a placeholder. */
+  hideWhenClosed?: boolean
+  className?: string
+  children: React.ReactNode
+}) {
+  const narrow = useNarrow()
+  const ref = React.useRef<HTMLElement>(null)
+  React.useEffect(() => {
+    if (!focusSignal) return
+    const h = requestAnimationFrame(() => ref.current?.focus())
+    return () => cancelAnimationFrame(h)
+  }, [focusSignal])
+  const close = React.useRef(onClose)
+  React.useEffect(() => {
+    close.current = onClose
+  })
+  React.useEffect(() => {
+    if (!narrow || !open) return
+    const before = document.activeElement as HTMLElement | null
+    ref.current?.focus()
+    const html = document.documentElement
+    const was = html.style.overflow
+    html.style.overflow = "hidden"
+    const esc = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return
+      if (document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"]')) return
+      close.current()
+    }
+    window.addEventListener("keydown", esc)
+    return () => {
+      window.removeEventListener("keydown", esc)
+      html.style.overflow = was
+      if (before?.isConnected) before.focus()
+    }
+  }, [narrow, open])
+  if (narrow) {
+    if (!open) return null
+    return (
+      <section
+        ref={ref}
+        tabIndex={-1}
+        aria-label={label}
+        className="fixed inset-0 z-40 flex flex-col overflow-y-auto overscroll-contain bg-background outline-none"
+      >
+        {backBar && (
+          <div className="sticky top-0 z-10 flex h-12 shrink-0 items-center border-b border-divider bg-surface px-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-10 items-center gap-1.5 rounded-md px-2.5 text-[14px] font-medium hover:bg-hover"
+            >
+              <ArrowLeft aria-hidden className="size-4" />
+              Back to the list
+            </button>
+          </div>
+        )}
+        <div className="flex flex-col gap-4 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-4">{children}</div>
+      </section>
+    )
+  }
+  if (!open && hideWhenClosed) return null
+  return (
+    <section ref={ref} tabIndex={-1} aria-label={label} className={cn("outline-none", className)}>
+      {children}
+    </section>
+  )
+}
+
+/* The item to show after one is decided: the next in the list, else the one before, else none. */
+export function nextAfter<T extends { id: string }>(rows: T[], id: string | null): string | null {
+  const i = rows.findIndex((r) => r.id === id)
+  if (i < 0) return null
+  return (rows[i + 1] ?? rows[i - 1])?.id ?? null
 }

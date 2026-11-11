@@ -7,6 +7,9 @@ import * as React from "react"
 
 export type Params = Record<string, string | undefined>
 
+// Params that are a place in the app (an open item, a tab) rather than a filter: changing them adds a history entry.
+const STEPS = new Set(["sel", "item", "tab", "queue", "key", "week"])
+
 export function useParams(): [Params, (patch: Params, opts?: { replace?: boolean }) => void] {
   const search = useSearch({ strict: false }) as Record<string, unknown>
   const navigate = useNavigate()
@@ -24,7 +27,8 @@ export function useParams(): [Params, (patch: Params, opts?: { replace?: boolean
           for (const k of Object.keys(next)) if (next[k] === undefined || next[k] === "") delete next[k]
           return next
         },
-        replace: opts?.replace ?? true,
+        // Opening an item or switching tab is a step Back should undo; filters, search and paging replace.
+        replace: opts?.replace ?? !Object.keys(patch).some((k) => STEPS.has(k)),
       })
     },
     [navigate],

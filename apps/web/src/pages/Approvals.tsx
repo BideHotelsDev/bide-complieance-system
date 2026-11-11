@@ -10,13 +10,13 @@ import { CheckCircle2, Info } from "lucide-react"
 
 import { api, type ApiError } from "@bide-comply/api-client"
 import { Button } from "@bide-comply/ui/components/button"
-import { Callout, EmptyState, ErrorState, Skeleton } from "@bide-comply/ui/components/page"
+import { Callout, EmptyState, ErrorState, Skeleton, useNarrow } from "@bide-comply/ui/components/page"
 import { ClassBadge, Pill } from "@bide-comply/ui/components/status"
 import { toast, toastError } from "@bide-comply/ui/components/toaster"
 import { cn } from "@bide-comply/ui/lib/utils"
 
 import type { ApprovalCard, ApprovalDetail, ApprovalList } from "@/features/queues/types"
-import { LineTabs, Note, rowCls, textareaCls } from "@/features/queues/ui"
+import { LineTabs, nextAfter, Note, QueueDetail, rowCls, textareaCls } from "@/features/queues/ui"
 import { useParams } from "@/lib/params"
 import { useProperty } from "@/lib/property"
 
@@ -56,7 +56,15 @@ export function ApprovalsPage() {
   })
   // The property switcher scopes the list (the API returns every property you can see).
   const rows = (list.data?.rows ?? []).filter((r) => !property || r.sub.startsWith(`${property.name} ·`))
-  const sel = params.sel ?? rows[0]?.id ?? null
+  // Side by side, the first one opens by itself; on a phone or tablet the list comes first and a tap opens one.
+  const narrow = useNarrow()
+  const sel = params.sel ?? (narrow ? null : (rows[0]?.id ?? null))
+  const [focusSignal, setFocusSignal] = React.useState(0)
+  // After a decision the next request opens in its place (not the decided one again) and gets focus.
+  const decided = () => {
+    set({ sel: nextAfter(rows, sel) ?? undefined }, { replace: true })
+    setFocusSignal((n) => n + 1)
+  }
   const tabs = (tabsRaw ?? []).filter((t) => t.key !== "backfile" || t.count)
 
   return (
@@ -90,11 +98,8 @@ export function ApprovalsPage() {
           ) : (
             <Skeleton className="h-10 w-full" />
           )}
-          <div className="flex flex-wrap items-start gap-5">
-            <section
-              aria-label="Requests"
-              className="w-full overflow-hidden rounded-[10px] border border-divider bg-surface md:max-w-[440px] md:flex-[1_1_360px]"
-            >
+          <div className="grid items-start gap-5 lg:grid-cols-[minmax(300px,400px)_minmax(0,1fr)]">
+            <section aria-label="Requests" className="overflow-hidden rounded-[10px] border border-divider bg-surface">
               {list.error ? (
                 <ErrorState onRetry={() => void list.refetch()} />
               ) : !list.data ? (
@@ -116,18 +121,23 @@ export function ApprovalsPage() {
                 rows.map((r) => <RequestRow key={r.id} r={r} on={r.id === sel} onPick={() => set({ sel: r.id })} />)
               )}
             </section>
-            <section
-              aria-label="Request detail"
-              className="min-w-0 flex-[999_1_480px] rounded-[10px] border border-divider bg-surface"
+            <QueueDetail
+              open={!!sel}
+              label="Request detail"
+              onClose={() => set({ sel: undefined })}
+              focusSignal={focusSignal}
+              className="min-w-0 rounded-[10px] border border-divider bg-surface"
             >
               {sel ? (
-                <Detail key={sel} id={sel} onDecided={() => set({ sel: undefined })} />
+                <div className="rounded-[10px] border border-divider bg-surface lg:contents">
+                  <Detail key={sel} id={sel} onDecided={decided} />
+                </div>
               ) : list.data ? (
                 <EmptyState title="Pick a request">Choose a request on the left to see what it changes.</EmptyState>
               ) : (
                 <Skeleton className="m-4 h-64" />
               )}
-            </section>
+            </QueueDetail>
           </div>
         </>
       )}

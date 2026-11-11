@@ -141,7 +141,7 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
   return (
     <aside
       aria-label="Selected item"
-      className="flex w-full flex-col rounded-[10px] border border-divider bg-surface lg:sticky lg:top-0 lg:-my-6 lg:-mr-7 lg:h-screen lg:w-[400px] lg:shrink-0 lg:overflow-y-auto lg:rounded-none lg:border-y-0 lg:border-r-0"
+      className="flex w-full flex-col rounded-[10px] border border-divider bg-surface lg:h-full lg:overflow-y-auto lg:rounded-none lg:border-y-0 lg:border-r-0"
     >
       <div className="flex items-center gap-2 border-b border-divider px-[18px] py-3.5">
         {a ? (
@@ -161,7 +161,7 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
           type="button"
           aria-label="Close panel"
           onClick={onClose}
-          className="ml-auto rounded-md p-1.5 hover:bg-hover"
+          className="ml-auto flex size-9 items-center justify-center rounded-md hover:bg-hover"
         >
           <X className="size-4" />
         </button>

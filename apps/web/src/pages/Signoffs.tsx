@@ -10,13 +10,13 @@ import { CalendarClock, FileSignature, Lock, PenLine, Scale } from "lucide-react
 
 import { api, type ApiError } from "@bide-comply/api-client"
 import { Button } from "@bide-comply/ui/components/button"
-import { Callout, EmptyState, ErrorState, Skeleton } from "@bide-comply/ui/components/page"
+import { Callout, EmptyState, ErrorState, Skeleton, useNarrow } from "@bide-comply/ui/components/page"
 import { ClassBadge, Pill, RagBadge } from "@bide-comply/ui/components/status"
 import { toast, toastError } from "@bide-comply/ui/components/toaster"
 import { cn } from "@bide-comply/ui/lib/utils"
 
 import type { EvidenceFile, SignoffProperty, SignRequest } from "@/features/queues/types"
-import { rowCls } from "@/features/queues/ui"
+import { QueueDetail, rowCls } from "@/features/queues/ui"
 import { fmtDate, fmtDateTime, fmtDay } from "@/lib/format"
 import { useParams } from "@/lib/params"
 import { useProperty } from "@/lib/property"
@@ -55,7 +55,17 @@ export function SignoffsPage() {
   const props = (res.data?.properties ?? []).filter((p) => p.requests.length > 0 || !isAdmin)
   const all = props.flatMap((p) => p.requests.map((r) => ({ r, p })))
   const signable = all.filter(({ r }) => r.type !== "advisory" && r.status === "open")
-  const sel = all.find(({ r }) => r.id === params.sel) ?? signable[0] ?? null
+  // Side by side, the first one to sign opens by itself; on a phone or tablet a tap opens one.
+  const narrow = useNarrow()
+  const sel = all.find(({ r }) => r.id === params.sel) ?? (narrow ? null : (signable[0] ?? null))
+  const [focusSignal, setFocusSignal] = React.useState(0)
+  // After signing, the next thing to sign opens in its place and gets focus.
+  const signed = () => {
+    const i = signable.findIndex(({ r }) => r.id === sel?.r.id)
+    const next = i >= 0 ? (signable[i + 1] ?? signable[i - 1]) : undefined
+    set({ sel: next?.r.id }, { replace: true })
+    setFocusSignal((n) => n + 1)
+  }
   const awaiting = props.reduce((n, p) => n + p.awaiting, 0)
   const one = props.length === 1 ? props[0] : null
 
@@ -67,8 +77,13 @@ export function SignoffsPage() {
     )
 
   return (
-    <div className="mx-auto flex w-full max-w-[1360px] flex-wrap items-start gap-6">
-      <main className="flex min-w-0 flex-[999_1_520px] flex-col gap-[18px]">
+    <div
+      className={cn(
+        "mx-auto grid w-full max-w-[1360px] items-start gap-6",
+        sel && "lg:grid-cols-[minmax(0,1fr)_minmax(340px,420px)]",
+      )}
+    >
+      <div className="flex min-w-0 flex-col gap-[18px]">
         <div>
           {!res.data ? (
             <Skeleton className="h-7 w-80" />
@@ -148,17 +163,26 @@ export function SignoffsPage() {
             </ul>
           </section>
         )}
-      </main>
+      </div>
 
-      {sel && (
-        <SignPanel
-          key={sel.r.id}
-          r={sel.r}
-          p={sel.p}
-          canSign={canSign && sel.r.can_sign !== false}
-          onSigned={() => set({ sel: undefined })}
-        />
-      )}
+      <QueueDetail
+        open={!!sel}
+        label="Sign"
+        onClose={() => set({ sel: undefined })}
+        focusSignal={focusSignal}
+        hideWhenClosed
+        className="min-w-0 lg:sticky lg:top-4"
+      >
+        {sel && (
+          <SignPanel
+            key={sel.r.id}
+            r={sel.r}
+            p={sel.p}
+            canSign={canSign && sel.r.can_sign !== false}
+            onSigned={signed}
+          />
+        )}
+      </QueueDetail>
     </div>
   )
 }
@@ -347,7 +371,7 @@ function SignPanel({
   return (
     <aside
       aria-label={heading}
-      className="flex max-w-full min-w-0 flex-[1_1_420px] flex-col overflow-hidden rounded-[10px] border border-divider bg-surface lg:sticky lg:top-4"
+      className="flex min-w-0 flex-col overflow-hidden rounded-[10px] border border-divider bg-surface"
     >
       <div className="flex items-center gap-2 border-b border-divider p-4">
         <ClassBadge klass="A" />

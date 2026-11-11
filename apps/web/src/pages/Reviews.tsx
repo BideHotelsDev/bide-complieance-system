@@ -10,7 +10,7 @@ import { Check, ChevronLeft, ChevronRight, EyeOff, Inbox, Lock } from "lucide-re
 
 import { api, type ApiError } from "@bide-comply/api-client"
 import { Button } from "@bide-comply/ui/components/button"
-import { Callout, EmptyState, ErrorState, NoPermission, Skeleton } from "@bide-comply/ui/components/page"
+import { Callout, EmptyState, ErrorState, NoPermission, Skeleton, useNarrow } from "@bide-comply/ui/components/page"
 import { ClassBadge, FlagBadge, Pill, type Tone } from "@bide-comply/ui/components/status"
 import { toast, toastError } from "@bide-comply/ui/components/toaster"
 import { contactPhrase } from "@bide-comply/ui/lib/contact"
@@ -18,7 +18,18 @@ import { cn } from "@bide-comply/ui/lib/utils"
 
 import { ContractorUpload } from "@/features/queues/contractor-upload"
 import type { QueueCard, ReviewDetail, ReviewQueue } from "@/features/queues/types"
-import { Field, inputCls, isTyping, LineTabs, Note, QDialog, Radio, rowCls, textareaCls } from "@/features/queues/ui"
+import {
+  Field,
+  inputCls,
+  isTyping,
+  LineTabs,
+  Note,
+  QDialog,
+  QueueDetail,
+  Radio,
+  rowCls,
+  textareaCls,
+} from "@/features/queues/ui"
 import { fmtDateTime } from "@/lib/format"
 import { useParams } from "@/lib/params"
 import { useProperty } from "@/lib/property"
@@ -46,7 +57,10 @@ export function ReviewsPage() {
     enabled: !!me.data?.can.verify,
   })
   const rows = list.data?.rows ?? []
-  const sel = params.sel ?? rows[0]?.id ?? null
+  // Side by side, the first one opens by itself; on a phone or tablet the list comes first and a tap opens one.
+  const narrow = useNarrow()
+  const sel = params.sel ?? (narrow ? null : (rows[0]?.id ?? null))
+  const [focusSignal, setFocusSignal] = React.useState(0)
   const idx = rows.findIndex((r) => r.id === sel)
 
   if (me.data && !me.data.can.verify)
@@ -57,6 +71,16 @@ export function ReviewsPage() {
     )
 
   const go = (id: string | null) => set({ sel: id ?? undefined })
+  // After a decision the next item opens in place of the decided one (no extra Back step) and gets focus.
+  const decided = (label: string) => {
+    const next = rows[idx + 1] ?? rows[idx - 1] ?? null
+    const done = sel
+    void qc.invalidateQueries({ queryKey: ["reviews"] })
+    void qc.invalidateQueries({ queryKey: ["nav"] })
+    set({ sel: next && next.id !== done ? next.id : undefined }, { replace: true })
+    setFocusSignal((n) => n + 1)
+    toast(label, { action: { label: "Show it", onClick: () => go(done) } })
+  }
   const fromContractors = queue === "contractor" || rows[idx]?.kind === "contractor"
   const eligible = rows.filter((r) => r.badge !== "Failed" && r.kind !== "contractor")
 
@@ -121,20 +145,15 @@ export function ReviewsPage() {
         </div>
       </section>
 
-      <main className="flex min-w-0 flex-1 flex-col gap-4 lg:px-7 lg:pt-5 lg:pb-7">
+      <QueueDetail
+        open={!!sel}
+        label="Submission"
+        onClose={() => go(null)}
+        focusSignal={focusSignal}
+        className="flex min-w-0 flex-1 flex-col gap-4 lg:px-7 lg:pt-5 lg:pb-7"
+      >
         {sel && fromContractors ? (
-          <ContractorUpload
-            key={sel}
-            id={sel}
-            onDecided={(label) => {
-              const next = rows[idx + 1] ?? rows[idx - 1] ?? null
-              const done = sel
-              void qc.invalidateQueries({ queryKey: ["reviews"] })
-              void qc.invalidateQueries({ queryKey: ["nav"] })
-              go(next && next.id !== done ? next.id : null)
-              toast(label, { action: { label: "Show it", onClick: () => go(done) } })
-            }}
-          />
+          <ContractorUpload key={sel} id={sel} onDecided={decided} />
         ) : sel ? (
           <Submission
             key={sel}
@@ -142,14 +161,7 @@ export function ReviewsPage() {
             pos={idx >= 0 ? { i: idx, n: rows.length } : null}
             onPrev={idx > 0 ? () => go(rows[idx - 1].id) : undefined}
             onNext={idx >= 0 && idx < rows.length - 1 ? () => go(rows[idx + 1].id) : undefined}
-            onDecided={(label) => {
-              const next = rows[idx + 1] ?? rows[idx - 1] ?? null
-              const done = sel
-              void qc.invalidateQueries({ queryKey: ["reviews"] })
-              void qc.invalidateQueries({ queryKey: ["nav"] })
-              go(next && next.id !== done ? next.id : null)
-              toast(label, { action: { label: "Show it", onClick: () => go(done) } })
-            }}
+            onDecided={decided}
           />
         ) : list.data ? (
           <div className="rounded-[10px] border border-divider bg-surface">
@@ -160,7 +172,7 @@ export function ReviewsPage() {
         ) : (
           <Skeleton className="h-[480px]" />
         )}
-      </main>
+      </QueueDetail>
 
       {bulk && (
         <BulkDialog

@@ -307,7 +307,24 @@ export function GatePage() {
                         (i.wording_pending || !i.applies) && "text-muted-foreground",
                       )}
                     >
-                      <span className={cn(!i.applies && "line-through")}>{i.item}</span>
+                      {/* The row opens on a click; this button is the same for keyboard and screen readers. */}
+                      {g.can_edit ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setEditing(i)
+                          }}
+                          className={cn(
+                            "rounded-sm text-left text-inherit focus-visible:outline-2 focus-visible:outline-focus",
+                            !i.applies && "line-through",
+                          )}
+                        >
+                          {i.item}
+                        </button>
+                      ) : (
+                        <span className={cn(!i.applies && "line-through")}>{i.item}</span>
+                      )}
                       {i.wording_pending && <span className="block text-[12px] text-subtle">Wording pending</span>}
                       {i.actions > 0 && (
                         <Link

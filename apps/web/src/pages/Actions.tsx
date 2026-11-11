@@ -19,7 +19,17 @@ import { cn } from "@bide-comply/ui/lib/utils"
 import { ActionPanel } from "@/features/queues/action-panel"
 import { NewActionDialog } from "@/features/queues/new-action"
 import type { ActionList, ActionRow } from "@/features/queues/types"
-import { BarRow, IconBox, Legend, Ring, StatBig, StatCard, StatTitle } from "@/features/queues/ui"
+import {
+  BarRow,
+  IconBox,
+  Legend,
+  nextAfter,
+  QueueDetail,
+  Ring,
+  StatBig,
+  StatCard,
+  StatTitle,
+} from "@/features/queues/ui"
 import { fmtDate } from "@/lib/format"
 import { useParams } from "@/lib/params"
 import { useProperty } from "@/lib/property"
@@ -71,6 +81,13 @@ export function ActionsPage() {
   const d = res.data
 
   const pick = (ref: string | null) => set({ sel: ref ?? undefined })
+  const [focusSignal, setFocusSignal] = React.useState(0)
+  // Closing an Action opens the next one in the list in its place, with focus, ready to work through.
+  const closed = () => {
+    const rows = (d?.rows ?? []).map((r) => ({ id: r.ref }))
+    set({ sel: nextAfter(rows, sel) ?? undefined }, { replace: true })
+    setFocusSignal((n) => n + 1)
+  }
   const clearAll = () =>
     set({
       owner: undefined,
@@ -277,7 +294,17 @@ export function ActionsPage() {
         )}
       </div>
 
-      {sel && <ActionPanel key={sel} ref_={sel} onClose={() => pick(null)} onClosed={() => pick(null)} />}
+      <QueueDetail
+        open={!!sel}
+        label="Selected Action"
+        onClose={() => pick(null)}
+        focusSignal={focusSignal}
+        backBar={false}
+        hideWhenClosed
+        className="lg:sticky lg:top-0 lg:-my-6 lg:-mr-7 lg:h-screen lg:w-[400px] lg:shrink-0"
+      >
+        {sel && <ActionPanel key={sel} ref_={sel} onClose={() => pick(null)} onClosed={closed} />}
+      </QueueDetail>
 
       <NewActionDialog
         open={creating}
