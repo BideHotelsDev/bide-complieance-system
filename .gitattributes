@@ -1,0 +1,4 @@
+# Shell scripts and Dockerfiles run in Linux containers. Keep them on LF whatever a checkout's settings are, so a
+# deploy uploaded from Windows can't carry CRLF (a start script with "set -e\r" fails, and the service won't start).
+*.sh text eol=lf
+Dockerfile text eol=lf
