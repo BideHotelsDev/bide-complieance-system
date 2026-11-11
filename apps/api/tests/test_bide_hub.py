@@ -9,13 +9,15 @@ import time
 import uuid
 from urllib.parse import parse_qs, urlsplit
 
+import httpx
 import pyotp
 import pytest
 from authlib.jose import JsonWebKey, jwt
 from fastapi.testclient import TestClient
 from sqlalchemy import select, update
 
-from bide_comply import auth, emailer, hub, ratelimit
+from bide_comply import auth, clock, emailer, hub, ratelimit
+from bide_comply._vendor.bide_hub_client.testing import FakeHub as SharedFakeHub
 from bide_comply.config import settings
 from bide_comply.db import engine
 from bide_comply.schema import audit_event, auth_session, person, property_, role_assignment, totp_secret
@@ -26,22 +28,23 @@ WEB = "http://localhost:5180"
 FIELD = "http://localhost:5181"
 
 
-class FakeHub:
-    """The parts of Bide Hub the app talks to: discovery, JWKS and the token endpoint."""
+class FakeHub(SharedFakeHub):
+    """The parts of Bide Hub the app talks to: discovery, JWKS and the token endpoint, served by the shared fake Hub
+    (bide-hub-client's testing.FakeHub, over an httpx MockTransport). Tokens are still signed here, with authlib."""
 
     def __init__(self):
+        super().__init__(issuer=ISSUER, client_id=CLIENT_ID, client_secret="dev-secret-comply", kid="test-1")
         self.key = JsonWebKey.generate_key("RSA", 2048, is_private=True, options={"kid": "test-1"})
         self.claims: dict = {}  # what the next ID token says, over the defaults
         self.nonce = ""
         self.challenge = ""
         self.token_calls: list[dict] = []
 
-    @property
     def jwks(self) -> dict:
         return {"keys": [self.key.as_dict(is_private=False)]}
 
-    def sign(self, claims: dict, key=None) -> str:
-        return jwt.encode({"alg": "RS256", "kid": "test-1"}, claims, key or self.key).decode()
+    def sign(self, claims: dict, key=None, typ: str = "JWT") -> str:  # type: ignore[override]
+        return jwt.encode({"alg": "RS256", "kid": "test-1", "typ": typ}, claims, key or self.key).decode()
 
     def id_token(self) -> str:
         now = int(time.time())
@@ -68,7 +71,14 @@ class FakeHub:
             "jti": uuid.uuid4().hex,
             "events": {hub.BACKCHANNEL_EVENT: {}},
         } | claims
-        return self.sign({k: v for k, v in body.items() if v is not None})
+        # Typed as the Hub types them (Back-Channel Logout 1.0 §2.4); authlib would otherwise say "JWT".
+        return self.sign({k: v for k, v in body.items() if v is not None}, typ="logout+jwt")
+
+    def _token(self, request: httpx.Request) -> httpx.Response:
+        data = {k: v[0] for k, v in parse_qs(request.content.decode()).items()}
+        user, _, password = base64.b64decode(request.headers["authorization"].split()[1]).decode().partition(":")
+        resp = self.post(str(request.url), auth=(user, password), data=data)
+        return httpx.Response(resp.status_code, json=resp.json())
 
     def post(self, url, auth=None, data=None, timeout=None):
         self.token_calls.append({"url": url, "auth": auth, "data": data})
@@ -94,18 +104,8 @@ def fake(monkeypatch):
     monkeypatch.setattr(settings, "bide_hub_issuer", ISSUER + "/")
     monkeypatch.setattr(settings, "bide_hub_client_id", CLIENT_ID)
     monkeypatch.setattr(settings, "bide_hub_client_secret", "dev-secret-comply")
-    monkeypatch.setattr(
-        hub,
-        "discovery",
-        lambda: {
-            "issuer": ISSUER,
-            "authorization_endpoint": f"{ISSUER}/oauth/authorize",
-            "token_endpoint": f"{ISSUER}/oauth/token",
-            "jwks_uri": f"{ISSUER}/oauth/jwks",
-        },
-    )
-    monkeypatch.setattr(hub, "jwks", lambda fresh=False: f.jwks)
-    monkeypatch.setattr(hub.httpx, "post", f.post)
+    c = f.client(now=lambda: clock.now().timestamp())
+    monkeypatch.setattr(hub, "client", lambda: c)
     # Every test client shares one IP, and these tests enter many device codes.
     ratelimit._local.clear()
     yield f
@@ -532,6 +532,8 @@ def test_already_linked_sub_does_not_need_the_email_again(app, fake):
     p = _person()
     _sign_in(TestClient(app), fake, p)  # linked by a verified email
     assert _sign_in(TestClient(app), fake, p, email_verified=False) == f"{WEB}/signin/code"
+    # Nor any email at all (it used to be required even when the sub matched).
+    assert _sign_in(TestClient(app), fake, p, email=None) == f"{WEB}/signin/code"
 
 
 # --- account disabled (urn:bide:hub:account-disabled) ----------------------------------------------------------------
@@ -708,28 +710,18 @@ def test_subject_access_export_leaves_out_the_hub_id(app, fake):
     assert "bide_hub_sub" not in data["person"] and p["sub"] not in r.content.decode("latin-1")
 
 
-def test_jwks_is_fetched_again_only_for_an_unknown_key_and_at_most_once_a_minute(monkeypatch):
-    """Anyone can post tokens to the back-channel address: a bad one must not make the app call the Hub each time."""
-    f = FakeHub()
-    monkeypatch.setattr(settings, "bide_hub_issuer", ISSUER)
-    monkeypatch.setattr(settings, "bide_hub_client_id", CLIENT_ID)
-    monkeypatch.setattr(hub, "discovery", lambda: {"jwks_uri": f"{ISSUER}/oauth/jwks"})
-    fetches = []
-    monkeypatch.setattr(hub, "_get_json", lambda url: fetches.append(url) or f.jwks)
-    monkeypatch.setattr(hub, "_cache", {})
-    monkeypatch.setattr(hub, "_jwks_refreshed_at", [float("-inf")])
+def test_vendored_bide_hub_client_is_unmodified():
+    """bide-hub-client is copied from bide-hub (packages/bide-hub-client/vendor.py): change it there, not here.
+    (Its own tests cover token checks and key refresh pacing.)"""
+    from bide_comply._vendor.bide_hub_client import integrity
 
-    assert hub.verify_logout_token(f.logout_token(sub="p"))["sub"] == "p"
-    assert len(fetches) == 1
+    assert integrity.check() == []
 
-    forged = JsonWebKey.generate_key("RSA", 2048, is_private=True)
-    for _ in range(5):  # a known kid with a bad signature: no refetch
-        with pytest.raises(hub.HubError):
-            hub.verify_logout_token(f.sign({"sub": "p"}, forged))
-    assert len(fetches) == 1
 
-    unknown = jwt.encode({"alg": "RS256", "kid": "rotated"}, {"sub": "p"}, forged).decode()
-    for _ in range(5):  # an unknown kid: one refetch, then none for a minute
-        with pytest.raises(hub.HubError):
-            hub.verify_logout_token(unknown)
-    assert len(fetches) == 2
+def test_backchannel_logout_when_the_hubs_keys_cant_be_fetched_is_retried_later(app, fake, monkeypatch):
+    """Not a 400 (which says "bad token"): the Hub keeps retrying anything that isn't a 2xx."""
+    monkeypatch.setattr(fake, "handler", lambda request: httpx.Response(503))
+    down = fake.client(now=lambda: clock.now().timestamp())
+    monkeypatch.setattr(hub, "client", lambda: down)
+    r = TestClient(app).post("/api/auth/bide/backchannel-logout", data={"logout_token": fake.logout_token(sub="p")})
+    assert r.status_code == 503

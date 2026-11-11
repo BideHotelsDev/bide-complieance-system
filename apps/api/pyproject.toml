@@ -17,6 +17,7 @@ dependencies = [
     "psycopg[binary]>=3.2",
     "pydantic-settings>=2.10",
     "pydantic[email]>=2.11",
+    "pyjwt[crypto]>=2.10",
     "pyotp>=2.9",
     "python-dateutil>=2.9",
     "python-multipart>=0.0.20",
@@ -46,6 +47,8 @@ packages = ["bide_comply"]
 [tool.ruff]
 line-length = 120
 target-version = "py312"
+# Vendored code (bide-hub-client) is linted and formatted where it lives, in bide-hub; a test checks the copy is unedited.
+extend-exclude = ["bide_comply/_vendor"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "S", "SIM"]
