@@ -151,13 +151,14 @@ class TestOffline:
         pam = login(PAM, "field")
         t = task_named(login, "Emergency lighting")
         assert t["class"] == "A"
+        taken = clock.now() - timedelta(minutes=20)
         r = pam.post(
             f"/api/field/tasks/{t['task_id']}/submit",
             json={
                 "values": answers(t["form"]),
                 "photos": photos_for(pam, t),
                 "captured_offline": True,
-                "device_time": (clock.now() - timedelta(minutes=20)).isoformat(),
+                "device_time": taken.isoformat(),
             },
         )
         assert r.status_code == 200, r.text
@@ -167,14 +168,14 @@ class TestOffline:
         rows = [row for g in pam.get("/api/field/history").json()["groups"] for row in g["rows"]]
         row = next(row for row in rows if row["id"] == r.json()["submission_id"])
         assert row["status"] == "Sent" and "captured offline" in row["detail"]
-        # The register row moved: last done is today.
+        # The register row moved: last done is the day it was captured (yesterday, just after midnight).
         with engine.connect() as c:
             last = c.execute(
                 select(register_item.c.last_done_on)
                 .join(task, task.c.register_item_id == register_item.c.id)
                 .where(task.c.id == uuid.UUID(t["task_id"]))
             ).scalar()
-        assert last == clock.today()
+        assert last == clock.london(taken).date()
 
 
 class TestReport:

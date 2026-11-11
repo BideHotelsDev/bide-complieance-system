@@ -2,11 +2,12 @@
 and Actions; their report and fix photos wait for a site manager's check in Evidence review before they count."""
 
 import uuid
+from datetime import timedelta
 
 import pytest
 from sqlalchemy import select
 
-from bide_comply import emailer
+from bide_comply import clock, emailer
 from bide_comply.db import engine
 from bide_comply.schema import action, action_evidence, audit_event, contractor, contractor_visit, evidence
 
@@ -50,7 +51,11 @@ def north(app, login):
         prop = c.execute(select(contractor_visit.c.property_id).limit(1)).scalar()
         c.execute(
             contractor_visit.insert().values(
-                id=vid, contractor_id=cid, property_id=prop, visit_on="2026-11-20", purpose="Fire door survey"
+                id=vid,
+                contractor_id=cid,
+                property_id=prop,
+                visit_on=clock.today() + timedelta(days=9),
+                purpose="Fire door survey",
             )
         )
     r = login(SAM).post(

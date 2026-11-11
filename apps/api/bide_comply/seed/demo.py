@@ -1455,7 +1455,7 @@ def run(conn: Connection) -> None:
             id=uuid.uuid4(),
             contractor_id=nova,
             property_id=props["TV"],
-            visit_on=D("2026-10-27"),
+            visit_on=today - timedelta(days=3),  # visited, report due
             purpose="Bedhead sound test (TV-006)",
         )
     )
@@ -1464,7 +1464,7 @@ def run(conn: Connection) -> None:
             id=uuid.uuid4(),
             contractor_id=nova,
             property_id=props["TM"],
-            visit_on=D("2026-11-12"),
+            visit_on=today + timedelta(days=14),  # booked, a fortnight out
             purpose="Emergency lighting test",
         )
     )
