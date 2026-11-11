@@ -560,38 +560,26 @@ def bide_login(app: str = "web", next: str | None = None) -> RedirectResponse:  
     if not settings.bide_hub_on:
         raise HTTPException(404, detail={"code": "not_found", "message": "Not found."})
     app = "field" if app == "field" else "web"
-    verifier = secrets.token_urlsafe(64)
-    challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode()
-    state = secrets.token_urlsafe(24)
-    nonce = secrets.token_urlsafe(24)
     try:
-        url = hub.authorize_url(
-            response_type="code",
-            client_id=settings.bide_hub_client_id,
-            redirect_uri=_bide_redirect_uri(app),
-            scope="openid email profile",
-            state=state,
-            nonce=nonce,
-            code_challenge=challenge,
-            code_challenge_method="S256",
-        )
+        url, pending = hub.client().start_login(_bide_redirect_uri(app))
     except hub.HubError:
         return _signin_error(app, "hub")
     resp = RedirectResponse(url, status_code=302)
-    tok = _serializer("bide").dumps({"v": verifier, "s": state, "n": nonce, "a": app, "x": _safe_next(next)})
+    tok = _serializer("bide").dumps({"p": pending.to_dict(), "a": app, "x": _safe_next(next)})
     _cookie(resp, BIDE_COOKIE, tok, 600, path="/api/auth/bide")
     return resp
 
 
-def _hub_person(conn: Connection, claims: dict) -> dict:
+def _hub_person(conn: Connection, identity: hub.Identity) -> dict:
     """The Bide Hub sub first, then the email, which links the sub for next time. Linking by email needs the Hub to say
-    the address is verified (email_verified true), so an unverified address can't claim someone's account.
-    Bide Comply is invite-only: someone who isn't in Settings › People is refused, as with Google."""
-    sub, email = str(claims["sub"]), str(claims["email"]).strip().lower()
+    the address is verified (identity.email is only set then), so an unverified address can't claim someone's account;
+    someone already linked by sub needs no email at all. Bide Comply is invite-only: someone who isn't in Settings ›
+    People is refused, as with Google."""
+    sub, email = identity.sub, identity.email
     p = conn.execute(select(person).where(person.c.bide_hub_sub == sub)).mappings().first()
     if p:
         return dict(p)
-    if claims.get("email_verified") is not True:
+    if email is None:
         raise HTTPException(403, detail={"code": "unverified", "message": "Sign-in failed."})
     p = conn.execute(select(person).where(func.lower(person.c.email) == email)).mappings().first()
     if not p:
@@ -617,21 +605,23 @@ def bide_callback(
         pk = _serializer("bide").loads(request.cookies.get(BIDE_COOKIE, ""), max_age=600)
     except BadSignature:
         return _signin_error(_app_from_origin(request), "state")
-    app = pk["a"]
-    if not state or not hmac.compare_digest(pk["s"], state):
-        return _signin_error(app, "state")
-    if error or not code:
-        # access_denied: the Hub says this person may not open Bide Comply. login_required and the rest: try again.
-        return _signin_error(app, "denied" if error == "access_denied" else "hub")
+    app = pk.get("a", "web")
+    pending = hub.PendingLogin.from_dict(pk.get("p"))
     try:
-        tokens = hub.exchange_code(code, _bide_redirect_uri(app), pk["v"])
-        claims = hub.verify_id_token(tokens["id_token"], pk["n"])
+        identity = hub.client().finish_login(pending, _bide_redirect_uri(app), state, code, error)
+    except hub.StateMismatch:
+        # The state matched but no code came back (and no error): the Hub went wrong, not the browser.
+        matched = pending is not None and bool(state) and hub.same(state, pending.state)
+        return _signin_error(app, "hub" if matched else "state")
+    except hub.HubDenied as exc:
+        # access_denied: the Hub says this person may not open Bide Comply. login_required and the rest: try again.
+        return _signin_error(app, "denied" if exc.error == "access_denied" else "hub")
     except hub.HubError:
         return _signin_error(app, "hub")
     resp = RedirectResponse(_app_base(app), status_code=302)
     try:
-        p = _hub_person(conn, claims)
-        result = establish(conn, request, resp, p, app, pk["x"], "Bide Hub", hub_sid=claims.get("sid"))
+        p = _hub_person(conn, identity)
+        result = establish(conn, request, resp, p, app, pk["x"], "Bide Hub", hub_sid=identity.sid)
     except HTTPException as e:
         return _signin_error(app, e.detail["code"] if isinstance(e.detail, dict) else "hub")
     resp.headers["location"] = _app_base(app) + result["next"]
@@ -650,28 +640,27 @@ def bide_backchannel_logout(conn: ConnDep, logout_token: Annotated[str, Form()] 
     if not settings.bide_hub_on:
         raise HTTPException(404, detail={"code": "not_found", "message": "Not found."})
     try:
-        claims = hub.verify_logout_token(logout_token)
-    except hub.HubError:
+        logout = hub.client().verify_logout_token(logout_token)
+    except hub.InvalidToken:
         raise HTTPException(400, detail={"code": "invalid_request", "message": "Not a valid logout token."}) from None
+    except hub.HubError:  # the Hub's keys couldn't be fetched: not a 2xx, so the Hub tries again later
+        raise HTTPException(503, detail={"code": "unavailable", "message": "Couldn't check the token."}) from None
     now = clock.now()
-    try:
-        # When the sign-out really happened: the Hub retries for up to 30 days, each time with a new iat.
-        logout_at = min(datetime.fromtimestamp(float(claims["logout_at"]), UTC), now)
-    except (KeyError, TypeError, ValueError, OverflowError, OSError):
-        logout_at = now
+    # When the sign-out really happened (the Hub retries for up to 30 days, each time with a new iat), never after now.
+    logout_at = logout.logout_at
     live = auth_session.c.revoked_at.is_(None)
-    if claims.get("sid"):
-        which = auth_session.c.hub_sid == str(claims["sid"])
+    if logout.sid:
+        which = auth_session.c.hub_sid == logout.sid
     else:
-        pid = conn.execute(select(person.c.id).where(person.c.bide_hub_sub == str(claims["sub"]))).scalar()
+        pid = conn.execute(select(person.c.id).where(person.c.bide_hub_sub == logout.sub)).scalar()
         # Only sessions started before the sign-out: a late delivery mustn't end ones started since.
         which = (auth_session.c.person_id == pid) & (auth_session.c.created_at <= logout_at)
     # Kept for sign-ins still on their device-code or authenticator step (_hub_signed_out).
     conn.execute(hub_logout.delete().where(hub_logout.c.created_at < now - timedelta(days=1)))
     conn.execute(
         hub_logout.insert().values(
-            sid=str(claims["sid"]) if claims.get("sid") else None,
-            sub=None if claims.get("sid") else str(claims["sub"]),
+            sid=logout.sid,
+            sub=None if logout.sid else logout.sub,
             logout_at=logout_at,
         )
     )
@@ -692,8 +681,8 @@ def bide_backchannel_logout(conn: ConnDep, logout_token: Annotated[str, Form()] 
             entity_type="person",
             entity_id=pid,
         )
-    if hub.ACCOUNT_DISABLED_EVENT in claims["events"] and claims.get("sub"):
-        _hub_switch_off(conn, str(claims["sub"]))
+    if logout.disabled:
+        _hub_switch_off(conn, logout.sub)
     return Response(status_code=200, headers={"Cache-Control": "no-store"})
 
 

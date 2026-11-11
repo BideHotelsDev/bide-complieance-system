@@ -1,0 +1,13 @@
+{
+  "package": "bide-hub-client",
+  "version": "0.1.2",
+  "source": "27255bd",
+  "files": {
+    "__init__.py": "607d6511e9e9a04bad2760d717c77af2a7eed70563c5e5434eca02864911e293",
+    "client.py": "3d547e11c73cc9cac92a73222bfc311ed86f54a58fe3f0c09f6058bf53dd0d5f",
+    "errors.py": "355beb676a65e1fcf03265ac041eb7864113a4dc9a8657d61b8f65070962a559",
+    "integrity.py": "ae95f6cc5d79d45fcbe3bba4dc1aaaef9549f19a078dbac5f9f4eb25d11c25f5",
+    "models.py": "da756b6f3d1cac7bd5e7ae3c79f6c931363e455c4fc594779fc9e3bfe1080eaa",
+    "testing.py": "246324c1559947f549947e823b85e25400251037dfeedcf2864ef99184eef273"
+  }
+}
