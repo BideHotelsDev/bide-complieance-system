@@ -161,7 +161,7 @@ def test_off_unless_all_three_are_set(app, monkeypatch):
     monkeypatch.setattr(settings, "bide_hub_issuer", ISSUER)
     monkeypatch.setattr(settings, "bide_hub_client_id", CLIENT_ID)  # no secret
     c = TestClient(app)
-    assert c.get("/api/auth/bide").json() == {"enabled": False, "issuer": None}
+    assert c.get("/api/auth/bide").json() == {"enabled": False, "issuer": None, "accounts_managed": False}
     assert c.get("/api/auth/bide/login", follow_redirects=False).status_code == 404
     assert c.get("/api/auth/bide/callback", params={"code": "a", "state": "b"}).status_code == 404
     assert c.post("/api/auth/bide/backchannel-logout", data={"logout_token": "x"}).status_code == 404
@@ -194,7 +194,7 @@ def test_happy_path_device_code_then_session_with_hub_sid(app, fake):
     p = _person()
     c = TestClient(app)
     c.headers.update({"X-Requested-With": "bide-comply"})
-    assert c.get("/api/auth/bide").json() == {"enabled": True, "issuer": ISSUER}
+    assert c.get("/api/auth/bide").json() == {"enabled": True, "issuer": ISSUER, "accounts_managed": False}
     q = _start(c, fake, "web", "/actions")
     assert q["client_id"] == CLIENT_ID
     assert q["redirect_uri"] == f"{WEB}/api/auth/bide/callback"

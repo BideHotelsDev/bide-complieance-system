@@ -552,7 +552,13 @@ def _signin_error(app: str, code: str) -> RedirectResponse:
 @router.get("/bide")
 def bide_state() -> dict:
     """Whether the sign-in pages show Sign in with Bide, and the Hub the app switcher loads from."""
-    return {"enabled": settings.bide_hub_on, "issuer": hub.issuer() if settings.bide_hub_on else None}
+    return {
+        "enabled": settings.bide_hub_on,
+        "issuer": hub.issuer() if settings.bide_hub_on else None,
+        # The Hub decides which staff have access and their staff roles (hub_accounts.py): Settings › People is
+        # read-only for those.
+        "accounts_managed": settings.accounts_managed_by_hub,
+    }
 
 
 @router.get("/bide/login")

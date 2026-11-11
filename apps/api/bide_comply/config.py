@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     bide_hub_issuer: str = ""
     bide_hub_client_id: str = ""
     bide_hub_client_secret: str = ""
+    # With Sign in with Bide on, also let the Hub manage which staff have access and their staff roles. Off until an
+    # operator turns it on; then the Hub imports the staff first. Outside people stay managed here.
+    bide_hub_manages_accounts: bool = False
     # Local development and demos only: sign in as any seeded person without Google. Refused in production.
     dev_login: bool = False
     # First Super Admins for a new install, as "Name <email>, email". Used at start-up only while nobody is a
@@ -102,6 +105,11 @@ class Settings(BaseSettings):
     @property
     def bide_hub_on(self) -> bool:
         return bool(self.bide_hub_issuer and self.bide_hub_client_id and self.bide_hub_client_secret)
+
+    @property
+    def accounts_managed_by_hub(self) -> bool:
+        """The Hub also decides which staff have access and with which staff roles (hub_accounts.py)."""
+        return self.bide_hub_on and self.bide_hub_manages_accounts
 
     @property
     def is_production(self) -> bool:

@@ -287,6 +287,25 @@ def _active_super_admins(conn, other_than: uuid.UUID | None = None) -> int:
     return conn.execute(q).scalar() or 0
 
 
+def _hub_owns(conn, person_id: uuid.UUID | None, role: str | None = None) -> None:
+    """While Bide Hub manages staff access, a staff member's staff roles (and whether they're here at all) are set
+    there. Outside people, and the roles the Hub doesn't give (Dutyholder, Competent assessor, Contractor), stay here."""
+    from bide_comply import hub_accounts
+
+    if not hub_accounts.managed() or (role is not None and role not in hub_accounts.HUB_ROLES):
+        return
+    kind = (
+        "staff" if person_id is None else conn.execute(select(person.c.kind).where(person.c.id == person_id)).scalar()
+    )
+    if kind == "staff":
+        raise problem(
+            409,
+            "managed_by_hub",
+            "Staff access and staff roles are set in Bide Hub now (Admin → People there). Outside people and the "
+            "Dutyholder, Competent assessor and Contractor roles are still set here.",
+        )
+
+
 def _may_change_role(pr: Principal, person_id: uuid.UUID, role: str) -> None:
     """Who may give or take away a role (no self-escalation). Nobody changes their own roles. A Super Admin may change
     any role; only a Super Admin may give or take away Super Admin or System owner. The other admin roles can only be
@@ -301,11 +320,30 @@ def _may_change_role(pr: Principal, person_id: uuid.UUID, role: str) -> None:
         raise problem(403, "forbidden", f"Only someone who is {ROLES[role]} can change who has that role.")
 
 
+def require_training(conn, person_id: uuid.UUID, role: str) -> None:
+    """Required training follows the role (DOC-03): a "missing" requirement for each type the role needs."""
+    for t in conn.execute(
+        select(staff_requirement_type).where(staff_requirement_type.c.roles.contains([role]))
+    ).mappings():
+        exists = conn.execute(
+            select(staff_requirement.c.id).where(
+                staff_requirement.c.person_id == person_id, staff_requirement.c.type_id == t["id"]
+            )
+        ).first()
+        if not exists:
+            conn.execute(
+                staff_requirement.insert().values(
+                    id=uuid.uuid4(), person_id=person_id, type_id=t["id"], status="missing"
+                )
+            )
+
+
 @router.post("/{person_id}/roles")
 def add_role(person_id: uuid.UUID, body: RoleIn, request: Request, pr: Current, conn: ConnDep) -> dict:
     pr.require("people.manage")
     if body.role not in ROLES:
         raise problem(422, "role", "Unknown role.")
+    _hub_owns(conn, person_id, body.role)
     _may_change_role(pr, person_id, body.role)
     if not conn.execute(select(person.c.id).where(person.c.id == person_id)).first():
         raise problem(404, "not_found", "Not found.")
@@ -325,21 +363,7 @@ def add_role(person_id: uuid.UUID, body: RoleIn, request: Request, pr: Current, 
             id=uuid.uuid4(), person_id=person_id, role=body.role, property_id=body.property_id
         )
     )
-    # Required training follows the role (DOC-03).
-    for t in conn.execute(
-        select(staff_requirement_type).where(staff_requirement_type.c.roles.contains([body.role]))
-    ).mappings():
-        exists = conn.execute(
-            select(staff_requirement.c.id).where(
-                staff_requirement.c.person_id == person_id, staff_requirement.c.type_id == t["id"]
-            )
-        ).first()
-        if not exists:
-            conn.execute(
-                staff_requirement.insert().values(
-                    id=uuid.uuid4(), person_id=person_id, type_id=t["id"], status="missing"
-                )
-            )
+    require_training(conn, person_id, body.role)
     audit.record(
         conn,
         actor_for(request, pr),
@@ -366,6 +390,7 @@ def remove_role(person_id: uuid.UUID, role_id: uuid.UUID, request: Request, pr: 
     )
     if not r:
         raise problem(404, "not_found", "Not found.")
+    _hub_owns(conn, person_id, r["role"])
     _may_change_role(pr, person_id, r["role"])
     if r["role"] == "super_admin" and _active_super_admins(conn, other_than=person_id) == 0:
         raise problem(409, "last_admin", "There must always be at least one Super Admin.")
@@ -396,6 +421,8 @@ class InviteIn(BaseModel):
 @router.post("")
 def invite(body: InviteIn, request: Request, pr: Current, conn: ConnDep) -> dict:
     pr.require("people.manage")
+    if body.kind == "staff":
+        _hub_owns(conn, None)
     email = body.email.lower()
     if conn.execute(select(person.c.id).where(person.c.email == email)).first():
         raise problem(409, "exists", "Someone with that email is already set up.")
@@ -483,6 +510,7 @@ def offboard(person_id: uuid.UUID, request: Request, pr: Current, conn: ConnDep)
     p = conn.execute(select(person).where(person.c.id == person_id)).mappings().first()
     if not p:
         raise problem(404, "not_found", "Not found.")
+    _hub_owns(conn, person_id)
     # Offboarding takes away every role they hold, so the same rules as taking each one away (no going over someone's head).
     held = set(conn.execute(select(role_assignment.c.role).where(role_assignment.c.person_id == person_id)).scalars())
     for role in held:

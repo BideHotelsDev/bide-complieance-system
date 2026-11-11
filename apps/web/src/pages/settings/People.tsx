@@ -105,6 +105,8 @@ export function PeoplePage() {
     placeholderData: (prev) => prev,
   })
   const [inviting, setInviting] = React.useState(false)
+  // While Bide Hub manages staff access, staff come from the Hub, not from a Google directory sync.
+  const hubManaged = useBideHub().data?.accounts_managed ?? false
   const sync = useMutation({
     mutationFn: () => api.post<{ message?: string }>("/api/people/sync-google"),
     onSuccess: (r) => toast(r.message ?? "Synced from Google Workspace."),
@@ -124,10 +126,12 @@ export function PeoplePage() {
           actions={
             canManage && (
               <>
-                <Button variant="outline" disabled={sync.isPending} onClick={() => sync.mutate()}>
-                  <RefreshCw className={cn(sync.isPending && "animate-spin")} aria-hidden />
-                  Sync from Google
-                </Button>
+                {!hubManaged && (
+                  <Button variant="outline" disabled={sync.isPending} onClick={() => sync.mutate()}>
+                    <RefreshCw className={cn(sync.isPending && "animate-spin")} aria-hidden />
+                    Sync from Google
+                  </Button>
+                )}
                 <Button onClick={() => setInviting(true)}>Invite someone</Button>
               </>
             )
@@ -300,12 +304,16 @@ const REQ_TONE: Record<string, Tone> = {
   pending: "blue",
 }
 
+/* The roles Bide Hub gives staff while it manages staff access (the API's hub_accounts.HUB_ROLES). */
+const HUB_ROLES = ["super_admin", "system_owner", "register_keeper", "systems", "site_lead", "keyholder", "staff"]
+
 function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
   const qc = useQueryClient()
   const me = useMe()
   const q = useQuery({ queryKey: ["person", id], queryFn: () => api.get<Detail>(`/api/people/${id}`) })
   const [offboarding, setOffboarding] = React.useState(false)
   const [covering, setCovering] = React.useState(false)
+  const hubManaged = useBideHub().data?.accounts_managed ?? false
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: ["person", id] })
     void qc.invalidateQueries({ queryKey: ["people"] })
@@ -351,7 +359,13 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
       footer={
         d &&
         manage &&
-        !isMe && (
+        !isMe &&
+        (hubManaged && d.kind === "staff" ? (
+          <p className="m-0 text-xs text-muted-foreground">
+            Whether {d.first_name} has access, and their staff roles, are set in Bide Hub. Taking their access away
+            there offboards them here.
+          </p>
+        ) : (
           <div className="flex w-full flex-col gap-2">
             <Button
               variant="outline"
@@ -365,7 +379,7 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
               past records stay.
             </p>
           </div>
-        )
+        ))
       }
     >
       {q.error ? (
@@ -383,7 +397,7 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
                   <span className="font-medium">{r.label}</span>{" "}
                   <span className="text-muted-foreground">at {r.property}</span>
                 </span>
-                {manage && (
+                {manage && !(hubManaged && d.kind === "staff" && HUB_ROLES.includes(r.role)) && (
                   <button
                     type="button"
                     disabled={removeRole.isPending}
@@ -396,7 +410,12 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
                 )}
               </div>
             ))}
-            {manage && <AddRole personId={id} onDone={refresh} />}
+            {manage && hubManaged && d.kind === "staff" && (
+              <p className="m-0 text-xs text-muted-foreground">
+                Staff roles are set in Bide Hub. Dutyholder, Competent assessor and Contractor are still added here.
+              </p>
+            )}
+            {manage && <AddRole personId={id} onDone={refresh} hubRolesElsewhere={hubManaged && d.kind === "staff"} />}
           </section>
 
           <section className="flex flex-col gap-1">
@@ -471,10 +490,24 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
   )
 }
 
-function AddRole({ personId, onDone }: { personId: string; onDone: () => void }) {
+function AddRole({
+  personId,
+  onDone,
+  hubRolesElsewhere = false,
+}: {
+  personId: string
+  onDone: () => void
+  /** Bide Hub gives this person's staff roles: only offer the others. */
+  hubRolesElsewhere?: boolean
+}) {
   const me = useMe()
   const [open, setOpen] = React.useState(false)
-  const [role, setRole] = React.useState("staff")
+  const offered = ROLES.filter(
+    (r) =>
+      (r.key !== "super_admin" || me.data?.roles.includes("super_admin")) &&
+      !(hubRolesElsewhere && HUB_ROLES.includes(r.key)),
+  )
+  const [role, setRole] = React.useState(offered[0]?.key ?? "staff")
   const props = me.data?.properties ?? []
   const [picked, setProp] = React.useState("")
   const prop = picked || props[0]?.id || ""
@@ -501,12 +534,7 @@ function AddRole({ personId, onDone }: { personId: string; onDone: () => void })
             id="ar-role"
             value={role}
             onChange={(e) => setRole(e.target.value)}
-            options={ROLES.filter((r) => r.key !== "super_admin" || me.data?.roles.includes("super_admin")).map(
-              (r) => ({
-                value: r.key,
-                label: r.label,
-              }),
-            )}
+            options={offered.map((r) => ({ value: r.key, label: r.label }))}
           />
         </Labeled>
         <Labeled label="Where" htmlFor="ar-prop" hint={group ? "Group roles cover every property." : undefined}>
@@ -689,7 +717,9 @@ function InviteDialog({ onClose, onDone }: { onClose: () => void; onDone: (id: s
   const [email, setEmail] = React.useState("")
   const [title, setTitle] = React.useState("")
   const [role, setRole] = React.useState("staff")
-  const [kind, setKind] = React.useState<"staff" | "external">("staff")
+  const hubManaged = useBideHub().data?.accounts_managed ?? false
+  // While Bide Hub manages staff access, staff are added there: only outside people are invited here.
+  const [kind, setKind] = React.useState<"staff" | "external">(hubManaged ? "external" : "staff")
   const [prop, setProp] = React.useState(props[0]?.id ?? "")
   const bide = useBideHub().data?.enabled ?? false
   const how =
@@ -774,7 +804,14 @@ function InviteDialog({ onClose, onDone }: { onClose: () => void; onDone: (id: s
           value={kind}
           onChange={(e) => setKind(e.target.value as "staff" | "external")}
           options={[
-            { value: "staff", label: bide ? "Bide staff (signs in with Bide)" : "Bide staff (signs in with Google)" },
+            ...(hubManaged
+              ? []
+              : [
+                  {
+                    value: "staff",
+                    label: bide ? "Bide staff (signs in with Bide)" : "Bide staff (signs in with Google)",
+                  },
+                ]),
             { value: "external", label: "Outside person (signs in with an emailed link)" },
           ]}
         />

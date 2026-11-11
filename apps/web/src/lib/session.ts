@@ -55,11 +55,12 @@ export function navFor(me: Me) {
   }
 }
 
-/* Sign in with Bide (Bide Hub single sign-on). Off unless the API has BIDE_HUB_* set. */
+/* Sign in with Bide (Bide Hub single sign-on). Off unless the API has BIDE_HUB_* set. accounts_managed: the Hub also
+   decides which staff have access and their staff roles (Settings › People is read-only for those). */
 export function useBideHub() {
   return useQuery({
     queryKey: ["bide-hub"],
-    queryFn: () => api.get<{ enabled: boolean; issuer: string | null }>("/api/auth/bide"),
+    queryFn: () => api.get<{ enabled: boolean; issuer: string | null; accounts_managed?: boolean }>("/api/auth/bide"),
     staleTime: Infinity,
     retry: false,
   })
