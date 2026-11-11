@@ -341,9 +341,9 @@ export function Field({
 }
 
 export const inputCls =
-  "h-9 w-full rounded-lg border border-border bg-surface px-3 text-[14px] text-foreground outline-none placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-focus"
+  "h-9 w-full rounded-lg border border-border bg-surface px-3 text-[14px] text-foreground coarse:h-10 coarse:text-base outline-none placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-focus"
 export const textareaCls =
-  "w-full resize-y rounded-lg border border-border bg-surface px-3 py-2 text-[13.5px] text-foreground outline-none placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-focus"
+  "w-full resize-y rounded-lg border border-border bg-surface px-3 py-2 text-[13.5px] text-foreground coarse:text-base outline-none placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-focus"
 
 export function Note({
   icon,
