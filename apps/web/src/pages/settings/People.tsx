@@ -105,6 +105,8 @@ export function PeoplePage() {
     placeholderData: (prev) => prev,
   })
   const [inviting, setInviting] = React.useState(false)
+  // While Bide Hub manages staff access, staff come from the Hub, not from a Google directory sync.
+  const hubManaged = useBideHub().data?.accounts_managed ?? false
   const sync = useMutation({
     mutationFn: () => api.post<{ message?: string }>("/api/people/sync-google"),
     onSuccess: (r) => toast(r.message ?? "Synced from Google Workspace."),
@@ -124,10 +126,12 @@ export function PeoplePage() {
           actions={
             canManage && (
               <>
-                <Button variant="outline" disabled={sync.isPending} onClick={() => sync.mutate()}>
-                  <RefreshCw className={cn(sync.isPending && "animate-spin")} aria-hidden />
-                  Sync from Google
-                </Button>
+                {!hubManaged && (
+                  <Button variant="outline" disabled={sync.isPending} onClick={() => sync.mutate()}>
+                    <RefreshCw className={cn(sync.isPending && "animate-spin")} aria-hidden />
+                    Sync from Google
+                  </Button>
+                )}
                 <Button onClick={() => setInviting(true)}>Invite someone</Button>
               </>
             )
