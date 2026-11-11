@@ -486,8 +486,10 @@ def test_backchannel_logout_by_sub_ends_every_session(app, fake):
         {"nonce": "n"},
         {"aud": "linen-tracker"},
         {"sid": None, "sub": None},
+        {"exp": None},
+        {"iat": None},
     ],
-    ids=["no-event", "nonce", "aud", "nobody"],
+    ids=["no-event", "nonce", "aud", "nobody", "no-exp", "no-iat"],
 )
 def test_backchannel_logout_refuses_bad_tokens(app, fake, claims):
     p = _person()
@@ -704,3 +706,30 @@ def test_subject_access_export_leaves_out_the_hub_id(app, fake):
     data = json.loads(zipfile.ZipFile(io.BytesIO(r.content)).read("data.json"))
     assert data["person"]["email"] == p["email"]
     assert "bide_hub_sub" not in data["person"] and p["sub"] not in r.content.decode("latin-1")
+
+
+def test_jwks_is_fetched_again_only_for_an_unknown_key_and_at_most_once_a_minute(monkeypatch):
+    """Anyone can post tokens to the back-channel address: a bad one must not make the app call the Hub each time."""
+    f = FakeHub()
+    monkeypatch.setattr(settings, "bide_hub_issuer", ISSUER)
+    monkeypatch.setattr(settings, "bide_hub_client_id", CLIENT_ID)
+    monkeypatch.setattr(hub, "discovery", lambda: {"jwks_uri": f"{ISSUER}/oauth/jwks"})
+    fetches = []
+    monkeypatch.setattr(hub, "_get_json", lambda url: fetches.append(url) or f.jwks)
+    monkeypatch.setattr(hub, "_cache", {})
+    monkeypatch.setattr(hub, "_jwks_refreshed_at", [float("-inf")])
+
+    assert hub.verify_logout_token(f.logout_token(sub="p"))["sub"] == "p"
+    assert len(fetches) == 1
+
+    forged = JsonWebKey.generate_key("RSA", 2048, is_private=True)
+    for _ in range(5):  # a known kid with a bad signature: no refetch
+        with pytest.raises(hub.HubError):
+            hub.verify_logout_token(f.sign({"sub": "p"}, forged))
+    assert len(fetches) == 1
+
+    unknown = jwt.encode({"alg": "RS256", "kid": "rotated"}, {"sub": "p"}, forged).decode()
+    for _ in range(5):  # an unknown kid: one refetch, then none for a minute
+        with pytest.raises(hub.HubError):
+            hub.verify_logout_token(unknown)
+    assert len(fetches) == 2

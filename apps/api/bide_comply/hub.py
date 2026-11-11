@@ -5,7 +5,9 @@ and whether they may open bide Comply; everything after that (device code, authe
 in auth.py. This module only talks to the Hub: discovery, token exchange and checking the tokens it signs.
 """
 
+import base64
 import hmac
+import json
 import time
 from collections.abc import Callable
 from typing import Any
@@ -24,6 +26,8 @@ ACCOUNT_DISABLED_EVENT = "urn:bide:hub:account-disabled"
 _jwt = JsonWebToken(["RS256"])
 _CACHE_SECONDS = 3600
 _cache: dict[str, tuple[float, Any]] = {}
+_REFRESH_SECONDS = 60
+_jwks_refreshed_at = [float("-inf")]  # when an unknown key id last made us fetch the JWKS again
 
 
 class HubError(Exception):
@@ -91,21 +95,43 @@ def exchange_code(code: str, redirect_uri: str, code_verifier: str) -> dict:
     return body
 
 
+def _kid(token: str) -> str | None:
+    """The key id in a token's header, read without verifying anything (it only picks which key to check against)."""
+    try:
+        header = json.loads(base64.urlsafe_b64decode(token.split(".", 1)[0] + "=="))
+    except (ValueError, IndexError):
+        return None
+    kid = header.get("kid") if isinstance(header, dict) else None
+    return kid if isinstance(kid, str) else None
+
+
+def _key_set(token: str) -> dict:
+    """The Hub's keys. Fetched again only when the token names a key the cached set doesn't have (the Hub rotated),
+    and at most once a minute, so tokens anyone can post to the back-channel address can't make the app hammer the
+    Hub."""
+    keys = jwks()
+    kid = _kid(token)
+    known = {k.get("kid") for k in keys.get("keys", []) if isinstance(k, dict)}
+    if kid and kid not in known and time.monotonic() - _jwks_refreshed_at[0] >= _REFRESH_SECONDS:
+        _jwks_refreshed_at[0] = time.monotonic()
+        keys = jwks(fresh=True)
+    return keys
+
+
 def _decode(token: str) -> dict:
-    """Signature, iss, aud and exp. A key the cached set doesn't know means the Hub rotated keys: fetch once more."""
-    claims = None
-    for fresh in (False, True):
-        try:
-            claims = _jwt.decode(token, JsonWebKey.import_key_set(jwks(fresh=fresh)))
-            break
-        except (JoseError, ValueError) as e:
-            if fresh:
-                raise HubError(f"Bide Hub token didn't verify: {e}") from e
-    assert claims is not None
+    """Signature, iss, aud, exp and iat (all required)."""
+    try:
+        claims = _jwt.decode(
+            token,
+            JsonWebKey.import_key_set(_key_set(token)),
+            claims_options={"exp": {"essential": True}, "iat": {"essential": True}},
+        )
+    except (JoseError, ValueError) as e:
+        raise HubError(f"Bide Hub token didn't verify: {e}") from e
     try:
         claims.validate(leeway=30)  # exp, iat, nbf
     except JoseError as e:
-        raise HubError(f"Bide Hub token has expired: {e}") from e
+        raise HubError(f"Bide Hub token has expired or lacks exp/iat: {e}") from e
     if claims.get("iss") != issuer():
         raise HubError("Bide Hub token is from another issuer")
     aud = claims.get("aud")
