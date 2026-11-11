@@ -34,6 +34,7 @@ The rules from the PRD that the code enforces, and where:
 | Permission matrix and separation of duties (§2, §9.3) | `authz.py`, tested in `tests/test_authz.py` |
 | Sign-in, device trust, rotating refresh tokens (§9.2) | `auth.py` |
 | Sign in with Bide (Bide Hub SSO) in place of Google; Hub sign-out ends the sessions it started | `hub.py`, `auth.py` |
+| Staff access and staff roles managed by Bide Hub (optional; outside people stay here) | `hub_accounts.py` |
 | Append-only hash-chained audit log (AUD-01) | `audit.py` and the migration's trigger |
 | Evidence integrity (§9.4) | `storage.py`, `services/evidence.py` |
 

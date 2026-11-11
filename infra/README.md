@@ -28,6 +28,11 @@ Before go-live (PRD §9, §13):
   `https://<app host>/api/auth/bide/callback` (portal and staff app share it), post-logout addresses
   `https://<app host>/` and `https://<app host>/app/`, and back-channel logout URI
   `https://<app host>/api/auth/bide/backchannel-logout`.
+- Staff access managed by the Hub (optional, after Sign in with Bide): also set `BIDE_HUB_MANAGES_ACCOUNTS=true`, then on
+  the Hub fill in "Accounts managed by the Hub" for `comply` with `https://<app host>/api/auth/bide/provisioning`. The
+  Hub imports today's staff and their staff roles first. From then on the Hub decides which staff have access and their
+  staff roles (the group roles, Site lead, Keyholder, Staff); taking access away there offboards the person here.
+  Outside people, and the Dutyholder, Competent assessor and Contractor roles, stay managed in Settings › People.
 - A DPIA, the staff privacy notice (Settings › Messages and wording), DPAs with every sub-processor.
 - Retention defaults signed off by David (Settings shows them; the categories are seeded in `seed/library.py`).
 - An independent penetration test, and a restore test recorded as a compliance task.

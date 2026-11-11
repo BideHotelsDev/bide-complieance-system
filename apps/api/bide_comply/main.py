@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from bide_comply import auth, ratelimit
+from bide_comply import auth, hub_accounts, ratelimit
 from bide_comply.api import (
     actions,
     admin,
@@ -127,6 +127,7 @@ for r in (
     admin.router,
     contractor_portal.router,
     contractor_portal.staff_router,
+    hub_accounts.router,
 ):
     app.include_router(r)
 
