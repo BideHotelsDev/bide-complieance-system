@@ -32,6 +32,7 @@ export function ActionDialog({
   footer,
   busy = false,
   className,
+  onSubmit,
 }: {
   open: boolean
   onOpenChange: (o: boolean) => void
@@ -41,7 +42,21 @@ export function ActionDialog({
   footer: React.ReactNode
   busy?: boolean
   className?: string
+  /** Makes the body and footer one form, so Enter in a field submits it: give the main button type="submit" and the
+   * others type="button". */
+  onSubmit?: () => void
 }) {
+  const body = (
+    <>
+      {/* The body scrolls and the buttons stay in view, however tall the form or small the screen. */}
+      {children && (
+        <div className="flex min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain px-5 pt-3 pb-5 text-[13.5px]">
+          {children}
+        </div>
+      )}
+      <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-divider px-5 py-3.5">{footer}</div>
+    </>
+  )
   return (
     <Dialog open={open} onOpenChange={(o) => !busy && onOpenChange(o)}>
       <DialogContent
@@ -59,13 +74,19 @@ export function ActionDialog({
             <DialogDescription className="sr-only">{typeof title === "string" ? title : "Dialog"}</DialogDescription>
           )}
         </div>
-        {/* The body scrolls and the buttons stay in view, however tall the form or small the screen. */}
-        {children && (
-          <div className="flex min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain px-5 pt-3 pb-5 text-[13.5px]">
-            {children}
-          </div>
+        {onSubmit ? (
+          <form
+            className="flex min-h-0 flex-col"
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (!busy) onSubmit()
+            }}
+          >
+            {body}
+          </form>
+        ) : (
+          body
         )}
-        <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-divider px-5 py-3.5">{footer}</div>
       </DialogContent>
     </Dialog>
   )
@@ -86,15 +107,49 @@ export function Labeled({
   className?: string
   htmlFor?: string
 }) {
+  const id = React.useId()
+  const noteId = `${id}-note`
+  const labelId = `${id}-label`
+  const note = error || hint ? noteId : undefined
+  // A field (htmlFor) gets the hint or error read out with it. Anything else (a picker, say) becomes a group named by
+  // the label, so the label isn't left pointing at nothing.
+  let field = children
+  if (
+    htmlFor &&
+    React.isValidElement<{ "aria-describedby"?: string; "aria-invalid"?: React.AriaAttributes["aria-invalid"] }>(
+      children,
+    )
+  ) {
+    const own = children.props
+    field = React.cloneElement(children, {
+      "aria-describedby": [own["aria-describedby"], note].filter(Boolean).join(" ") || undefined,
+      "aria-invalid": error ? true : own["aria-invalid"],
+    })
+  }
   return (
-    <div className={cn("flex min-w-0 flex-col gap-1.5", className)}>
-      <label htmlFor={htmlFor} className="text-[12.5px] font-medium text-ink2">
-        {label}
-      </label>
-      {children}
-      {hint && !error && <div className="text-xs text-muted-foreground">{hint}</div>}
+    <div
+      className={cn("flex min-w-0 flex-col gap-1.5", className)}
+      role={htmlFor ? undefined : "group"}
+      aria-labelledby={htmlFor ? undefined : labelId}
+      aria-describedby={htmlFor ? undefined : note}
+    >
+      {htmlFor ? (
+        <label htmlFor={htmlFor} className="text-[12.5px] font-medium text-ink2">
+          {label}
+        </label>
+      ) : (
+        <span id={labelId} className="text-[12.5px] font-medium text-ink2">
+          {label}
+        </span>
+      )}
+      {field}
+      {hint && !error && (
+        <div id={noteId} className="text-xs text-muted-foreground">
+          {hint}
+        </div>
+      )}
       {error && (
-        <div role="alert" className="text-xs text-st-red">
+        <div id={noteId} role="alert" className="text-xs text-st-red">
           {error}
         </div>
       )}
@@ -103,14 +158,14 @@ export function Labeled({
 }
 
 const control =
-  "h-8 w-full min-w-0 rounded-md border border-border bg-surface px-2.5 text-[13.5px] text-foreground outline-none focus-visible:outline-2 focus-visible:outline-focus disabled:opacity-60 aria-[invalid=true]:border-st-red"
+  "h-8 w-full min-w-0 rounded-md border border-border bg-surface px-2.5 text-[13.5px] text-foreground coarse:h-10 coarse:text-base outline-none focus-visible:outline-2 focus-visible:outline-focus disabled:opacity-60 aria-[invalid=true]:border-st-red"
 
 export function TextInput({ className, ...props }: React.ComponentProps<"input">) {
   return <input className={cn(control, className)} {...props} />
 }
 
 export function TextArea({ className, ...props }: React.ComponentProps<"textarea">) {
-  return <textarea className={cn(control, "h-auto min-h-[64px] py-1.5", className)} {...props} />
+  return <textarea className={cn(control, "h-auto min-h-[64px] py-1.5 coarse:h-auto", className)} {...props} />
 }
 
 export function NativeSelect({

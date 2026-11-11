@@ -106,7 +106,8 @@ export function PeoplePage() {
   })
   const [inviting, setInviting] = React.useState(false)
   // While Bide Hub manages staff access, staff come from the Hub, not from a Google directory sync.
-  const hubManaged = useBideHub().data?.accounts_managed ?? false
+  const hub = useBideHub().data
+  const hubManaged = hub?.accounts_managed ?? false
   const sync = useMutation({
     mutationFn: () => api.post<{ message?: string }>("/api/people/sync-google"),
     onSuccess: (r) => toast(r.message ?? "Synced from Google Workspace."),
@@ -165,6 +166,19 @@ export function PeoplePage() {
             </button>
           ))}
         </div>
+        {hubManaged && tab === "people" && (
+          <Callout tone="blue">
+            Bide Hub decides which staff have access to Bide Comply and their staff roles, so those are changed in{" "}
+            {hub?.issuer ? (
+              <a href={hub.issuer} target="_blank" rel="noreferrer" className="font-medium text-current underline">
+                Bide Hub
+              </a>
+            ) : (
+              "Bide Hub"
+            )}
+            . Outside people, and the Dutyholder and Competent assessor roles, are still managed here.
+          </Callout>
+        )}
         {tab === "people" && <PeopleTab q={people} />}
         {tab === "groups" && <GroupsTab canManage={canManage} />}
         {tab === "contractors" && <ContractorsTab canManage={canManage} />}
@@ -318,17 +332,29 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
     void qc.invalidateQueries({ queryKey: ["person", id] })
     void qc.invalidateQueries({ queryKey: ["people"] })
   }
+  const readdRole = useMutation({
+    mutationFn: (r: Detail["roles"][number]) =>
+      api.post(`/api/people/${id}/roles`, { role: r.role, property_id: r.property_id }),
+    onSuccess: (_x, r) => {
+      refresh()
+      toast(`Added ${r.label} at ${r.property} back.`)
+    },
+    onError: (e) => toastError(errMsg(e)),
+  })
   const removeRole = useMutation({
     mutationFn: (r: Detail["roles"][number]) => api.del(`/api/people/${id}/roles/${r.id}`),
     onSuccess: (_x, r) => {
       refresh()
-      toast(`Removed ${r.label} at ${r.property}`)
+      toast(`Removed ${r.label} at ${r.property}`, { action: { label: "Undo", onClick: () => readdRole.mutate(r) } })
     },
     onError: (e) => toastError(errMsg(e)),
   })
+  // Signing out a device can't be undone, so it asks first, on the device's own row.
+  const [confirmDevice, setConfirmDevice] = React.useState<string | null>(null)
   const revoke = useMutation({
     mutationFn: (deviceId: string) => api.post(`/api/people/${id}/devices/${deviceId}/revoke`),
     onSuccess: () => {
+      setConfirmDevice(null)
       refresh()
       toast("Signed out that device. They'll need to sign in again on it.")
     },
@@ -391,28 +417,35 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
           <section className="flex flex-col gap-2">
             <h3 className="m-0 text-[12.5px] font-medium text-ink2">Roles</h3>
             {d.roles.length === 0 && <p className="m-0 text-[13px] text-muted-foreground">No roles yet.</p>}
-            {d.roles.map((r) => (
-              <div key={r.id} className="flex items-center gap-2 rounded-lg border border-divider px-3 py-2.5">
-                <span className="min-w-0 flex-1 text-[13.5px]">
-                  <span className="font-medium">{r.label}</span>{" "}
-                  <span className="text-muted-foreground">at {r.property}</span>
-                </span>
-                {manage && !(hubManaged && d.kind === "staff" && HUB_ROLES.includes(r.role)) && (
-                  <button
-                    type="button"
-                    disabled={removeRole.isPending}
-                    onClick={() => removeRole.mutate(r)}
-                    className="text-[13px] text-link hover:underline"
-                    aria-label={`Remove ${r.label} at ${r.property}`}
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-            ))}
+            {d.roles.map((r) => {
+              const fromHub = hubManaged && d.kind === "staff" && HUB_ROLES.includes(r.role)
+              return (
+                <div key={r.id} className="flex items-center gap-2 rounded-lg border border-divider px-3 py-2.5">
+                  <span className="min-w-0 flex-1 text-[13.5px]">
+                    <span className="font-medium">{r.label}</span>{" "}
+                    <span className="text-muted-foreground">at {r.property}</span>
+                  </span>
+                  {fromHub ? (
+                    <Pill tone="grey">Set in Bide Hub</Pill>
+                  ) : (
+                    manage && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={removeRole.isPending && removeRole.variables?.id === r.id}
+                        onClick={() => removeRole.mutate(r)}
+                        aria-label={`Remove ${r.label} at ${r.property}`}
+                      >
+                        Remove
+                      </Button>
+                    )
+                  )}
+                </div>
+              )
+            })}
             {manage && hubManaged && d.kind === "staff" && (
               <p className="m-0 text-xs text-muted-foreground">
-                Staff roles are set in Bide Hub. Dutyholder, Competent assessor and Contractor are still added here.
+                Staff roles are set in Bide Hub. Dutyholder and Competent assessor are still added here.
               </p>
             )}
             {manage && <AddRole personId={id} onDone={refresh} hubRolesElsewhere={hubManaged && d.kind === "staff"} />}
@@ -452,25 +485,47 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
           <section className="flex flex-col gap-2">
             <h3 className="m-0 text-[12.5px] font-medium text-ink2">Trusted devices</h3>
             {d.devices.length === 0 && <p className="m-0 text-[13px] text-muted-foreground">No trusted devices.</p>}
-            {d.devices.map((dev) => (
-              <div key={dev.id} className="flex items-center gap-3 rounded-lg border border-divider px-3 py-2.5">
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[13.5px] font-medium">{dev.label}</span>
-                  <span className="block text-xs text-muted-foreground">{dev.detail}</span>
-                </span>
-                {manage && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-st-red/50 text-st-red hover:bg-st-red-bg"
-                    disabled={revoke.isPending}
-                    onClick={() => revoke.mutate(dev.id)}
-                  >
-                    Sign out
-                  </Button>
-                )}
-              </div>
-            ))}
+            {d.devices.map((dev) => {
+              const busy = revoke.isPending && revoke.variables === dev.id
+              return (
+                <div
+                  key={dev.id}
+                  className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-divider px-3 py-2.5"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[13.5px] font-medium">{dev.label}</span>
+                    <span className="block text-xs text-muted-foreground">{dev.detail}</span>
+                  </span>
+                  {manage &&
+                    (confirmDevice === dev.id ? (
+                      <span className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" disabled={busy} onClick={() => setConfirmDevice(null)}>
+                          Keep
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={busy}
+                          onClick={() => revoke.mutate(dev.id)}
+                          aria-label={`Sign out ${dev.label} now`}
+                        >
+                          {busy ? "Signing out…" : "Sign out now"}
+                        </Button>
+                      </span>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-st-red/50 text-st-red hover:bg-st-red-bg"
+                        onClick={() => setConfirmDevice(dev.id)}
+                        aria-label={`Sign out ${dev.label}`}
+                      >
+                        Sign out
+                      </Button>
+                    ))}
+                </div>
+              )
+            })}
           </section>
         </div>
       )}
@@ -642,13 +697,14 @@ function CoverDialog({ person: d, onClose }: { person: Detail; onClose: () => vo
       onOpenChange={(o) => !o && onClose()}
       busy={m.isPending}
       title={`Cover ${d.first_name}'s checks`}
+      onSubmit={() => cover && propertyId && until >= from && m.mutate()}
       subtitle={`${plural(d.items_named + (d.items_via_groups ?? 0), "check")}${propName ? ` at ${propName}` : ""}`}
       footer={
         <>
-          <Button variant="outline" onClick={onClose}>
+          <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button disabled={!cover || !propertyId || until < from || m.isPending} onClick={() => m.mutate()}>
+          <Button type="submit" disabled={!cover || !propertyId || until < from || m.isPending}>
             {m.isPending ? "Setting up…" : "Set up cover"}
           </Button>
         </>
@@ -676,6 +732,7 @@ function CoverDialog({ person: d, onClose }: { person: Detail; onClose: () => vo
             <div className="rounded-md border border-border">
               <AssigneePicker
                 label="Who covers"
+                invalid={!!error}
                 value={cover?.label ?? "Choose a person"}
                 selected={cover ? { kind: "person", id: cover.id } : null}
                 options={[{ kind: "person", items: assignees.person.filter((o) => o.id !== d.id) }]}
@@ -686,7 +743,7 @@ function CoverDialog({ person: d, onClose }: { person: Detail; onClose: () => vo
               />
             </div>
           </Labeled>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Labeled label="From" htmlFor="cv-from">
               <TextInput id="cv-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
             </Labeled>
@@ -719,7 +776,8 @@ function InviteDialog({ onClose, onDone }: { onClose: () => void; onDone: (id: s
   const [role, setRole] = React.useState("staff")
   const hubManaged = useBideHub().data?.accounts_managed ?? false
   // While Bide Hub manages staff access, staff are added there: only outside people are invited here.
-  const [kind, setKind] = React.useState<"staff" | "external">(hubManaged ? "external" : "staff")
+  const [picked, setKind] = React.useState<"staff" | "external">("staff")
+  const kind = hubManaged ? "external" : picked
   const [prop, setProp] = React.useState(props[0]?.id ?? "")
   const bide = useBideHub().data?.enabled ?? false
   const how =
@@ -760,6 +818,7 @@ function InviteDialog({ onClose, onDone }: { onClose: () => void; onDone: (id: s
       onOpenChange={(o) => !o && onClose()}
       busy={m.isPending}
       title="Invite someone"
+      onSubmit={() => ok && m.mutate()}
       subtitle={
         kind === "external"
           ? "Outside people (assessors, SPV directors) sign in with an emailed link. Required training follows the role."
@@ -767,16 +826,16 @@ function InviteDialog({ onClose, onDone }: { onClose: () => void; onDone: (id: s
       }
       footer={
         <>
-          <Button variant="outline" onClick={onClose}>
+          <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button disabled={!ok || m.isPending} onClick={() => m.mutate()}>
+          <Button type="submit" disabled={!ok || m.isPending}>
             {m.isPending ? "Inviting…" : "Invite"}
           </Button>
         </>
       }
     >
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Labeled label="Name" htmlFor="iv-name">
           <TextInput id="iv-name" autoFocus value={name} onChange={(e) => setName(e.target.value)} />
         </Labeled>
@@ -798,25 +857,24 @@ function InviteDialog({ onClose, onDone }: { onClose: () => void; onDone: (id: s
           placeholder="name@bidehotels.com"
         />
       </Labeled>
-      <Labeled label="Who they are" htmlFor="iv-kind">
-        <NativeSelect
-          id="iv-kind"
-          value={kind}
-          onChange={(e) => setKind(e.target.value as "staff" | "external")}
-          options={[
-            ...(hubManaged
-              ? []
-              : [
-                  {
-                    value: "staff",
-                    label: bide ? "Bide staff (signs in with Bide)" : "Bide staff (signs in with Google)",
-                  },
-                ]),
-            { value: "external", label: "Outside person (signs in with an emailed link)" },
-          ]}
-        />
-      </Labeled>
-      <div className="grid grid-cols-2 gap-3">
+      {hubManaged ? (
+        <p className="m-0 text-[13px] text-muted-foreground">
+          Staff are added in Bide Hub. Anyone invited here is an outside person who signs in with an emailed link.
+        </p>
+      ) : (
+        <Labeled label="Who they are" htmlFor="iv-kind">
+          <NativeSelect
+            id="iv-kind"
+            value={kind}
+            onChange={(e) => setKind(e.target.value as "staff" | "external")}
+            options={[
+              { value: "staff", label: bide ? "Bide staff (signs in with Bide)" : "Bide staff (signs in with Google)" },
+              { value: "external", label: "Outside person (signs in with an emailed link)" },
+            ]}
+          />
+        </Labeled>
+      )}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Labeled label="Role" htmlFor="iv-role">
           <NativeSelect
             id="iv-role"
@@ -861,11 +919,11 @@ function GroupsTab({ canManage }: { canManage: boolean }) {
         Groups (pools) can be named on a check as Done by: anyone in the group can do it. Only people can be
         accountable.
       </Summary>
-      <div className="overflow-hidden rounded-[10px] border border-divider bg-surface">
+      <div className="overflow-x-auto rounded-[10px] border border-divider bg-surface">
         {q.data.rows.length === 0 ? (
           <EmptyState title="No groups yet">Groups are made per property, e.g. Keyholders – The Villa.</EmptyState>
         ) : (
-          <table className="w-full border-collapse text-[13.5px]">
+          <table className="w-full min-w-[640px] border-collapse text-[13.5px]">
             <thead>
               <tr className="text-left text-xs text-muted-foreground">
                 <th className="h-[34px] bg-background px-4 font-medium">Group</th>
@@ -1012,13 +1070,13 @@ function ContractorsTab({ canManage }: { canManage: boolean }) {
           </Button>
         )}
       </div>
-      <div className="overflow-hidden rounded-[10px] border border-divider bg-surface">
+      <div className="overflow-x-auto rounded-[10px] border border-divider bg-surface">
         {q.data.rows.length === 0 ? (
           <EmptyState title="No contractors yet">
             Add the companies that service alarms, gas, water and the rest.
           </EmptyState>
         ) : (
-          <table className="w-full border-collapse text-[13.5px]">
+          <table className="w-full min-w-[880px] border-collapse text-[13.5px]">
             <thead>
               <tr className="text-left text-xs text-muted-foreground">
                 {["Contractor", "Trade", "Accreditation", "Email", "Portal access"].map((h) => (
@@ -1123,42 +1181,34 @@ function PortalInviteDialog({ contractor: c, onClose }: { contractor: Contractor
       onOpenChange={(o) => !o && onClose()}
       busy={m.isPending}
       title="Send portal link"
+      onSubmit={() => ok && m.mutate()}
       subtitle={`${c.name} can see their own visits and send reports and fix photos. Nothing counts until a site manager checks it.`}
       footer={
         <>
-          <Button variant="outline" onClick={onClose}>
+          <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button disabled={!ok || m.isPending} onClick={() => m.mutate()}>
+          <Button type="submit" disabled={!ok || m.isPending}>
             {m.isPending ? "Sending…" : "Send portal link"}
           </Button>
         </>
       }
     >
-      <form
-        className="flex flex-col gap-3"
-        onSubmit={(e) => {
-          e.preventDefault()
-          if (ok) m.mutate()
-        }}
-      >
-        <Labeled label="Contact's email" htmlFor="pi-email" error={error}>
-          <TextInput
-            id="pi-email"
-            type="email"
-            autoFocus
-            value={email}
-            aria-invalid={!!error || undefined}
-            onChange={(e) => {
-              setEmail(e.target.value)
-              setError(null)
-            }}
-          />
-        </Labeled>
-        <Labeled label="Contact's name (optional)" htmlFor="pi-name">
-          <TextInput id="pi-name" value={name} placeholder={c.name} onChange={(e) => setName(e.target.value)} />
-        </Labeled>
-      </form>
+      <Labeled label="Contact's email" htmlFor="pi-email" error={error}>
+        <TextInput
+          id="pi-email"
+          type="email"
+          autoFocus
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value)
+            setError(null)
+          }}
+        />
+      </Labeled>
+      <Labeled label="Contact's name (optional)" htmlFor="pi-name">
+        <TextInput id="pi-name" value={name} placeholder={c.name} onChange={(e) => setName(e.target.value)} />
+      </Labeled>
     </ActionDialog>
   )
 }
@@ -1193,12 +1243,13 @@ function ContractorDialog({ onClose }: { onClose: () => void }) {
       onOpenChange={(o) => !o && onClose()}
       busy={m.isPending}
       title="Add a contractor"
+      onSubmit={() => v.name.trim().length >= 2 && m.mutate()}
       footer={
         <>
-          <Button variant="outline" onClick={onClose}>
+          <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button disabled={v.name.trim().length < 2 || m.isPending} onClick={() => m.mutate()}>
+          <Button type="submit" disabled={v.name.trim().length < 2 || m.isPending}>
             {m.isPending ? "Adding…" : "Add contractor"}
           </Button>
         </>
@@ -1210,7 +1261,7 @@ function ContractorDialog({ onClose }: { onClose: () => void }) {
       <Labeled label="Trade" htmlFor="c-trade">
         <TextInput id="c-trade" placeholder="e.g. Fire alarm and emergency lighting" {...f("trade")} />
       </Labeled>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Labeled label="Accreditation" htmlFor="c-acc">
           <TextInput id="c-acc" placeholder="e.g. BAFE SP203-1" {...f("accreditation")} />
         </Labeled>
@@ -1245,8 +1296,8 @@ function DutyholdersTab() {
         The company that owns each property is its dutyholder. Only its directors can sign the FRA and the opening
         checklist.
       </Summary>
-      <div className="overflow-hidden rounded-[10px] border border-divider bg-surface">
-        <table className="w-full border-collapse text-[13.5px]">
+      <div className="overflow-x-auto rounded-[10px] border border-divider bg-surface">
+        <table className="w-full min-w-[640px] border-collapse text-[13.5px]">
           <thead>
             <tr className="text-left text-xs text-muted-foreground">
               {["Dutyholder", "Company number", "Directors who sign", "Properties"].map((h) => (

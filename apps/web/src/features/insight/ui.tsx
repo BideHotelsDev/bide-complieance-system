@@ -7,7 +7,7 @@ import { cn } from "@bide-comply/ui/lib/utils"
 
 /* Native select / date input styled like the design's 36px fields */
 export const fieldCls =
-  "h-9 w-full rounded-md border border-border bg-surface px-3 text-[13.5px] text-foreground outline-none focus-visible:border-focus focus-visible:ring-2 focus-visible:ring-focus/30"
+  "h-9 w-full rounded-md border border-border bg-surface px-3 text-[13.5px] text-foreground coarse:h-10 coarse:text-base outline-none focus-visible:border-focus focus-visible:ring-2 focus-visible:ring-focus/30"
 
 export function Field({
   label,
