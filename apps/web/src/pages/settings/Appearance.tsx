@@ -77,6 +77,10 @@ export function AppearancePage() {
   const [pending, setPending] = React.useState(false)
   const [saving, setSaving] = React.useState(false)
   const loaded = React.useRef(false)
+  // Counts edits, so a save that finishes after a newer edit doesn't mark that edit as saved.
+  const rev = React.useRef(0)
+  // Draft saves run one at a time, so an older draft can never land after a newer one.
+  const chain = React.useRef<Promise<unknown>>(Promise.resolve())
 
   const load = React.useCallback((d: AppearanceData) => {
     const base = d.draft ?? d.live
@@ -98,27 +102,33 @@ export function AppearancePage() {
   const canEdit = !!(me.data?.can["theme.publish"] && q.data?.can_publish)
 
   const saveDraft = React.useCallback(
-    async (t: DraftTokens, b: Branding) => {
-      setSaving(true)
-      try {
-        const sw = swatchOf(t)
-        const name = sw ? `${sw.name} primary` : "Custom colours"
-        const r = await api.put<{ checks: { light: Check[]; dark: Check[] } }>("/api/settings/appearance/draft", {
-          tokens: t,
-          branding: b,
-          name,
-        })
-        setChecks(r.checks)
-        setHasDraft(true)
-        setPending(false)
-        void qc.invalidateQueries({ queryKey: ["settings", "appearance"] })
-        return true
-      } catch (e) {
-        toast.error(errText(e))
-        return false
-      } finally {
-        setSaving(false)
+    (t: DraftTokens, b: Branding): Promise<boolean> => {
+      const at = rev.current
+      const run = async () => {
+        setSaving(true)
+        try {
+          const sw = swatchOf(t)
+          const name = sw ? `${sw.name} primary` : "Custom colours"
+          const r = await api.put<{ checks: { light: Check[]; dark: Check[] } }>("/api/settings/appearance/draft", {
+            tokens: t,
+            branding: b,
+            name,
+          })
+          setChecks(r.checks)
+          setHasDraft(true)
+          if (rev.current === at) setPending(false)
+          void qc.invalidateQueries({ queryKey: ["settings", "appearance"] })
+          return true
+        } catch (e) {
+          toast.error(errText(e))
+          return false
+        } finally {
+          setSaving(false)
+        }
       }
+      const next = chain.current.then(run, run)
+      chain.current = next
+      return next
     },
     [qc],
   )
@@ -131,10 +141,12 @@ export function AppearancePage() {
   }, [pending, tokens, branding, canEdit, saveDraft])
 
   const change = (fn: (t: DraftTokens) => DraftTokens) => {
+    rev.current += 1
     setTokens((t) => (t ? fn(t) : t))
     setPending(true)
   }
   const changeBrand = (patch: Partial<Branding>) => {
+    rev.current += 1
     setBranding((b) => ({ ...b, ...patch }))
     setPending(true)
   }
@@ -163,7 +175,12 @@ export function AppearancePage() {
     },
   })
   const discard = useMutation<unknown, ApiError>({
-    mutationFn: () => api.del("/api/settings/appearance/draft"),
+    mutationFn: async () => {
+      // Stop any pending autosave, and let one in flight finish, so it can't recreate the draft after it's deleted.
+      setPending(false)
+      await chain.current.catch(() => {})
+      return api.del("/api/settings/appearance/draft")
+    },
     onSuccess: async () => {
       toast.success("Draft discarded. Showing the published theme.")
       await refetchAndLoad()

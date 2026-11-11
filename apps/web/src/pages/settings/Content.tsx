@@ -75,8 +75,14 @@ export function ContentPage() {
     enabled: !!selected,
   })
 
+  // The open message's editor registers how to save its unsaved typing, so Publish includes the last keystrokes.
+  const flushEditor = React.useRef<(() => Promise<boolean>) | null>(null)
+  const [editorDirty, setEditorDirty] = React.useState(false)
   const publish = useMutation<{ published: number }, ApiError>({
-    mutationFn: () => api.post("/api/settings/content/publish"),
+    mutationFn: async () => {
+      if (flushEditor.current && !(await flushEditor.current())) throw new Error("not saved")
+      return api.post("/api/settings/content/publish")
+    },
     onSuccess: (r) => {
       toast.success(
         r.published === 1
@@ -85,7 +91,11 @@ export function ContentPage() {
       )
       void qc.invalidateQueries({ queryKey: ["settings", "content"] })
     },
-    onError: (e) => toast.error(errText(e)),
+    // A failed draft save already shows its own message in the editor.
+    onError: (e) => {
+      if (e instanceof Error && e.message === "not saved") return
+      toast.error(errText(e))
+    },
   })
   const reset = useMutation<unknown, ApiError, string>({
     mutationFn: (key) => api.post(`/api/settings/content/${key}/reset`),
@@ -118,7 +128,7 @@ export function ContentPage() {
               </button>
               <button
                 type="button"
-                disabled={!anyEdited || publish.isPending}
+                disabled={!(anyEdited || editorDirty) || publish.isPending}
                 onClick={() => publish.mutate()}
                 className="inline-flex h-9 items-center rounded-md bg-primary px-3.5 text-[13.5px] font-medium text-primary-foreground hover:opacity-90 disabled:opacity-40"
               >
@@ -185,7 +195,13 @@ export function ContentPage() {
               <Skeleton className="hidden h-60 xl:block" />
             </>
           ) : (
-            <Editor key={msg.data.key} msg={msg.data} canEdit={canEdit} />
+            <Editor
+              key={msg.data.key}
+              msg={msg.data}
+              canEdit={canEdit}
+              flushRef={flushEditor}
+              onDirty={setEditorDirty}
+            />
           )}
         </div>
       )}
@@ -193,7 +209,17 @@ export function ContentPage() {
   )
 }
 
-function Editor({ msg, canEdit }: { msg: Message; canEdit: boolean }) {
+function Editor({
+  msg,
+  canEdit,
+  flushRef,
+  onDirty,
+}: {
+  msg: Message
+  canEdit: boolean
+  flushRef: React.MutableRefObject<(() => Promise<boolean>) | null>
+  onDirty: (dirty: boolean) => void
+}) {
   const qc = useQueryClient()
   const [body, setBody] = React.useState(msg.body)
   const [preview, setPreview] = React.useState({ text: msg.preview, tone: msg.tone })
@@ -201,25 +227,34 @@ function Editor({ msg, canEdit }: { msg: Message; canEdit: boolean }) {
   const [state, setState] = React.useState<"idle" | "saving" | "saved" | "error">("idle")
   const [error, setError] = React.useState<string | null>(null)
   const saved = React.useRef(msg.body)
+  const [savedBody, setSavedBody] = React.useState(msg.body) // the same, for rendering
   const ta = React.useRef<HTMLTextAreaElement>(null)
   const backdrop = React.useRef<HTMLDivElement>(null)
 
-  // A new server copy (after Reset or Publish) replaces what's on screen.
+  // A new server copy (after Reset or Publish) replaces what's on screen, unless there's unsaved typing: a background
+  // refetch must never overwrite words that haven't reached the server yet.
+  const bodyNow = React.useRef(body)
   React.useEffect(() => {
+    bodyNow.current = body
+  }, [body])
+  React.useEffect(() => {
+    if (bodyNow.current !== saved.current) return
     setBody(msg.body)
     saved.current = msg.body
+    setSavedBody(msg.body)
     setPreview({ text: msg.preview, tone: msg.tone })
     setEdited(msg.edited)
   }, [msg])
 
   const doSave = React.useCallback(
-    async (text: string) => {
+    async (text: string): Promise<boolean> => {
       setState("saving")
       try {
         const r = await api.put<{ preview: string; tone: Message["tone"] }>(`/api/settings/content/${msg.key}`, {
           body: text,
         })
         saved.current = text
+        setSavedBody(text)
         setPreview({ text: r.preview, tone: r.tone })
         setError(null)
         setState("saved")
@@ -227,9 +262,11 @@ function Editor({ msg, canEdit }: { msg: Message; canEdit: boolean }) {
           setEdited(true)
           void qc.invalidateQueries({ queryKey: ["settings", "content"], exact: true })
         }
+        return true
       } catch (e) {
         setError(errText(e))
         setState("error")
+        return false
       }
     },
     [msg.key, edited, qc],
@@ -245,6 +282,20 @@ function Editor({ msg, canEdit }: { msg: Message; canEdit: boolean }) {
     const t = setTimeout(() => void doSave(body), 600)
     return () => clearTimeout(t)
   }, [body, canEdit, doSave])
+  const dirty = canEdit && body !== savedBody
+  React.useEffect(() => {
+    onDirty(dirty)
+  }, [dirty, onDirty])
+  React.useEffect(() => {
+    flushRef.current = async () => {
+      const { body: b, doSave: s } = latest.current
+      return b === saved.current ? true : s(b)
+    }
+    return () => {
+      flushRef.current = null
+      onDirty(false)
+    }
+  }, [flushRef, onDirty])
   // Leaving this message mid-edit still keeps the words.
   React.useEffect(
     () => () => {

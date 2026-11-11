@@ -208,11 +208,9 @@ export function ReassignDialog({
       const match = choices.find((c) => c.o.name.toLowerCase() === typed.toLowerCase())
       const body: Record<string, unknown> = {}
       if (typed !== item.done_by) {
-        if (!match) {
-          // Let the server apply the golden rule to what was typed ("TBC", "Housekeeping" are not names).
-          await api.patch(`/api/register/${item.ref}`, { done_by_text: typed })
-          throw new ApiError(422, "pick", "Pick a person, pool or contractor from the list for Done by.")
-        }
+        // Nothing is sent until Done by names someone on the list ("TBC" or "Housekeeping" is never a name), so a
+        // refused name can't leave the other changes half-saved.
+        if (!match) throw new ApiError(422, "pick", "Pick a person, pool or contractor from the list for Done by.")
         body.done_by_kind = match.kind
         body.done_by_id = match.o.id
         body.done_by_text = typed
@@ -227,6 +225,7 @@ export function ReassignDialog({
     onSuccess: () => {
       toast(`${item.ref} reassigned`)
       void qc.invalidateQueries({ queryKey: ["property"] })
+      void qc.invalidateQueries({ queryKey: ["register"] })
       onOpenChange(false)
     },
     onError: (e) => setError(msg(e)),

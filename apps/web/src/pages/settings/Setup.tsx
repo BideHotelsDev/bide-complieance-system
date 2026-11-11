@@ -286,19 +286,13 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
   const freeText = (row: Row, field: "done_by" | "accountable" | "cover" | "verifier", text: string) => {
     if (!row.ref) return
     const what = { done_by: "Done by", accountable: "Accountable", cover: "Cover", verifier: "Verifier" }[field]
-    if (field === "done_by") {
-      // The server applies golden rule 2 and says why a generic name is refused.
-      api
-        .patch(`/api/register/${row.ref}`, { done_by_text: text })
-        .then(() => setErr(`${row.ref}:${field}`, `No one called “${text}”. Choose a person, pool or contractor.`))
-        .catch((e: unknown) => setErr(`${row.ref}:${field}`, errMsg(e)))
-      return
-    }
+    // Typed text never saves anything: only a pick from the list does. Say why it wasn't taken.
+    const who = field === "done_by" ? "a person, pool or contractor" : "a person"
     setErr(
       `${row.ref}:${field}`,
-      GENERIC.has(text.toLowerCase())
-        ? `"${text}" is not a name. Choose a person for ${what}.`
-        : `No one called “${text}”. Choose someone from the list.`,
+      GENERIC.has(text.trim().toLowerCase())
+        ? `"${text}" is not a name. Choose ${who} for ${what}.`
+        : `No one called “${text}”. Choose ${who} from the list.`,
     )
   }
 

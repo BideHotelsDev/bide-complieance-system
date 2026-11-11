@@ -100,6 +100,30 @@ export function useShots(ctx: Ctx) {
     [send],
   )
 
+  /* Put back photos from a kept draft: ones already uploaded keep their evidence id, the rest upload again. */
+  const restore = React.useCallback(
+    (saved: { key: string; blob: Blob; captured_at: string; via: "camera" | "upload"; evidence_id?: string }[]) => {
+      const back: Shot[] = saved.map((x) => {
+        const id = crypto.randomUUID()
+        if (x.evidence_id) uploaded.current.set(id, x.evidence_id)
+        return {
+          id,
+          key: x.key,
+          blob: x.blob,
+          url: URL.createObjectURL(x.blob),
+          captured_at: x.captured_at,
+          via: x.via,
+          evidence_id: x.evidence_id,
+          status: x.evidence_id ? "done" : "local",
+        }
+      })
+      latest.current = [...latest.current, ...back]
+      setShots((all) => [...all, ...back])
+      for (const b of back) if (!b.evidence_id) void send(b)
+    },
+    [send],
+  )
+
   const remove = React.useCallback((id: string) => {
     const s = latest.current.find((x) => x.id === id)
     if (s) URL.revokeObjectURL(s.url)
@@ -124,5 +148,5 @@ export function useShots(ctx: Ctx) {
     return { status, shots }
   }, [send])
 
-  return { shots, add, remove, ensureUploaded }
+  return { shots, add, remove, restore, ensureUploaded }
 }

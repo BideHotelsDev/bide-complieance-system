@@ -68,8 +68,8 @@ export function SignInPage() {
         <>
           <h1 className="m-0 text-[18px] font-semibold">You've been signed out</h1>
           <p className="mt-1 text-[13.5px] text-muted-foreground">
-            For safety, after 30 minutes without activity. Anything you were typing has been kept on this computer. Sign
-            in again to carry on where you left off.
+            For safety, after 30 minutes without activity. Anything you hadn't saved wasn't kept. Sign in again to carry
+            on.
           </p>
         </>
       ) : (
@@ -123,8 +123,17 @@ export function SignInPage() {
               autoComplete="email"
             />
           </label>
+          {magic.isError && (
+            <p role="alert" className="m-0 text-[13px] text-st-red">
+              {magic.error instanceof ApiError && magic.error.status === 429
+                ? "Too many links asked for. Wait a few minutes, then try again."
+                : magic.error instanceof ApiError && magic.error.status < 500
+                  ? magic.error.message
+                  : "The link couldn't be sent. Check your connection and try again."}
+            </p>
+          )}
           <Button type="submit" variant="secondary" disabled={magic.isPending}>
-            Email me a sign-in link
+            {magic.isPending ? "Sending…" : "Email me a sign-in link"}
           </Button>
         </form>
       )}

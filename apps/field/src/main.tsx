@@ -11,6 +11,7 @@ import { loadTheme, type Theme } from "@bide-comply/ui/lib/theme"
 import "./index.css"
 import { toastSent } from "./components/sync"
 import { refreshPush } from "./lib/push"
+import { pruneDrafts } from "./lib/drafts"
 import { onSent, startSync } from "./lib/queue"
 import { PropertyProvider } from "./lib/session"
 import { router } from "./router"
@@ -40,6 +41,7 @@ const queryClient = new QueryClient({
 
 // Checks saved on the phone send by themselves when the signal comes back.
 startSync()
+void pruneDrafts()
 onSent((item, res) => {
   // A check saved offline that turns out Failed still says what happened next (design: AppResult, in short).
   toastSent(

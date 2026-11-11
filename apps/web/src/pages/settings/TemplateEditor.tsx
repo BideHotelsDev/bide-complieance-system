@@ -127,14 +127,32 @@ function Editor({ detail, refetch }: { detail: Detail; refetch: () => Promise<De
     },
     onError: (e) => setSaveError(errMsg(e)),
   })
-  const flush = React.useCallback(async () => {
+  // Saves run one at a time, in order. A patch leaves `pending` only once the server has it: if the save fails it goes
+  // back, under any edits made meanwhile, so the next save (or Publish) still includes it.
+  const chain = React.useRef<Promise<void>>(Promise.resolve())
+  const { mutateAsync } = save
+  const flush = React.useCallback(() => {
     if (timer.current) clearTimeout(timer.current)
     timer.current = null
-    const body = pending.current
-    pending.current = null
-    setDirty(false)
-    if (body) await save.mutateAsync(body)
-  }, [save])
+    const run = async () => {
+      const body = pending.current
+      if (!body) return
+      pending.current = null
+      try {
+        await mutateAsync(body)
+      } catch (e) {
+        // Read fresh: edits made while the save was out land in `pending` meanwhile.
+        const newer = pending.current as typeof body | null
+        pending.current = { settings: { ...body.settings, ...(newer?.settings ?? {}) }, form: newer?.form ?? body.form }
+        throw e
+      } finally {
+        setDirty(pending.current !== null)
+      }
+    }
+    const next = chain.current.catch(() => {}).then(run)
+    chain.current = next
+    return next
+  }, [mutateAsync])
   const schedule = (patch: { settings?: Partial<Settings>; form?: FormField[] }) => {
     const cur = pending.current ?? { settings: {}, form: null }
     pending.current = {
@@ -225,6 +243,8 @@ function Editor({ detail, refetch }: { detail: Detail; refetch: () => Promise<De
       if (timer.current) clearTimeout(timer.current)
       pending.current = null
       setDirty(false)
+      // A save still in flight would otherwise recreate the draft just after it's deleted.
+      await chain.current.catch(() => {})
       return api.del(`/api/library/${detail.id}/draft`)
     },
     onSuccess: async () => {

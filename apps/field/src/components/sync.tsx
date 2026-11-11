@@ -2,6 +2,8 @@
  * What the phone is holding (§8 Offline): a banner that stays while there is no signal, the sync pill on Today, and
  * each waiting check with its own upload status. Small confirmations follow design: Dialogs › Small confirmations.
  */
+import * as React from "react"
+
 import { Pill } from "@bide-comply/ui/components/status"
 import { toast } from "@bide-comply/ui/components/toaster"
 import { Check, CloudOff, RefreshCw, Trash2, TriangleAlert } from "lucide-react"
@@ -107,6 +109,8 @@ function itemStatus(q: QueuedCheck, online: boolean): { text: string; tone: "amb
 export function WaitingList() {
   const queue = useQueue()
   const online = useOnline()
+  // Removing a check that couldn't send deletes it and its photos for good, so it asks first, in place.
+  const [confirming, setConfirming] = React.useState<string | null>(null)
   if (!queue.length) return null
   return (
     <section aria-label="Waiting to send" className="flex flex-col gap-2.5">
@@ -130,7 +134,36 @@ export function WaitingList() {
               {st.tone === "red" && <TriangleAlert aria-hidden className="mr-1 inline size-3.5 align-[-2px]" />}
               {st.text}
             </p>
-            {q.status === "failed" && (
+            {q.status === "failed" && confirming === q.id && (
+              <div role="group" aria-label="Delete this check?" className="mt-2 rounded-lg bg-st-red-bg p-3">
+                <p className="m-0 text-[14px]">
+                  Delete this check
+                  {q.photos.length ? ` and its ${q.photos.length} photo${q.photos.length === 1 ? "" : "s"}` : ""} from
+                  this phone? It hasn't been sent, so it can't be got back.
+                </p>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    type="button"
+                    autoFocus
+                    className="h-11 flex-1 rounded-lg border border-border bg-surface text-[15px] font-semibold"
+                    onClick={() => setConfirming(null)}
+                  >
+                    Keep it
+                  </button>
+                  <button
+                    type="button"
+                    className="h-11 flex-1 rounded-lg border border-st-red text-[15px] font-semibold text-st-red"
+                    onClick={() => {
+                      setConfirming(null)
+                      void removeQueued(q.id)
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            )}
+            {q.status === "failed" && confirming !== q.id && (
               <div className="mt-2 flex gap-2">
                 <button
                   type="button"
@@ -143,7 +176,7 @@ export function WaitingList() {
                   type="button"
                   aria-label={`Remove ${q.title} from this phone`}
                   className="flex h-11 w-12 items-center justify-center rounded-lg border border-border text-st-red"
-                  onClick={() => void removeQueued(q.id)}
+                  onClick={() => setConfirming(q.id)}
                 >
                   <Trash2 aria-hidden className="size-4" />
                 </button>

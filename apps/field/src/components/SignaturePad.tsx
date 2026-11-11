@@ -29,6 +29,27 @@ export function SignaturePad({
     ctx.strokeStyle = getComputedStyle(c).color
   }, [])
 
+  // A signature from a kept draft is drawn back in; clearing it from outside empties the box.
+  React.useEffect(() => {
+    const c = canvas.current
+    const ctx = c?.getContext("2d")
+    if (!c || !ctx) return
+    if (!value) {
+      if (dirty.current) {
+        ctx.clearRect(0, 0, c.width, c.height)
+        dirty.current = false
+      }
+      return
+    }
+    if (dirty.current) return
+    const img = new Image()
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, c.offsetWidth, c.offsetHeight)
+      dirty.current = true
+    }
+    img.src = value
+  }, [value])
+
   const pos = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const r = e.currentTarget.getBoundingClientRect()
     return { x: e.clientX - r.left, y: e.clientY - r.top }

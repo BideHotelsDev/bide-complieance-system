@@ -30,7 +30,8 @@ import { FailedResult } from "@/components/Result"
 import { SignaturePad } from "@/components/SignaturePad"
 import { toastSaved, toastSent } from "@/components/sync"
 import { cachedGet } from "@/lib/cache"
-import { listWords, shortName } from "@/lib/format"
+import { clearDraft, loadDraft, saveDraft } from "@/lib/drafts"
+import { fmtTime, listWords, shortName } from "@/lib/format"
 import { locateOnce } from "@/lib/geo"
 import { enqueue } from "@/lib/queue"
 import { useMe } from "@/lib/session"
@@ -94,13 +95,14 @@ function CheckForm({ task }: { task: TaskDetail }) {
     if (task.form.some((f) => EVIDENCE.has(f.type))) return task.form
     return [...task.form, { key: "photo", type: "photo", label: "Photo", required: true, min_photos: 1 }]
   }, [task.form])
-  const [values, setValues] = React.useState<Record<string, unknown>>(() => {
+  const initialValues = React.useCallback(() => {
     const v: Record<string, unknown> = {}
     for (const f of task.form) if (f.type === "location" && f.suggested) v[f.key] = f.suggested
     return v
-  })
+  }, [task.form])
+  const [values, setValues] = React.useState<Record<string, unknown>>(initialValues)
   const [signature, setSignature] = React.useState<string | null>(null)
-  const { shots, add, remove, ensureUploaded } = useShots({
+  const { shots, add, remove, restore, ensureUploaded } = useShots({
     property_id: task.property_id,
     task_id: task.task_id,
     ref: task.ref,
@@ -116,6 +118,80 @@ function CheckForm({ task }: { task: TaskDetail }) {
     retry: false,
   })
 
+  // Half-done work is kept on the phone as it changes and put back when the check is opened again.
+  const [draftLoaded, setDraftLoaded] = React.useState(false)
+  const [keptFrom, setKeptFrom] = React.useState<string | null>(null)
+  const finished = React.useRef(false)
+  React.useEffect(() => {
+    let live = true
+    void loadDraft(task.task_id).then((d) => {
+      if (!live) return
+      if (d && task.can_submit) {
+        setValues({ ...initialValues(), ...d.values })
+        setSignature(d.signature)
+        restore(d.shots)
+        setKeptFrom(d.saved_at)
+      }
+      setDraftLoaded(true)
+    })
+    return () => {
+      live = false
+    }
+    // Once per check: the form is keyed by task id.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  const started =
+    shots.length > 0 ||
+    signature !== null ||
+    Object.entries(values).some(([k, v]) => !isEmpty(v) && v !== initialValues()[k])
+  // What to keep right now, or null for nothing (not started, already sent, or not loaded yet).
+  const keep = React.useRef<(() => void) | null>(null)
+  React.useEffect(() => {
+    keep.current =
+      !draftLoaded || !task.can_submit
+        ? null
+        : () => {
+            if (finished.current) return
+            if (!started) void clearDraft(task.task_id)
+            else
+              void saveDraft(task.task_id, {
+                values,
+                signature,
+                shots: shots.map((x) => ({
+                  key: x.key,
+                  blob: x.blob,
+                  captured_at: x.captured_at,
+                  via: x.via,
+                  evidence_id: x.evidence_id,
+                })),
+              })
+          }
+    const t = setTimeout(() => keep.current?.(), 400)
+    return () => clearTimeout(t)
+  }, [draftLoaded, started, values, signature, shots, task.task_id, task.can_submit])
+  // Keep it at once when the app goes to the background (the phone may close it) or the check is left.
+  React.useEffect(() => {
+    const hidden = () => {
+      if (document.visibilityState === "hidden") keep.current?.()
+    }
+    document.addEventListener("visibilitychange", hidden)
+    return () => {
+      document.removeEventListener("visibilitychange", hidden)
+      keep.current?.()
+    }
+  }, [])
+  const finish = async () => {
+    finished.current = true
+    await clearDraft(task.task_id)
+  }
+  const startAgain = () => {
+    setValues(initialValues())
+    setSignature(null)
+    for (const x of shots) remove(x.id)
+    setKeptFrom(null)
+    void clearDraft(task.task_id)
+  }
+
   const set = (key: string, v: unknown) => setValues((all) => ({ ...all, [key]: v }))
   const photoFields = form.filter((f) => f.type === "photo")
   const need = (f: FormField) => (f.required === false ? 0 : Math.max(1, f.min_photos ?? 1))
@@ -129,6 +205,7 @@ function CheckForm({ task }: { task: TaskDetail }) {
   const missing = form.filter((f) => {
     if (EVIDENCE.has(f.type)) return count(f.key) < need(f)
     if (f.type === "signature") return Boolean(f.required) && !signature
+    if (f.type === "number" && !isEmpty(values[f.key]) && Number.isNaN(Number(values[f.key]))) return true
     return Boolean(f.required) && isEmpty(values[f.key])
   })
 
@@ -160,6 +237,7 @@ function CheckForm({ task }: { task: TaskDetail }) {
         lng: fix?.lng ?? null,
         accuracy: fix?.accuracy ?? null,
       })
+      await finish()
       toastSaved()
       void navigate({ to: "/" })
     }
@@ -188,6 +266,7 @@ function CheckForm({ task }: { task: TaskDetail }) {
       void qc.invalidateQueries({ queryKey: ["history"] })
       void qc.invalidateQueries({ queryKey: ["field-me"] })
       void qc.invalidateQueries({ queryKey: ["task", task.task_id] })
+      await finish()
       if (res.result === "failed") {
         setResult(res)
         window.scrollTo(0, 0)
@@ -239,6 +318,14 @@ function CheckForm({ task }: { task: TaskDetail }) {
           </summary>
           <p className="m-0 px-4 pb-4 text-[15px] leading-relaxed text-ink2">{task.guidance}</p>
         </details>
+      )}
+      {keptFrom && (
+        <div role="status" className="flex items-center gap-3 rounded-xl bg-st-blue-bg px-4 py-3 text-[15px]">
+          <span className="min-w-0 flex-1">What you'd done at {fmtTime(keptFrom)} was kept on this phone.</span>
+          <button type="button" className="h-11 shrink-0 px-2 font-semibold text-link" onClick={startAgain}>
+            Start again
+          </button>
+        </div>
       )}
       {(task.status_note || task.rejected || !task.can_submit || task.na_pending) && (
         <div className="-mt-1 flex flex-col gap-2">
@@ -476,7 +563,9 @@ function FieldInput({
       )
     }
     case "number": {
-      const n = value === undefined || value === "" ? null : Number(value)
+      const raw = (value as string | undefined) ?? ""
+      const n = raw === "" ? null : Number(raw)
+      const notNumber = n !== null && Number.isNaN(n) && raw !== "-"
       const out = n !== null && !Number.isNaN(n) && ((f.min != null && n < f.min) || (f.max != null && n > f.max))
       const unit = f.unit ?? ""
       const range =
@@ -493,13 +582,31 @@ function FieldInput({
             {f.label}
           </FieldLabel>
           <div className="relative">
+            {/* iPhone's decimal keypad has no minus key, so freezer readings (-18) need this button. */}
+            <button
+              type="button"
+              aria-label={raw.startsWith("-") ? "Make positive" : "Make negative"}
+              aria-pressed={raw.startsWith("-")}
+              onClick={() => onChange(raw.startsWith("-") ? raw.slice(1) : `-${raw}`)}
+              className="absolute inset-y-0 left-0 flex w-12 items-center justify-center rounded-l-xl border-r border-border text-[18px] font-semibold text-ink2"
+            >
+              ±
+            </button>
             <TextInput
               id={id}
               inputMode="decimal"
-              value={(value as string | undefined) ?? ""}
-              onChange={(e) => onChange(e.target.value.replace(/[^0-9.,-]/g, "").replace(",", "."))}
-              aria-describedby={out ? `${id}-warn` : undefined}
-              className={cn("tabular pr-14", out && "border-st-amber")}
+              value={raw}
+              onChange={(e) =>
+                onChange(
+                  e.target.value
+                    .replace(/[^0-9.,-]/g, "")
+                    .replace(",", ".")
+                    .replace(/(?!^)-/g, ""),
+                )
+              }
+              aria-invalid={notNumber || undefined}
+              aria-describedby={notNumber || out ? `${id}-warn` : undefined}
+              className={cn("tabular pr-14 pl-15", (out || notNumber) && "border-st-amber")}
             />
             {unit && (
               <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[16px] text-muted-foreground">
@@ -507,6 +614,11 @@ function FieldInput({
               </span>
             )}
           </div>
+          {notNumber && (
+            <p id={`${id}-warn`} className="m-0 mt-1.5 text-[14px] text-st-amber">
+              That isn't a number. Type it like 3.5 or -18.
+            </p>
+          )}
           {out && (
             <p id={`${id}-warn`} className="m-0 mt-1.5 text-[14px] text-st-amber">
               Outside the safe range. You can still send it; it will be logged as Failed so it gets fixed.

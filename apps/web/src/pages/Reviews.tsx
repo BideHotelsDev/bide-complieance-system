@@ -264,7 +264,12 @@ function Submission({
 
   React.useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if (isTyping(e) || e.metaKey || e.ctrlKey || e.altKey) return
+      if (isTyping(e) || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return
+      // Only when nothing sits on top: with a dialog, menu or picker open (the bulk dialog, a select), "a" must never
+      // approve the submission behind it.
+      if (document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"]')) return
+      const t = e.target instanceof Element ? e.target : null
+      if (t?.closest('[role="radio"], [role="checkbox"], [role="option"], [role="combobox"], select')) return
       if (e.key === "a" && canAct && !verify.isPending) {
         e.preventDefault()
         act("approved")

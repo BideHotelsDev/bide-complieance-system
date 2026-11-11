@@ -72,6 +72,65 @@ function Field({ label, children, hint }: { label: string; children: React.React
   )
 }
 
+/**
+ * A decimal box that keeps exactly what was typed ("55.", "-", "-3.1") and hands the parent a number once it parses:
+ * null when empty, NaN while it isn't a number yet. A plain Number() per keystroke would eat the dot and the minus
+ * sign, so a negative longitude (all of Scotland) couldn't be typed. `type="text"` keeps the minus key on iPhones.
+ */
+function DecimalInput({
+  value,
+  onChange,
+  min,
+  max,
+  ...rest
+}: {
+  value: number | null
+  onChange: (v: number | null) => void
+  min: number
+  max: number
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "min" | "max">) {
+  const [text, setText] = React.useState(value == null || Number.isNaN(value) ? "" : String(value))
+  // Take a new value from outside (a reload), but not our own echo of what's being typed.
+  React.useEffect(() => {
+    setText((t) => {
+      const p = parseDecimal(t)
+      const same = p === value || (p !== null && value !== null && Number.isNaN(p) && Number.isNaN(value))
+      return same ? t : value == null ? "" : String(value)
+    })
+  }, [value])
+  const parsed = parseDecimal(text)
+  const bad = parsed !== null && (Number.isNaN(parsed) || parsed < min || parsed > max)
+  return (
+    <>
+      <input
+        {...rest}
+        type="text"
+        inputMode="text"
+        autoComplete="off"
+        value={text}
+        aria-invalid={bad || undefined}
+        onChange={(e) => {
+          setText(e.target.value)
+          onChange(parseDecimal(e.target.value))
+        }}
+      />
+      {bad && (
+        <span role="alert" className="font-normal text-st-red">
+          Enter a number from {min} to {max}
+        </span>
+      )}
+    </>
+  )
+}
+
+function parseDecimal(t: string): number | null {
+  const s = t.trim()
+  if (!s) return null
+  return /^-?\d+(\.\d*)?$|^-?\.\d+$/.test(s) ? Number(s) : NaN
+}
+
+const badCoord = (v: number | null | undefined, lim: number) => v != null && (Number.isNaN(v) || Math.abs(v) > lim)
+
 export function PropertyDetailsPage() {
   const { code } = useRouteParams({ strict: false }) as { code?: string }
   const me = useMe().data
@@ -153,7 +212,14 @@ export function PropertyDetailsPage() {
               </Button>
             )}
             <Button
-              disabled={!canEdit || save.isPending || !form.name || (isNew && !form.code)}
+              disabled={
+                !canEdit ||
+                save.isPending ||
+                !form.name ||
+                (isNew && !form.code) ||
+                badCoord(g.lat, 90) ||
+                badCoord(g.lng, 180)
+              }
               onClick={() => save.mutate()}
             >
               {isNew ? "Add property" : "Save changes"}
@@ -277,19 +343,23 @@ export function PropertyDetailsPage() {
           <h3 className="mt-5 mb-2 text-[13px] font-semibold">Location check (geofence)</h3>
           <div className="grid grid-cols-3 gap-3">
             <Field label="Latitude">
-              <input
+              <DecimalInput
                 className={field}
-                inputMode="decimal"
-                value={g.lat ?? ""}
-                onChange={(e) => set("geofence", { ...g, lat: e.target.value ? Number(e.target.value) : null })}
+                min={-90}
+                max={90}
+                placeholder="55.9533"
+                value={g.lat}
+                onChange={(lat) => set("geofence", { ...g, lat })}
               />
             </Field>
             <Field label="Longitude">
-              <input
+              <DecimalInput
                 className={field}
-                inputMode="decimal"
-                value={g.lng ?? ""}
-                onChange={(e) => set("geofence", { ...g, lng: e.target.value ? Number(e.target.value) : null })}
+                min={-180}
+                max={180}
+                placeholder="-3.1883"
+                value={g.lng}
+                onChange={(lng) => set("geofence", { ...g, lng })}
               />
             </Field>
             <Field label="Radius (m)" hint="Default 150 m">
