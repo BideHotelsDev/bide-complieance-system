@@ -18,3 +18,8 @@
 @utility pb-safe {
   padding-bottom: max(env(safe-area-inset-bottom), 0px);
 }
+
+/* pb-safe-4: at least 1rem, more where the phone's home bar needs it. pb-safe plus pb-4 on one element cancel out. */
+@utility pb-safe-* {
+  padding-bottom: max(env(safe-area-inset-bottom), --spacing(--value(integer)));
+}

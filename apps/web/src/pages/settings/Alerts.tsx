@@ -280,7 +280,7 @@ function StepMarker({ step }: { step: number }) {
         "flex size-11 shrink-0 items-center justify-center rounded-lg text-[15px] font-semibold",
         step === 1 && "bg-st-amber-bg text-st-amber",
         step === 2 && "bg-st-red-bg text-st-red",
-        step >= 3 && "bg-st-red text-white dark:text-black",
+        step >= 3 && "bg-st-red text-on-status",
       )}
     >
       <span className="sr-only">Step </span>

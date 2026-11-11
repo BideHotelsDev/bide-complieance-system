@@ -151,7 +151,7 @@ export function Camera({ title, hint, index, total, stampPrefix, exampleUrl, sit
           <span className="size-12" />
         ) : (
           <span
-            className={`flex h-9 items-center gap-1.5 rounded-full px-3 text-[14px] font-semibold ${here ? "bg-st-green" : "bg-st-amber"}`}
+            className={`flex h-9 items-center gap-1.5 rounded-full px-3 text-[14px] font-semibold text-on-status ${here ? "bg-st-green" : "bg-st-amber"}`}
           >
             <MapPin aria-hidden className="size-4" />
             {here ? "On site" : "Away from site"}
@@ -229,7 +229,7 @@ export function Camera({ title, hint, index, total, stampPrefix, exampleUrl, sit
           <span className="size-12" />
         )}
       </div>
-      <p className="pb-safe m-0 px-8 pt-3 pb-4 text-center text-[13px] text-white/60">
+      <p className="pb-safe-4 m-0 px-8 pt-3 text-center text-[13px] text-white/60">
         Evidence photos are taken here, not picked from your gallery. The original is kept unaltered.
       </p>
       <input

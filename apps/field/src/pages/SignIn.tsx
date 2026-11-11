@@ -219,7 +219,7 @@ export function CodePage({ stage }: { stage: "code" | "totp" | "totp-setup" }) {
             </div>
           </>
         )}
-        <div className="pb-safe mt-auto pt-8 pb-6">
+        <div className="pb-safe-6 mt-auto pt-8">
           <PrimaryButton type="submit" disabled={code.length !== 6 || verify.isPending}>
             Continue
           </PrimaryButton>

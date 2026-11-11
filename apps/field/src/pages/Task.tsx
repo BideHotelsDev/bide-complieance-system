@@ -451,19 +451,19 @@ function CheckForm({ task }: { task: TaskDetail }) {
 function ShotTile({ shot, label, onRemove }: { shot: Shot; label: string; onRemove: () => void }) {
   const status =
     shot.status === "done"
-      ? { icon: <Check aria-hidden className="size-3.5" />, text: "Uploaded", cls: "bg-st-green text-white" }
+      ? { icon: <Check aria-hidden className="size-3.5" />, text: "Uploaded", cls: "bg-st-green text-on-status" }
       : shot.status === "uploading"
-        ? { icon: <Spinner className="size-3" />, text: "Uploading", cls: "bg-st-blue text-white" }
+        ? { icon: <Spinner className="size-3" />, text: "Uploading", cls: "bg-st-blue text-on-status" }
         : shot.status === "local"
           ? {
               icon: <span className="size-2 rounded-full bg-white" />,
               text: "On this phone",
-              cls: "bg-st-amber text-white",
+              cls: "bg-st-amber text-on-status",
             }
           : {
               icon: <CircleAlert aria-hidden className="size-3.5" />,
               text: "Didn't upload",
-              cls: "bg-st-red text-white",
+              cls: "bg-st-red text-on-status",
             }
   return (
     <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-hover">

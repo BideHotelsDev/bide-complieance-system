@@ -46,9 +46,12 @@ export function ActionDialog({
     <Dialog open={open} onOpenChange={(o) => !busy && onOpenChange(o)}>
       <DialogContent
         showCloseButton={false}
-        className={cn("gap-0 overflow-hidden rounded-xl border-border bg-surface p-0 sm:max-w-[440px]", className)}
+        className={cn(
+          "flex flex-col gap-0 overflow-hidden rounded-xl border-border bg-surface p-0 sm:max-w-[440px]",
+          className,
+        )}
       >
-        <div className="px-5 pt-5 pb-1">
+        <div className="shrink-0 px-5 pt-5 pb-1">
           <DialogTitle className="text-[17px] leading-snug font-semibold">{title}</DialogTitle>
           {subtitle ? (
             <DialogDescription className="mt-1 text-[13.5px] text-muted-foreground">{subtitle}</DialogDescription>
@@ -56,8 +59,13 @@ export function ActionDialog({
             <DialogDescription className="sr-only">{typeof title === "string" ? title : "Dialog"}</DialogDescription>
           )}
         </div>
-        {children && <div className="flex flex-col gap-3 px-5 pt-3 pb-5 text-[13.5px]">{children}</div>}
-        <div className="flex flex-wrap justify-end gap-2 border-t border-divider px-5 py-3.5">{footer}</div>
+        {/* The body scrolls and the buttons stay in view, however tall the form or small the screen. */}
+        {children && (
+          <div className="flex min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain px-5 pt-3 pb-5 text-[13.5px]">
+            {children}
+          </div>
+        )}
+        <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-divider px-5 py-3.5">{footer}</div>
       </DialogContent>
     </Dialog>
   )

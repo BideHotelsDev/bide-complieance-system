@@ -64,7 +64,7 @@ export function FailedResult({ task, result }: { task: TaskDetail; result: Submi
           </Line>
         </ul>
       </main>
-      <footer className="pb-safe sticky bottom-0 flex flex-col gap-2.5 border-t border-divider bg-surface px-4 pt-3 pb-4">
+      <footer className="pb-safe-4 sticky bottom-0 flex flex-col gap-2.5 border-t border-divider bg-surface px-4 pt-3">
         <Link
           to="/"
           className="flex h-[52px] items-center justify-center rounded-xl bg-primary text-[17px] font-semibold text-primary-foreground no-underline"

@@ -108,7 +108,7 @@ export function FlowScreen({
       </header>
       <main className="flex flex-1 flex-col gap-5 px-4 pt-4 pb-6">{children}</main>
       {footer && (
-        <footer className="pb-safe sticky bottom-0 z-20 border-t border-divider bg-surface px-4 pt-3">
+        <footer className="pb-safe-3 sticky bottom-0 z-20 border-t border-divider bg-surface px-4 pt-3">
           <div className="pb-3">{footer}</div>
         </footer>
       )}

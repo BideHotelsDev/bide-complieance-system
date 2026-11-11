@@ -12,6 +12,8 @@
 @import "@fontsource/jetbrains-mono/500.css";
 
 @custom-variant dark (&:is(.dark *));
+/* Touch screens (phones, tablets): controls grow to a finger-sized target. coarse:h-10 and friends. */
+@custom-variant coarse (@media (pointer: coarse));
 
 :root {
   --c-background: #fbfbfc;
@@ -38,6 +40,9 @@
   --c-grey-bg: #f1f1f3;
   --c-blue: #2459c7;
   --c-blue-bg: #eaf0fd;
+  /* Text on a solid status colour (a red button, a count badge): white here, near-black in dark mode, where the
+     status colours are light. */
+  --c-on-status: #ffffff;
   --radius: 6px;
   --font-sans-family: "Inter Variable", Inter, system-ui, sans-serif;
   --font-display-family: var(--font-sans-family);
@@ -77,6 +82,7 @@
   --c-grey-bg: #232328;
   --c-blue: #8fa8e6;
   --c-blue-bg: #172036;
+  --c-on-status: #111113;
 }
 
 @theme inline {
@@ -124,6 +130,7 @@
   --color-st-grey-bg: var(--c-grey-bg);
   --color-st-blue: var(--c-blue);
   --color-st-blue-bg: var(--c-blue-bg);
+  --color-on-status: var(--c-on-status);
 
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
@@ -146,6 +153,14 @@
   html {
     font-feature-settings: "cv11", "ss01";
     -webkit-text-size-adjust: 100%;
+  }
+  /* iOS zooms the page into any field under 16px when it's tapped; touch screens get 16px fields. */
+  @media (pointer: coarse) {
+    input:not([type="checkbox"], [type="radio"], [type="range"]),
+    textarea,
+    select {
+      font-size: max(16px, 1em);
+    }
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;

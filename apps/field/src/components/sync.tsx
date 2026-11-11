@@ -31,7 +31,7 @@ export function toastCouldntSave(retry?: () => void) {
       </span>
     ),
     action: retry ? { label: "Try again", onClick: retry } : undefined,
-    className: "!bg-st-red !text-white",
+    className: "!bg-st-red !text-on-status",
   })
 }
 

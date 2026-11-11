@@ -198,8 +198,8 @@ export function Sidebar({
           aria-label={`${it.count} ${it.tone === "red" ? "need you" : it.tone === "blue" ? "waiting" : it.tone === "amber" ? "awaiting signature" : "open"}`}
           className={cn(
             "tabular ml-auto inline-flex h-5 min-w-[22px] items-center justify-center rounded-full px-1.5 text-xs font-semibold",
-            it.tone === "red" && "bg-st-red text-white",
-            it.tone === "blue" && "bg-st-blue text-white dark:text-black",
+            it.tone === "red" && "bg-st-red text-on-status",
+            it.tone === "blue" && "bg-st-blue text-on-status",
             it.tone === "amber" && "bg-st-amber-bg text-st-amber",
             it.tone === "grey" && "bg-border text-ink2",
           )}

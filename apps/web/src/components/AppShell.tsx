@@ -1,7 +1,7 @@
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router"
 import * as React from "react"
 
-import { LoadingPage } from "@bide-comply/ui/components/page"
+import { ErrorState, LoadingPage } from "@bide-comply/ui/components/page"
 import { ContactProvider } from "@bide-comply/ui/lib/contact"
 import { Sheet, SheetContent, SheetTitle } from "@bide-comply/ui/components/sheet"
 
@@ -56,9 +56,20 @@ export function AppShell() {
           }
           return !c
         })
+  // Signed out goes to sign-in (above). Any other failure says so, with a retry, instead of loading for ever.
+  if (!me.data && me.error && me.error.status !== 401)
+    return (
+      <div className="mx-auto max-w-lg p-4 pt-16 md:p-8">
+        <ErrorState
+          title="Bide Comply couldn't load your details"
+          message={me.error.status === 0 ? "Check your connection, then try again." : me.error.message}
+          onRetry={() => void me.refetch()}
+        />
+      </div>
+    )
   if (!me.data)
     return (
-      <div className="p-8">
+      <div className="p-4 md:p-8">
         <LoadingPage />
       </div>
     )

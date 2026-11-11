@@ -32,8 +32,10 @@ export function QuickViews({
           aria-selected={v.on}
           onClick={() => onPick(v.key)}
           className={cn(
-            "inline-flex h-8 shrink-0 items-center gap-2 rounded-full border px-3 text-[13px] font-medium transition-colors",
-            v.on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-surface text-ink2 hover:bg-hover",
+            "inline-flex h-8 shrink-0 items-center gap-2 rounded-full border px-3 text-[13px] font-medium transition-colors coarse:h-10",
+            v.on
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border bg-surface text-ink2 hover:bg-hover",
           )}
         >
           {v.label}
@@ -92,7 +94,7 @@ export function SearchBox({
   return (
     <label
       className={cn(
-        "flex h-8 min-w-[220px] items-center gap-2 rounded-md border border-border bg-surface px-2.5 text-muted-foreground focus-within:outline-2 focus-within:outline-focus",
+        "flex h-8 min-w-[220px] items-center gap-2 rounded-md coarse:h-10 border border-border bg-surface px-2.5 text-muted-foreground focus-within:outline-2 focus-within:outline-focus",
         className,
       )}
     >
@@ -114,7 +116,7 @@ export function SearchBox({
             setLocal("")
             onChange("")
           }}
-          className="rounded p-0.5 hover:bg-hover"
+          className="-mr-1.5 flex size-7 items-center justify-center rounded hover:bg-hover coarse:size-9"
         >
           <X className="size-3.5" />
         </button>
@@ -139,7 +141,7 @@ export function FacetButton({ facet, onChange }: { facet: Facet; onChange: (valu
           aria-haspopup="listbox"
           aria-expanded={open}
           className={cn(
-            "inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-[13px] whitespace-nowrap transition-colors",
+            "inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-[13px] whitespace-nowrap transition-colors coarse:h-10",
             facet.active
               ? "border-st-blue bg-st-blue-bg text-st-blue"
               : "border-border bg-surface text-ink2 hover:bg-hover",
@@ -158,12 +160,12 @@ export function FacetButton({ facet, onChange }: { facet: Facet; onChange: (valu
           className="z-50 w-64 rounded-lg border border-border bg-popover p-1.5 shadow-lg"
         >
           {facet.hint && <div className="px-2 pt-1 pb-1.5 text-xs font-medium text-muted-foreground">{facet.hint}</div>}
-          <div role="listbox" aria-multiselectable="true" className="max-h-72 overflow-y-auto">
+          <div role="group" aria-label={facet.name} className="max-h-72 overflow-y-auto">
             {facet.options.map((o) => (
               <div key={o.value} className="group flex items-center rounded-md hover:bg-hover">
                 <label
                   className={cn(
-                    "flex flex-1 cursor-pointer items-center gap-2 px-2 py-1.5 text-[13px]",
+                    "flex flex-1 cursor-pointer items-center gap-2 px-2 py-1.5 text-[13px] coarse:py-2.5",
                     o.count === 0 && !o.checked && "text-subtle",
                   )}
                 >
@@ -179,7 +181,8 @@ export function FacetButton({ facet, onChange }: { facet: Facet; onChange: (valu
                 <button
                   type="button"
                   onClick={() => onChange([o.value])}
-                  className="mr-1 rounded px-1.5 py-0.5 text-xs text-link opacity-0 group-hover:opacity-100 focus:opacity-100"
+                  aria-label={`Only ${o.label}`}
+                  className="mr-1 rounded px-1.5 py-0.5 text-xs text-link opacity-0 group-hover:opacity-100 focus:opacity-100 coarse:px-2.5 coarse:py-2 coarse:opacity-100"
                 >
                   Only
                 </button>
@@ -226,7 +229,11 @@ export function FilterBar({
         <FacetButton key={f.key} facet={f} onChange={(v) => onFacet(f.key, v)} />
       ))}
       {anyFilter && onClearAll && (
-        <button type="button" onClick={onClearAll} className="h-8 rounded-md px-2 text-[13px] text-link hover:bg-hover">
+        <button
+          type="button"
+          onClick={onClearAll}
+          className="h-8 rounded-md px-2 text-[13px] text-link hover:bg-hover coarse:h-10"
+        >
           Clear all filters
         </button>
       )}
@@ -268,8 +275,10 @@ export function Segmented<T extends string>({
           onClick={() => onChange(o.value)}
           className={cn(
             "inline-flex items-center gap-1.5 rounded-[5px] px-2.5 font-medium transition-colors",
-            size === "sm" ? "h-6 text-xs" : "h-[26px] text-[13px]",
-            value === o.value ? "bg-surface text-foreground shadow-[0_0_0_1px_var(--c-border)]" : "text-muted-foreground",
+            size === "sm" ? "h-6 text-xs coarse:h-9" : "h-[26px] text-[13px] coarse:h-9",
+            value === o.value
+              ? "bg-surface text-foreground shadow-[0_0_0_1px_var(--c-border)]"
+              : "text-muted-foreground",
           )}
         >
           {o.label}

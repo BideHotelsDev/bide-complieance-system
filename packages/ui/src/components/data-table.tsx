@@ -284,7 +284,7 @@ export function Pagination({
             <select
               value={pageSize}
               onChange={(e) => onPageSize(Number(e.target.value))}
-              className="h-7 rounded-md border border-border bg-surface px-1.5 text-foreground"
+              className="h-7 rounded-md border border-border bg-surface px-1.5 text-foreground coarse:h-10"
             >
               {[25, 50, 100].map((n) => (
                 <option key={n} value={n}>
@@ -299,7 +299,7 @@ export function Pagination({
           aria-label="Previous page"
           disabled={page <= 1}
           onClick={() => onPage(page - 1)}
-          className="inline-flex size-7 items-center justify-center rounded-md border border-border bg-surface disabled:opacity-40"
+          className="inline-flex size-7 items-center justify-center rounded-md border border-border bg-surface disabled:opacity-40 coarse:size-10"
         >
           <ChevronLeft className="size-4" />
         </button>
@@ -308,7 +308,7 @@ export function Pagination({
           aria-label="Next page"
           disabled={page >= last}
           onClick={() => onPage(page + 1)}
-          className="inline-flex size-7 items-center justify-center rounded-md border border-border bg-surface disabled:opacity-40"
+          className="inline-flex size-7 items-center justify-center rounded-md border border-border bg-surface disabled:opacity-40 coarse:size-10"
         >
           <ChevronRight className="size-4" />
         </button>

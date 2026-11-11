@@ -143,7 +143,7 @@ export function ImportPage() {
                 className={cn(
                   "inline-flex size-[22px] items-center justify-center rounded-full text-xs font-semibold",
                   i < idx && "bg-primary text-primary-foreground",
-                  i === idx && "bg-st-blue text-white",
+                  i === idx && "bg-st-blue text-on-status",
                   i > idx && "border border-border",
                 )}
               >

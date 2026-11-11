@@ -41,7 +41,7 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <PropertyProvider>
         <RouterProvider router={router} />
-        <Toaster />
+        <Toaster mobileBottom={88} />
       </PropertyProvider>
     </QueryClientProvider>
   </React.StrictMode>,

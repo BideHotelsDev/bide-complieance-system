@@ -16,7 +16,7 @@ const TONE: Record<Tone, string> = {
   grey: "bg-st-grey-bg text-st-grey",
   blue: "bg-st-blue-bg text-st-blue",
   outline: "border border-border text-st-grey",
-  "solid-amber": "bg-st-amber text-white dark:text-black",
+  "solid-amber": "bg-st-amber text-on-status",
   "outline-red": "border border-st-red text-st-red",
   ink: "bg-primary text-primary-foreground",
 }

@@ -84,7 +84,10 @@ export function Card({
   bodyClassName?: string
 }) {
   return (
-    <As className={cn("rounded-[10px] border border-divider bg-surface", className)} {...(props as React.ComponentProps<"div">)}>
+    <As
+      className={cn("rounded-[10px] border border-divider bg-surface", className)}
+      {...(props as React.ComponentProps<"div">)}
+    >
       {(title || action) && (
         <div className="flex items-center gap-3 border-b border-divider px-4 py-3">
           {title && <h2 className="m-0 text-[14px] font-semibold">{title}</h2>}
@@ -159,7 +162,13 @@ export function Kpi({
   )
 }
 
-export function Dl({ items, className }: { items: { label: React.ReactNode; value: React.ReactNode }[]; className?: string }) {
+export function Dl({
+  items,
+  className,
+}: {
+  items: { label: React.ReactNode; value: React.ReactNode }[]
+  className?: string
+}) {
   return (
     <dl className={cn("m-0 grid grid-cols-[minmax(110px,auto)_1fr] gap-x-4 gap-y-2 text-[13.5px]", className)}>
       {items.map((it, i) => (
@@ -189,34 +198,89 @@ export function SideSheet({
   footer?: React.ReactNode
   className?: string
 }) {
-  // A click opens the record in a side sheet so people keep their place in the list (§10.5). Esc closes it.
+  // A click opens the record in a side sheet so people keep their place in the list (§10.5). Esc closes it, unless
+  // something sits on top of it (a dialog, menu or picker owns that Escape).
   React.useEffect(() => {
-    const h = (e: KeyboardEvent) => e.key === "Escape" && onClose()
+    const h = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return
+      if (document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"]')) return
+      onClose()
+    }
     window.addEventListener("keydown", h)
     return () => window.removeEventListener("keydown", h)
   }, [onClose])
+  // Below lg there's no room beside the list, so the sheet covers the page from the bottom instead of landing under
+  // the whole list (where a tap looked like it did nothing). There it takes focus, and gives it back on close.
+  const ref = React.useRef<HTMLElement>(null)
+  const narrow = useNarrow()
+  React.useEffect(() => {
+    if (!narrow) return
+    const before = document.activeElement as HTMLElement | null
+    ref.current?.focus()
+    const html = document.documentElement
+    const was = html.style.overflow
+    html.style.overflow = "hidden"
+    return () => {
+      html.style.overflow = was
+      if (before?.isConnected) before.focus()
+    }
+  }, [narrow])
   return (
-    <aside
-      aria-label={label}
-      className={cn(
-        "flex max-h-[calc(100vh-32px)] w-full flex-col overflow-hidden rounded-[10px] border border-divider bg-surface lg:sticky lg:top-4 lg:w-[400px] lg:shrink-0",
-        className,
-      )}
-    >
-      <div className="flex items-center gap-2 border-b border-divider px-4 py-3">
-        <div className="flex min-w-0 flex-1 items-center gap-2">{header}</div>
-        {onOpenFull && (
-          <button type="button" aria-label="Open full page" onClick={onOpenFull} className="rounded p-1 hover:bg-hover">
-            <Maximize2 className="size-4" />
-          </button>
+    <>
+      <div aria-hidden onClick={onClose} className="fixed inset-0 z-40 bg-black/40 lg:hidden" />
+      <aside
+        ref={ref}
+        tabIndex={-1}
+        aria-label={label}
+        className={cn(
+          "fixed inset-x-0 bottom-0 z-50 flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-xl border border-divider bg-surface shadow-lg outline-none",
+          "lg:sticky lg:inset-auto lg:top-4 lg:z-auto lg:max-h-[calc(100dvh-32px)] lg:w-[400px] lg:shrink-0 lg:rounded-[10px] lg:shadow-none",
+          className,
         )}
-        <button type="button" aria-label="Close" onClick={onClose} className="rounded p-1 hover:bg-hover">
-          <X className="size-4" />
-        </button>
-      </div>
-      <div className="flex-1 overflow-y-auto p-4">{children}</div>
-      {footer && <div className="flex flex-wrap items-center gap-2 border-t border-divider px-4 py-3">{footer}</div>}
-    </aside>
+      >
+        <div className="flex items-center gap-2 border-b border-divider px-4 py-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2">{header}</div>
+          {onOpenFull && (
+            <button
+              type="button"
+              aria-label="Open full page"
+              onClick={onOpenFull}
+              className="flex size-9 items-center justify-center rounded-md hover:bg-hover lg:size-8"
+            >
+              <Maximize2 className="size-4" />
+            </button>
+          )}
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={onClose}
+            className="flex size-9 items-center justify-center rounded-md hover:bg-hover lg:size-8"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto overscroll-contain p-4">{children}</div>
+        {footer && (
+          <div className="flex flex-wrap items-center gap-2 border-t border-divider px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:pb-3">
+            {footer}
+          </div>
+        )}
+      </aside>
+    </>
+  )
+}
+
+/* True below the lg breakpoint (1024px), following resizes and rotation. */
+export function useNarrow(): boolean {
+  const q = "(max-width: 1023.98px)"
+  return React.useSyncExternalStore(
+    (cb) => {
+      const m = window.matchMedia(q)
+      m.addEventListener("change", cb)
+      return () => m.removeEventListener("change", cb)
+    },
+    () => window.matchMedia(q).matches,
+    () => false,
   )
 }
 
@@ -236,9 +300,9 @@ export function LoadingRows({ rows = 6, label = "Loading" }: { rows?: number; la
 
 export function LoadingPage() {
   return (
-    <div aria-busy="true" aria-label="Loading" className="flex flex-col gap-4">
-      <Skeleton className="h-7 w-72" />
-      <Skeleton className="h-4 w-96" />
+    <div role="status" aria-busy="true" aria-label="Loading" className="flex flex-col gap-4">
+      <Skeleton className="h-7 w-72 max-w-full" />
+      <Skeleton className="h-4 w-96 max-w-full" />
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <Skeleton key={i} className="h-24" />
