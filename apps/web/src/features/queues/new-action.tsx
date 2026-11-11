@@ -6,6 +6,7 @@ import { api, type ApiError } from "@bide-comply/api-client"
 import { Button } from "@bide-comply/ui/components/button"
 import { toast, toastError } from "@bide-comply/ui/components/toaster"
 
+import { useDraft } from "@/lib/draft"
 import { useMe } from "@/lib/session"
 import { ownerBody, OwnerSelect, useOwnerOptions } from "./owner-select"
 import { Field, inputCls, QDialog, textareaCls } from "./ui"
@@ -37,6 +38,8 @@ export function NewActionDialog({
     [defaultPropertyId, firstId],
   )
   const [f, setF] = React.useState(blank)
+  // What needs fixing is kept if the dialog is closed by mistake, or the page reloads; cleared once raised.
+  const [description, setDescription, clearDescription] = useDraft("new-action")
   React.useEffect(() => {
     if (open) setF(blank())
   }, [open, blank])
@@ -49,7 +52,7 @@ export function NewActionDialog({
     mutationFn: () =>
       api.post<{ ref: string; id: string }>("/api/actions", {
         property_id: f.property_id,
-        description: f.description.trim(),
+        description: description.trim(),
         type: f.type,
         priority: f.priority,
         ...ownerBody(f.owner_id),
@@ -59,12 +62,13 @@ export function NewActionDialog({
       }),
     onSuccess: (r) => {
       toast(`${r.ref} raised`)
+      clearDescription()
       onOpenChange(false)
       onCreated(r.ref)
     },
     onError: (e: ApiError) => toastError(e.message),
   })
-  const ok = f.property_id && f.description.trim().length > 2
+  const ok = f.property_id && description.trim().length > 2
   return (
     <QDialog
       open={open}
@@ -96,8 +100,8 @@ export function NewActionDialog({
       <Field label="What needs fixing?">
         <textarea
           rows={3}
-          value={f.description}
-          onChange={up("description")}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
           placeholder="e.g. Fire door to room 7 doesn't close fully"
           className={textareaCls}
         />

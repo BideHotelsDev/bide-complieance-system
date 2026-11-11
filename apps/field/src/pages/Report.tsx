@@ -23,7 +23,8 @@ import {
 } from "@/components/kit"
 import { toastSaved, toastSent } from "@/components/sync"
 import { cachedGet } from "@/lib/cache"
-import { shortName } from "@/lib/format"
+import { fmtTime, shortName } from "@/lib/format"
+import { useKeptForm, type DraftShot } from "@/lib/drafts"
 import { enqueue } from "@/lib/queue"
 import { useMe, useProperty } from "@/lib/session"
 import { useShots, type Shot } from "@/lib/shots"
@@ -103,7 +104,59 @@ export function ReportPage() {
   const [camera, setCamera] = React.useState(false)
   const [sending, setSending] = React.useState(false)
   const property = me.data?.properties.find((p) => p.id === propertyId)
-  const { shots, add, remove, ensureUploaded } = useShots({ property_id: propertyId, ref: property?.code })
+  const { shots, add, remove, restore, ensureUploaded } = useShots({ property_id: propertyId, ref: property?.code })
+  // A half-written report is kept on the phone (words, choices and photos) and put back when Report is opened again.
+  const form = { kind, where, whereText, text, hurt, people, riddor, zone, cause, falseAlarm, arc, minutes }
+  const snapshot = React.useMemo(
+    () => ({
+      form,
+      shots: shots.map((x): DraftShot => ({
+        key: x.key,
+        blob: x.blob,
+        captured_at: x.captured_at,
+        via: x.via,
+        evidence_id: x.evidence_id,
+      })),
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [kind, where, whereText, text, hurt, people, riddor, zone, cause, falseAlarm, arc, minutes, shots],
+  )
+  const started =
+    shots.length > 0 || Boolean(text.trim() || whereText.trim() || people.trim() || cause || hurt || riddor || zone)
+  const [keptFrom, setKeptFrom] = React.useState<string | null>(null)
+  const { finish } = useKeptForm(propertyId ? `report:${propertyId}` : null, snapshot, started, (kept, savedAt) => {
+    const f = kept.form
+    setKind(f.kind)
+    setWhere(f.where)
+    setWhereText(f.whereText)
+    setText(f.text)
+    setHurt(f.hurt)
+    setPeople(f.people)
+    setRiddor(f.riddor)
+    setZone(f.zone)
+    setCause(f.cause)
+    setFalseAlarm(f.falseAlarm)
+    setArc(f.arc)
+    setMinutes(f.minutes)
+    restore(kept.shots)
+    setKeptFrom(savedAt)
+  })
+  const startAgain = () => {
+    setKind("hazard")
+    setWhere("")
+    setWhereText("")
+    setText("")
+    setHurt(null)
+    setPeople("")
+    setRiddor(null)
+    setZone("")
+    setCause("")
+    setFalseAlarm(null)
+    setArc("")
+    setMinutes("")
+    for (const x of shots) remove(x.id)
+    setKeptFrom(null)
+  }
   const locations = useQuery({
     queryKey: ["locations", propertyId],
     queryFn: () => cachedGet<Location[]>("/api/field/locations", { property: propertyId }),
@@ -155,6 +208,7 @@ export function ReportPage() {
         })),
         device_time: deviceTime,
       })
+      await finish()
       toastSaved()
       void navigate({ to: "/" })
     }
@@ -171,6 +225,7 @@ export function ReportPage() {
         ...body,
         photos: taken.map((s) => s.evidence_id).filter(Boolean),
       })
+      await finish()
       toastSent(res.message)
       void qc.invalidateQueries({ queryKey: ["today"] })
       void navigate({ to: "/" })
@@ -209,6 +264,14 @@ export function ReportPage() {
         </>
       }
     >
+      {keptFrom && (
+        <div role="status" className="flex items-center gap-3 rounded-xl bg-st-blue-bg px-4 py-3 text-[15px]">
+          <span className="min-w-0 flex-1">What you'd started at {fmtTime(keptFrom)} was kept on this phone.</span>
+          <button type="button" className="h-11 shrink-0 px-2 font-semibold text-link" onClick={startAgain}>
+            Start again
+          </button>
+        </div>
+      )}
       <fieldset className="m-0 border-0 p-0">
         <legend className="mb-2 p-0 text-[16px] font-semibold">What happened?</legend>
         <div className="flex flex-col gap-2">

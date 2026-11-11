@@ -68,8 +68,8 @@ export function SignInPage() {
         <>
           <h1 className="m-0 text-[18px] font-semibold">You've been signed out</h1>
           <p className="mt-1 text-[13.5px] text-muted-foreground">
-            For safety, after 30 minutes without activity. Anything you hadn't saved wasn't kept. Sign in again to carry
-            on.
+            For safety, after 30 minutes without activity. Comments and notes you hadn't sent are kept in this tab; sign
+            in again here to carry on.
           </p>
         </>
       ) : (

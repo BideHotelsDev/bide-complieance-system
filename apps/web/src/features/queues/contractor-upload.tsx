@@ -14,6 +14,7 @@ import { ClassBadge, Pill } from "@bide-comply/ui/components/status"
 import { toastError } from "@bide-comply/ui/components/toaster"
 import { cn } from "@bide-comply/ui/lib/utils"
 
+import { useDraft } from "@/lib/draft"
 import { fmtDateTime } from "@/lib/format"
 import type { EvidenceFile } from "./types"
 
@@ -42,7 +43,7 @@ export function ContractorUpload({ id, onDecided }: { id: string; onDecided: (la
     queryKey: ["contractor-upload", id],
     queryFn: () => api.get<Upload>(`/api/contractor-uploads/${id}`),
   })
-  const [comment, setComment] = React.useState("")
+  const [comment, setComment, clearComment] = useDraft(`contractor-upload:${id}`)
   const [needComment, setNeedComment] = React.useState(false)
   const commentRef = React.useRef<HTMLInputElement>(null)
   const u = res.data
@@ -51,6 +52,7 @@ export function ContractorUpload({ id, onDecided }: { id: string; onDecided: (la
     mutationFn: (result: "approved" | "rejected") =>
       api.post(`/api/contractor-uploads/${id}/decide`, { result, comment: comment.trim() || null }),
     onSuccess: (_d, result) => {
+      clearComment()
       void qc.invalidateQueries({ queryKey: ["contractor-upload", id] })
       void qc.invalidateQueries({ queryKey: ["actions"] })
       void qc.invalidateQueries({ queryKey: ["action"] })

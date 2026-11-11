@@ -15,6 +15,7 @@ import { Pill, PriorityBadge } from "@bide-comply/ui/components/status"
 import { toast, toastError } from "@bide-comply/ui/components/toaster"
 import { cn } from "@bide-comply/ui/lib/utils"
 
+import { useDraft } from "@/lib/draft"
 import { fmtDate, fmtDateTime } from "@/lib/format"
 import { useMe } from "@/lib/session"
 import type { ActionDetail } from "./types"
@@ -29,22 +30,23 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
     queryFn: () => api.get<ActionDetail>(`/api/actions/${ref_}`),
   })
   const a = res.data
-  const [decision, setDecision] = React.useState("")
-  const [reason, setReason] = React.useState("")
+  // An advisory's decision and reason start from what's saved; typing is kept until the Action is closed, so a
+  // refetch, opening another Action or a reload doesn't wipe it.
+  const [decision, setDecision, clearDecision] = useDraft(`action-decision:${ref_}`, a?.decision ?? "")
+  const [reason, setReason, clearReason] = useDraft(`action-reason:${ref_}`, a?.decision_reason ?? "")
   const [refused, setRefused] = React.useState<string | null>(null)
   const [reassign, setReassign] = React.useState(false)
-  const [commenting, setCommenting] = React.useState(false)
-  const [comment, setComment] = React.useState("")
+  const [commentOpen, setCommenting] = React.useState(false)
+  const [comment, setComment, clearComment] = useDraft(`action-comment:${ref_}`)
+  // A kept comment reopens its box, so the words are visible rather than hidden behind "Comment".
+  const commenting = commentOpen || !!comment
   const [uploading, setUploading] = React.useState(false)
   const fileRef = React.useRef<HTMLInputElement>(null)
   const decisionRef = React.useRef<HTMLTextAreaElement>(null)
 
   React.useEffect(() => {
-    setDecision(a?.decision ?? "")
-    setReason(a?.decision_reason ?? "")
     setCommenting(false)
-    setComment("")
-  }, [a?.ref, a?.decision, a?.decision_reason])
+  }, [a?.ref])
 
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: ["action", ref_] })
@@ -77,6 +79,8 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
               .catch((e: ApiError) => toastError(e.message)),
         },
       })
+      clearDecision()
+      clearReason()
       refresh()
       void qc.invalidateQueries({ queryKey: ["nav"] })
       onClosed()
@@ -120,7 +124,7 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
     mutationFn: () => api.post(`/api/actions/${ref_}/comments`, { body: comment }),
     onSuccess: () => {
       toast("Comment added")
-      setComment("")
+      clearComment()
       setCommenting(false)
       refresh()
     },
@@ -393,7 +397,7 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
                     Reassign
                   </Button>
                 )}
-                <Button variant="outline" onClick={() => setCommenting((c) => !c)} aria-expanded={commenting}>
+                <Button variant="outline" onClick={() => setCommenting(!commenting)} aria-expanded={commenting}>
                   Comment
                 </Button>
               </div>
@@ -432,7 +436,15 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
                 <Button type="submit" size="sm" disabled={!comment.trim() || sendComment.isPending}>
                   Add comment
                 </Button>
-                <Button type="button" size="sm" variant="ghost" onClick={() => setCommenting(false)}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    clearComment()
+                    setCommenting(false)
+                  }}
+                >
                   Cancel
                 </Button>
               </div>

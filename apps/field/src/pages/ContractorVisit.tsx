@@ -24,7 +24,8 @@ import {
 } from "@/components/kit"
 import { toastSaved, toastSent } from "@/components/sync"
 import { cachedGet } from "@/lib/cache"
-import { fmtSize } from "@/lib/format"
+import { useKeptForm } from "@/lib/drafts"
+import { fmtSize, fmtTime } from "@/lib/format"
 import { enqueue } from "@/lib/queue"
 import { useMe, useProperty } from "@/lib/session"
 import type { VisitForm } from "@/lib/types"
@@ -52,6 +53,35 @@ export function ContractorVisitPage() {
   const [fixes, setFixes] = React.useState<Fix[]>([{ text: "", priority: "high" }])
   const [saving, setSaving] = React.useState(false)
   const propName = me.data?.properties.find((p) => p.id === propertyId)?.name
+  // A half-logged visit (who, what for, the file, anything wrong) is kept on the phone and put back next time.
+  const snapshot = React.useMemo(
+    () => ({ who, adding, newName, purpose, file, uploaded, anyWrong, fixes }),
+    [who, adding, newName, purpose, file, uploaded, anyWrong, fixes],
+  )
+  const started = Boolean(who || newName.trim() || purpose || file || anyWrong || fixes.some((f) => f.text.trim()))
+  const [keptFrom, setKeptFrom] = React.useState<string | null>(null)
+  const { finish } = useKeptForm(propertyId ? `visit:${propertyId}` : null, snapshot, started, (kept, savedAt) => {
+    setWho(kept.who)
+    setAdding(kept.adding)
+    setNewName(kept.newName)
+    setPurpose(kept.purpose)
+    setFile(kept.file)
+    setUploaded(kept.uploaded)
+    setAnyWrong(kept.anyWrong)
+    setFixes(kept.fixes.length ? kept.fixes : [{ text: "", priority: "high" }])
+    setKeptFrom(savedAt)
+  })
+  const startAgain = () => {
+    setWho("")
+    setAdding(false)
+    setNewName("")
+    setPurpose(null)
+    setFile(null)
+    setUploaded(null)
+    setAnyWrong(null)
+    setFixes([{ text: "", priority: "high" }])
+    setKeptFrom(null)
+  }
 
   const chosen = form.data?.purposes.find((p) => p.label === purpose)
   const realFixes = fixes.filter((f) => f.text.trim())
@@ -120,6 +150,7 @@ export function ContractorVisitPage() {
           : [],
         device_time: deviceTime,
       })
+      await finish()
       toastSaved()
       void navigate({ to: "/" })
     }
@@ -135,6 +166,7 @@ export function ContractorVisitPage() {
         "/api/field/contractor-visits",
         { ...body, evidence_id: evidenceId },
       )
+      await finish()
       const done = res.task_done ? " The check counts as done." : ""
       toastSent(
         res.actions.length
@@ -173,6 +205,14 @@ export function ContractorVisitPage() {
         <ErrorBox message={form.error.message} onRetry={() => void form.refetch()} />
       ) : (
         <>
+          {keptFrom && (
+            <div role="status" className="flex items-center gap-3 rounded-xl bg-st-blue-bg px-4 py-3 text-[15px]">
+              <span className="min-w-0 flex-1">What you'd started at {fmtTime(keptFrom)} was kept on this phone.</span>
+              <button type="button" className="h-11 shrink-0 px-2 font-semibold text-link" onClick={startAgain}>
+                Start again
+              </button>
+            </div>
+          )}
           <div>
             <FieldLabel htmlFor="who">Who came?</FieldLabel>
             {adding ? (

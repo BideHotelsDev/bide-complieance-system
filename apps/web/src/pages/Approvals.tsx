@@ -17,6 +17,7 @@ import { cn } from "@bide-comply/ui/lib/utils"
 
 import type { ApprovalCard, ApprovalDetail, ApprovalList } from "@/features/queues/types"
 import { LineTabs, nextAfter, Note, QueueDetail, rowCls, textareaCls } from "@/features/queues/ui"
+import { useDraft } from "@/lib/draft"
 import { useParams } from "@/lib/params"
 import { useProperty } from "@/lib/property"
 
@@ -179,7 +180,7 @@ function Detail({ id, onDecided }: { id: string; onDecided: () => void }) {
     queryKey: ["approval", id],
     queryFn: () => api.get<ApprovalDetail>(`/api/approvals/${id}`),
   })
-  const [note, setNote] = React.useState("")
+  const [note, setNote, clearNote] = useDraft(`approval:${id}`)
   const [missing, setMissing] = React.useState<"decline" | "question" | null>(null)
   const noteRef = React.useRef<HTMLTextAreaElement>(null)
   const a = res.data
@@ -191,6 +192,7 @@ function Detail({ id, onDecided }: { id: string; onDecided: () => void }) {
         note: note.trim() || null,
       }),
     onSuccess: (_r, decision) => {
+      clearNote()
       void qc.invalidateQueries({ queryKey: ["approvals"] })
       void qc.invalidateQueries({ queryKey: ["approval", id] })
       void qc.invalidateQueries({ queryKey: ["nav"] })

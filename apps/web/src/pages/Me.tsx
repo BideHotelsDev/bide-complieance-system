@@ -28,6 +28,7 @@ import { applyMode, savedMode, type Mode } from "@bide-comply/ui/lib/theme"
 import { cn } from "@bide-comply/ui/lib/utils"
 
 import { fmtDateTime, fmtTime, relative } from "@/lib/format"
+import { clearDrafts } from "@/lib/draft"
 import { useMe, type Me } from "@/lib/session"
 
 type Notification = {
@@ -81,6 +82,7 @@ function SignOut() {
       // Whatever the server said, forget everything cached in this tab and go to sign-in. Signed in through Bide
       // Hub, the Hub signs out too (every Bide system), then sends the browser back here.
       qc.clear()
+      clearDrafts()
       if (r?.redirect) window.location.href = r.redirect
       else void navigate({ to: "/signin" })
     },

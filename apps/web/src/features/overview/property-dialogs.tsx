@@ -21,6 +21,8 @@ import { Callout } from "@bide-comply/ui/components/page"
 import { Textarea } from "@bide-comply/ui/components/textarea"
 import { toast } from "@bide-comply/ui/components/toaster"
 
+import { useDraft } from "@/lib/draft"
+
 import type { AssignOptions, Option, RegisterDetail } from "./property-types"
 
 const selectCls =
@@ -62,7 +64,8 @@ export function RaiseActionDialog({
   item?: { ref: string; check: string; class: string } | null
 }) {
   const qc = useQueryClient()
-  const [description, setDescription] = React.useState("")
+  // Kept per property and check if the dialog closes by mistake or the page reloads; cleared once raised.
+  const [description, setDescription, clearDescription] = useDraft(`raise:${propertyId}:${item?.ref ?? ""}`)
   const [type, setType] = React.useState("action")
   const [priority, setPriority] = React.useState("")
   const [klass, setKlass] = React.useState(item?.class ?? "")
@@ -70,7 +73,6 @@ export function RaiseActionDialog({
   const [error, setError] = React.useState<string | null>(null)
   React.useEffect(() => {
     if (open) {
-      setDescription("")
       setType("action")
       setPriority("")
       setKlass(item?.class ?? "")
@@ -92,6 +94,7 @@ export function RaiseActionDialog({
       }),
     onSuccess: (r) => {
       toast(`Action ${r.ref} raised at ${propertyName}`)
+      clearDescription()
       void qc.invalidateQueries({ queryKey: ["property"] })
       void qc.invalidateQueries({ queryKey: ["actions"] })
       onOpenChange(false)

@@ -32,6 +32,7 @@ import {
 } from "@/features/queues/ui"
 import { fmtDateTime } from "@/lib/format"
 import { useParams } from "@/lib/params"
+import { useDraft } from "@/lib/draft"
 import { useProperty } from "@/lib/property"
 import { useMe } from "@/lib/session"
 
@@ -239,7 +240,8 @@ function Submission({
     queryKey: ["review", id],
     queryFn: () => api.get<ReviewDetail>(`/api/reviews/${id}`),
   })
-  const [comment, setComment] = React.useState("")
+  // Kept while you look at other submissions, reload or get signed out; cleared once the decision is sent.
+  const [comment, setComment, clearComment] = useDraft(`review:${id}`)
   const [needComment, setNeedComment] = React.useState(false)
   const [amending, setAmending] = React.useState(false)
   const commentRef = React.useRef<HTMLInputElement>(null)
@@ -251,6 +253,7 @@ function Submission({
     mutationFn: (result: "approved" | "rejected" | "needs_action") =>
       api.post(`/api/reviews/${id}/verify`, { result, comment: comment.trim() || null }),
     onSuccess: (_d, result) => {
+      clearComment()
       void qc.invalidateQueries({ queryKey: ["review", id] })
       const what = {
         approved: "Approved. Marked Verified and locked.",
