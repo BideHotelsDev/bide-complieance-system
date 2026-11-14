@@ -20,7 +20,7 @@ from bide_comply import auth, clock, emailer, hub, ratelimit
 from bide_comply._vendor.bide_hub_client.testing import FakeHub as SharedFakeHub
 from bide_comply.config import settings
 from bide_comply.db import engine
-from bide_comply.schema import audit_event, auth_session, person, property_, role_assignment, totp_secret
+from bide_comply.schema import audit_event, auth_session, device, person, property_, role_assignment, totp_secret
 
 ISSUER = "https://hub.test"
 CLIENT_ID = "comply"
@@ -55,7 +55,9 @@ class FakeHub(SharedFakeHub):
             "iat": now,
             "exp": now + 300,
             "auth_time": now,
-            "amr": ["google"],
+            # A password-only Hub sign-in by default, so the device code still comes first; tests of a strong Hub
+            # sign-in pass amr.
+            "amr": ["password"],
             "nonce": self.nonce,
             "email_verified": True,
         } | self.claims
@@ -250,6 +252,48 @@ def test_admin_roles_still_need_device_code_and_authenticator(app, fake):
     assert _sign_in(c, fake, p) == f"{WEB}/signin/totp"
     with engine.connect() as conn:
         assert conn.execute(select(totp_secret.c.confirmed_at).where(totp_secret.c.person_id == p["id"])).scalar()
+
+
+@pytest.mark.parametrize("amr", [["google"], ["password", "otp"], ["magic_link", "otp"]])
+def test_strong_hub_sign_in_skips_the_device_code(app, fake, amr):
+    emailer.outbox.clear()
+    p = _person()
+    c = TestClient(app)
+    c.headers.update({"X-Requested-With": "bide-comply"})
+    sid = str(uuid.uuid4())
+    assert _sign_in(c, fake, p, sid=sid, amr=amr) == f"{WEB}/actions"
+    assert not [m for m in emailer.outbox if m["to"] == p["email"]]  # no code emailed
+    assert c.get("/api/me").status_code == 200
+    (s,) = _sessions(p["id"])
+    assert s["hub_sid"] == sid
+    # The device is now trusted, as after the code: a later password-only Hub sign-in here goes straight in too.
+    assert _sign_in(c, fake, p) == f"{WEB}/actions"
+
+
+@pytest.mark.parametrize("amr", [["password"], ["magic_link"], ["dev"], None])
+def test_weak_or_unknown_hub_sign_in_still_needs_the_device_code(app, fake, amr):
+    p = _person()
+    assert _sign_in(TestClient(app), fake, p, amr=amr) == f"{WEB}/signin/code"
+
+
+def test_strong_hub_sign_in_skips_only_the_code_admins_still_need_the_app(app, fake):
+    p = _person(("system_owner",))
+    c = TestClient(app)
+    c.headers.update({"X-Requested-With": "bide-comply"})
+    assert _sign_in(c, fake, p, amr=["google"]) == f"{WEB}/signin/totp-setup"
+    assert c.get("/api/me").status_code == 401
+
+
+def test_strong_hub_sign_in_trusts_a_revoked_device_again(app, fake):
+    p = _person()
+    c = TestClient(app)
+    assert _sign_in(c, fake, p, amr=["google"]) == f"{WEB}/actions"
+    with engine.connect() as conn:
+        conn.execute(update(device).where(device.c.person_id == p["id"]).values(revoked_at=clock.now()))
+        conn.commit()
+    # Revoking a device ends its trust; a strong Hub sign-in trusts it again, as the code would.
+    assert _sign_in(c, fake, p, amr=["google"]) == f"{WEB}/actions"
+    assert _sign_in(c, fake, p, amr=["password"]) == f"{WEB}/actions"
 
 
 def test_wrong_state_is_refused(app, fake):
