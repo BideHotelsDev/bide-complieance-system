@@ -7,7 +7,8 @@
   neither Google sign-in nor email yet. The authenticator app is still required after the password.
 - Outside people (assessor, SPV directors without a bide account, contractors): an emailed magic link, 8-hour sessions.
   Each link works once. With Bide Hub on, only outside people (kind external) can use one; staff go through the Hub.
-- A first sign-in on a device needs an emailed 6-digit code (single use, 10 minutes, 5 attempts). Admin roles also
+- A first sign-in on a device needs an emailed 6-digit code (single use, 10 minutes, 5 attempts), except after a Bide
+  Hub sign-in with Google or the Hub's two-step code, which trusts the device as the code would. Admin roles also
   need an authenticator app (TOTP).
 - Access tokens last 15 minutes. Refresh tokens rotate on use; presenting an old one again revokes the device.
 - Cookies are HttpOnly, Secure (outside development) and SameSite=Lax. Mutations also need the X-Requested-With
@@ -597,6 +598,16 @@ def _hub_person(conn: Connection, identity: hub.Identity) -> dict:
     return dict(p) | {"bide_hub_sub": sub}
 
 
+# Hub sign-in methods (the ID token's amr) that already prove more than a password: Google Workspace, or the Hub's own
+# two-step code. After one of those the emailed device code adds nothing, so the device is trusted as it is after the
+# code. A password or email link alone on the Hub still gets the device code here. Admin roles still need the app.
+HUB_STRONG_AMR = frozenset({"google", "otp"})
+
+
+def _hub_strong(identity: hub.Identity) -> bool:
+    return bool(HUB_STRONG_AMR & set(identity.amr))
+
+
 @router.get("/bide/callback")
 def bide_callback(
     request: Request,
@@ -627,7 +638,9 @@ def bide_callback(
     resp = RedirectResponse(_app_base(app), status_code=302)
     try:
         p = _hub_person(conn, identity)
-        result = establish(conn, request, resp, p, app, pk["x"], "Bide Hub", hub_sid=identity.sid)
+        result = establish(
+            conn, request, resp, p, app, pk["x"], "Bide Hub", trust_device=_hub_strong(identity), hub_sid=identity.sid
+        )
     except HTTPException as e:
         return _signin_error(app, e.detail["code"] if isinstance(e.detail, dict) else "hub")
     resp.headers["location"] = _app_base(app) + result["next"]
