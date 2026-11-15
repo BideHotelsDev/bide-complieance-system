@@ -42,6 +42,8 @@ class Settings(BaseSettings):
     bide_hub_issuer: str = ""
     bide_hub_client_id: str = ""
     bide_hub_client_secret: str = ""
+    # Admin roles skip the authenticator app here when their Hub sign-in used the Hub's two-step code this recently.
+    hub_two_step_hours: int = 12
     # With Sign in with Bide on, also let the Hub manage which staff have access and their staff roles. Off until an
     # operator turns it on; then the Hub imports the staff first. Outside people stay managed here.
     bide_hub_manages_accounts: bool = False

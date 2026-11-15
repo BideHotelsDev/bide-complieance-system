@@ -9,7 +9,7 @@
   Each link works once. With Bide Hub on, only outside people (kind external) can use one; staff go through the Hub.
 - A first sign-in on a device needs an emailed 6-digit code (single use, 10 minutes, 5 attempts), except after a Bide
   Hub sign-in with Google or the Hub's two-step code, which trusts the device as the code would. Admin roles also
-  need an authenticator app (TOTP).
+  need an authenticator app (TOTP), unless they entered the Hub's own two-step code in the last hub_two_step_hours.
 - Access tokens last 15 minutes. Refresh tokens rotate on use; presenting an old one again revokes the device.
 - Cookies are HttpOnly, Secure (outside development) and SameSite=Lax. Mutations also need the X-Requested-With
   header, which a cross-site form can't send.
@@ -276,12 +276,15 @@ def establish(
     trust_without_code: bool = False,
     trust_device: bool = False,
     hub_sid: str | None = None,
+    second_step_done: bool = False,
 ) -> dict:
     """After Google or Bide Hub, a magic link or dev sign-in: start a session, or ask for the device code first.
 
     trust_without_code skips both the device code and the authenticator app (dev sign-in). trust_device skips only
     the device code: the admin password sign-in has no email to send one to, but admin roles still need the app.
     hub_sid is the Bide Hub session behind this sign-in; the session (or the pending steps) keeps it.
+    second_step_done: the Hub's own two-step code was entered recently (_hub_two_step_fresh), so admin roles skip the
+    authenticator app here; it counts only on a trusted device.
     """
     if p["employment_status"] != "active":
         raise HTTPException(403, detail={"code": "inactive", "message": "This account no longer has access."})
@@ -309,14 +312,15 @@ def establish(
         d["trusted_at"], d["trusted_until"] = now, until
     if _device_trusted(d):
         strong = bool(_roles(conn, p["id"]) & STRONG_AUTH_ROLES)
-        if strong:
+        if strong and not second_step_done:
             # Admin roles confirm with the authenticator app on every sign-in, not only on a new device.
             stage = "totp" if _totp_confirmed(conn, p["id"]) else "totp_setup"
             cid = _totp_challenge(conn, p["id"], d["id"])
             _set_pending(response, Pending(p["id"], d["id"], cid, app, next_, stage, hub_sid))
             return {"next": f"/signin/{stage.replace('_', '-')}"}
-        start_session(conn, response, p, d["id"], hub_sid=hub_sid)
-        audit.record(conn, actor, category="sign_in", action="sign_in", summary=f"Signed in ({via})")
+        start_session(conn, response, p, d["id"], totp_ok=strong and second_step_done, hub_sid=hub_sid)
+        summary = f"Signed in ({via}, two-step on the Hub)" if strong and second_step_done else f"Signed in ({via})"
+        audit.record(conn, actor, category="sign_in", action="sign_in", summary=summary)
         return {"next": next_}
     cid = _send_otp(conn, p, d["id"])
     _set_pending(response, Pending(p["id"], d["id"], cid, app, next_, "otp", hub_sid))
@@ -608,6 +612,15 @@ def _hub_strong(identity: hub.Identity) -> bool:
     return bool(HUB_STRONG_AMR & set(identity.amr))
 
 
+def _hub_two_step_fresh(identity: hub.Identity) -> bool:
+    """The Hub sign-in used the Hub's two-step code (amr "otp") within hub_two_step_hours: then it stands in for the
+    authenticator app admin roles enter here. A Google-only Hub sign-in or an older one doesn't."""
+    if "otp" not in identity.amr or identity.auth_time is None:
+        return False
+    age = clock.now().timestamp() - identity.auth_time
+    return -300 <= age <= settings.hub_two_step_hours * 3600
+
+
 @router.get("/bide/callback")
 def bide_callback(
     request: Request,
@@ -639,7 +652,16 @@ def bide_callback(
     try:
         p = _hub_person(conn, identity)
         result = establish(
-            conn, request, resp, p, app, pk["x"], "Bide Hub", trust_device=_hub_strong(identity), hub_sid=identity.sid
+            conn,
+            request,
+            resp,
+            p,
+            app,
+            pk["x"],
+            "Bide Hub",
+            trust_device=_hub_strong(identity),
+            hub_sid=identity.sid,
+            second_step_done=_hub_two_step_fresh(identity),
         )
     except HTTPException as e:
         return _signin_error(app, e.detail["code"] if isinstance(e.detail, dict) else "hub")
