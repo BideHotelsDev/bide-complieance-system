@@ -134,7 +134,14 @@ export function ApprovalsPage() {
                   <Detail key={sel} id={sel} onDecided={decided} />
                 </div>
               ) : list.data ? (
-                <EmptyState title="Pick a request">Choose a request on the left to see what it changes.</EmptyState>
+                rows.length > 0 ? (
+                  <EmptyState title="Pick a request">Choose a request on the left to see what it changes.</EmptyState>
+                ) : (
+                  <p className="m-0 p-5 text-[13px] text-muted-foreground">
+                    When someone asks to switch off a check, mark one not applicable or pause it, the request opens
+                    here.
+                  </p>
+                )
               ) : (
                 <Skeleton className="m-4 h-64" />
               )}

@@ -16,6 +16,7 @@
 @custom-variant coarse (@media (pointer: coarse));
 
 :root {
+  color-scheme: light;
   --c-background: #fbfbfc;
   --c-surface: #ffffff;
   --c-sidebar: #f6f6f8;
@@ -30,6 +31,8 @@
   --c-accent: #2459c7;
   --c-focus: #2459c7;
   --c-hover: #f1f1f3;
+  /* Form control edges: derived from the theme so any published theme keeps 3:1 against the field (WCAG 1.4.11). */
+  --c-input: color-mix(in oklab, var(--c-foreground) 45%, var(--c-surface));
   --c-green: #17703c;
   --c-green-bg: #e8f5ee;
   --c-amber: #9a4f00;
@@ -58,6 +61,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --c-background: #0f0f11;
   --c-surface: #17171a;
   --c-sidebar: #131316;
@@ -107,7 +111,7 @@
   --color-accent-foreground: var(--c-foreground);
   --color-destructive: var(--c-red);
   --color-border: var(--c-border);
-  --color-input: var(--c-border);
+  --color-input: var(--c-input);
   --color-ring: var(--c-focus);
 
   /* bide Comply names */
@@ -207,6 +211,16 @@
       transition-duration: 0.01ms !important;
     }
   }
+}
+
+/* Unlayered, so it outranks the border-border utility: native inputs styled like cards still get a visible edge.
+   Focus and invalid states keep their own utilities. */
+:where(
+    input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"], [type="hidden"]),
+    textarea,
+    select
+  ).border-border:not(:focus-visible, [aria-invalid="true"]) {
+  border-color: var(--c-input);
 }
 
 @utility tabular {

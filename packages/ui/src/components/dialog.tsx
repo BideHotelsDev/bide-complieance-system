@@ -45,19 +45,61 @@ function DialogOverlay({
   )
 }
 
+/* Focus in and out of a dialog (WCAG 2.4.3). Most dialogs open from state, not a DialogTrigger, so Radix has
+   nowhere to send focus on close and it lands on <body>. Radix fires onOpenAutoFocus before it moves focus, so the
+   opener is still document.activeElement there: remember it, and return to it on close. With firstField, the dialog
+   also opens on its first field rather than the close button. Spread the result onto any Radix Dialog Content. */
+export function useDialogFocus({
+  onOpenAutoFocus,
+  onCloseAutoFocus,
+  firstField = false,
+}: {
+  onOpenAutoFocus?: (e: Event) => void
+  onCloseAutoFocus?: (e: Event) => void
+  firstField?: boolean
+} = {}) {
+  const opener = React.useRef<HTMLElement | null>(null)
+  return {
+    onOpenAutoFocus: (e: Event) => {
+      opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+      onOpenAutoFocus?.(e)
+      if (e.defaultPrevented || !firstField) return
+      const field = (e.currentTarget as HTMLElement | null)?.querySelector<HTMLElement>(
+        "input:not([type=hidden]):not([disabled]), select:not([disabled]), textarea:not([disabled])",
+      )
+      if (field) {
+        e.preventDefault()
+        field.focus()
+      }
+    },
+    onCloseAutoFocus: (e: Event) => {
+      onCloseAutoFocus?.(e)
+      const el = opener.current
+      if (!e.defaultPrevented && el && el !== document.body && el.isConnected) {
+        e.preventDefault()
+        el.focus()
+      }
+    },
+  }
+}
+
 function DialogContent({
   className,
   children,
   showCloseButton = true,
+  onCloseAutoFocus,
+  onOpenAutoFocus,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
+  const focus = useDialogFocus({ onOpenAutoFocus, onCloseAutoFocus, firstField: true })
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
+        {...focus}
         className={cn(
           "fixed top-[50%] left-[50%] z-50 grid max-h-[calc(100dvh-2rem)] w-full max-w-[calc(100%-2rem)] overflow-y-auto overscroll-contain translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg",
           className

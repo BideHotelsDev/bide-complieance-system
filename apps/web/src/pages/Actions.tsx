@@ -337,8 +337,7 @@ function NoRows({ anyFilter, summary, onClear }: { anyFilter: boolean; summary: 
     </EmptyState>
   ) : (
     <EmptyState icon={<ListChecks className="size-6" />} title="Nothing to fix">
-      Every Action here is closed. New ones appear when a check fails, an assessor finds something, or someone raises
-      one.
+      Nothing is open. New Actions appear when a check fails, an assessor finds something, or someone raises one.
     </EmptyState>
   )
 }

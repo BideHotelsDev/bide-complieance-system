@@ -136,7 +136,9 @@ function About({ me }: { me: Me }) {
         ]}
       />
       <p className="m-0 text-[12.5px] text-muted-foreground">
-        Something wrong here? Ask {contactPhrase(me.contact)} to change your roles or properties.
+        {me.can["people.manage"]
+          ? "You can change roles and properties in Settings › People and roles."
+          : `Something wrong here? Ask ${contactPhrase(me.contact)} to change your roles or properties.`}
       </p>
     </Card>
   )

@@ -63,18 +63,21 @@ async def security_headers(request: Request, call_next):
     # The Bide Hub app switcher is a script from the Hub that reads the Hub's public system list.
     hub = urlsplit(settings.bide_hub_issuer)
     hub_origin = f" {hub.scheme}://{hub.netloc}" if settings.bide_hub_on else ""
+    # Signed file downloads may be framed by our own pages (the sign-off PDF preview); everything else never.
+    framable = request.url.path.startswith("/api/files/download/")
+    ancestors = "'self'" if framable else "'none'"
     # §9.5: strict CSP (no inline scripts), HSTS, no framing, camera and geolocation for our own origin only.
     resp.headers.setdefault(
         "Content-Security-Policy",
         "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         f"font-src 'self' data: https://fonts.gstatic.com; script-src 'self'{hub_origin}; connect-src 'self'{hub_origin}; "
-        "frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+        f"frame-ancestors {ancestors}; base-uri 'self'; form-action 'self'",
     )
     resp.headers.setdefault("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload")
     resp.headers.setdefault("X-Content-Type-Options", "nosniff")
     resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
     resp.headers.setdefault("Permissions-Policy", "camera=(self), geolocation=(self), microphone=()")
-    resp.headers.setdefault("X-Frame-Options", "DENY")
+    resp.headers.setdefault("X-Frame-Options", "SAMEORIGIN" if framable else "DENY")
     return resp
 
 

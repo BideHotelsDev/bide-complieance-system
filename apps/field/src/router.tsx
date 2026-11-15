@@ -52,6 +52,8 @@ const routes = [
     createRoute({ getParentRoute: () => authed, path: "/history", component: HistoryPage }),
     createRoute({ getParentRoute: () => authed, path: "/documents", component: DocumentsPage }),
     createRoute({ getParentRoute: () => authed, path: "/me", component: MePage }),
+    // An old or mistyped link lands on Today (or the contractor screen) instead of a bare "Not Found".
+    createRoute({ getParentRoute: () => authed, path: "$", component: () => <Navigate to="/" /> }),
   ]),
 ]
 

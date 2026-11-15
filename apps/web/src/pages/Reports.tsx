@@ -129,6 +129,7 @@ export function ReportsPage() {
 function PackBuilder({ onShowScheduled, onShowPast }: { onShowScheduled: () => void; onShowPast: () => void }) {
   const [params] = useParams()
   const { propertyId } = useProperty()
+  const allProperties = useMe().data?.all_properties
   const opts = useQuery<Options, ApiError>({
     queryKey: ["reports", "options"],
     queryFn: () => api.get<Options>("/api/reports/options"),
@@ -165,7 +166,9 @@ function PackBuilder({ onShowScheduled, onShowPast }: { onShowScheduled: () => v
   if (opts.data.properties.length === 0)
     return (
       <EmptyState title="No properties to report on">
-        You can make a pack once you have access to a property.
+        {allProperties
+          ? "Packs can be made once a property is set up."
+          : "You can make a pack once you have access to a property."}
       </EmptyState>
     )
   if (!form) return <LoadingPage />

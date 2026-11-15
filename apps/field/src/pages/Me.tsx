@@ -140,8 +140,10 @@ export function MePage() {
         <Card className="divide-y divide-divider">
           <Toggle
             label="Phone notifications"
-            hint={all.push ? deviceHint(device) : undefined}
-            checked={Boolean(all.push)}
+            // Push isn't set up on the server yet: the switch can't honestly say On, so it shows off and locked.
+            hint={all.push || device === "no-key" ? deviceHint(device) : undefined}
+            checked={device !== "no-key" && Boolean(all.push)}
+            disabled={device === "no-key"}
             onChange={(v) => setPref("push", v)}
           />
           <Toggle

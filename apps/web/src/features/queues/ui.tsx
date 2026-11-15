@@ -6,6 +6,7 @@ import * as React from "react"
 import { Dialog as DialogPrimitive } from "radix-ui"
 import { ArrowLeft, Upload, X } from "lucide-react"
 
+import { useDialogFocus } from "@bide-comply/ui/components/dialog"
 import { useNarrow } from "@bide-comply/ui/components/page"
 import { cn } from "@bide-comply/ui/lib/utils"
 
@@ -218,7 +219,7 @@ export function LineTabs({
       role="tablist"
       aria-label={label}
       className={cn(
-        "flex overflow-x-auto border-b border-divider",
+        "flex overflow-x-auto overflow-y-hidden shadow-[inset_0_-1px_0_var(--color-divider)] [scrollbar-width:none]",
         size === "sm" ? "gap-3.5" : "gap-[22px]",
         className,
       )}
@@ -233,7 +234,7 @@ export function LineTabs({
             aria-selected={on}
             onClick={() => onChange(t.key)}
             className={cn(
-              "-mb-px inline-flex shrink-0 items-center gap-1.5 border-b-2 whitespace-nowrap",
+              "inline-flex shrink-0 items-center gap-1.5 border-b-2 whitespace-nowrap",
               size === "sm" ? "py-2 text-[13px]" : "py-2.5 text-[14px]",
               on
                 ? "border-foreground font-semibold text-foreground"
@@ -279,11 +280,14 @@ export function QDialog({
   busy?: boolean
   width?: number
 }) {
+  // Back to the button that opened it on close; forms open on their first field, confirmations as Radix does.
+  const focus = useDialogFocus({ firstField: !alert })
   return (
     <DialogPrimitive.Root open={open} onOpenChange={(o) => !busy && onOpenChange(o)}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40" />
         <DialogPrimitive.Content
+          {...focus}
           role={alert ? "alertdialog" : "dialog"}
           onInteractOutside={(e) => busy && e.preventDefault()}
           className="fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100vh-32px)] w-[calc(100%-32px)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-[14px] border border-border bg-surface shadow-[0_12px_32px_rgba(17,17,19,.10),0_2px_6px_rgba(17,17,19,.06)] outline-none"

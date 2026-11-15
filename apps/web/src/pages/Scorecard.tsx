@@ -242,7 +242,13 @@ function Goals({ goals }: { goals: Goal[] }) {
               <span className="tabular text-[20px] leading-none font-semibold">
                 {g.value == null ? "—" : `${g.value}${g.unit ?? ""}`}
               </span>
-              {g.on_goal ? <Pill tone="green">✓ On goal</Pill> : <Pill tone="red">! Off goal</Pill>}
+              {g.value == null ? (
+                <Pill tone="grey">No data yet</Pill>
+              ) : g.on_goal ? (
+                <Pill tone="green">✓ On goal</Pill>
+              ) : (
+                <Pill tone="red">! Off goal</Pill>
+              )}
             </div>
             <span className="relative mt-2.5 block h-2 rounded-full bg-hover" aria-hidden>
               <span
@@ -276,7 +282,7 @@ function People({
       action={<span className="text-muted-foreground">Three numbers each, only what the person controls</span>}
     >
       {rows.length === 0 ? (
-        <p className="m-0 p-4 text-[13px] text-muted-foreground">Nobody has checks or actions at this property yet.</p>
+        <p className="m-0 p-4 text-[13px] text-muted-foreground">Nobody has checks or actions here yet.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-[13.5px]">

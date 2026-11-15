@@ -43,7 +43,11 @@ export function TabBar<T extends string>({
   label: string
 }) {
   return (
-    <div role="tablist" aria-label={label} className="flex gap-5 overflow-x-auto border-b border-divider">
+    <div
+      role="tablist"
+      aria-label={label}
+      className="flex gap-5 overflow-x-auto overflow-y-hidden shadow-[inset_0_-1px_0_var(--color-divider)] [scrollbar-width:none]"
+    >
       {options.map((o) => (
         <button
           key={o.value}
@@ -52,7 +56,7 @@ export function TabBar<T extends string>({
           aria-selected={value === o.value}
           onClick={() => onChange(o.value)}
           className={cn(
-            "-mb-px h-9 shrink-0 border-b-2 text-[14px] font-medium",
+            "h-9 shrink-0 border-b-2 text-[14px] font-medium",
             value === o.value
               ? "border-foreground text-foreground"
               : "border-transparent text-muted-foreground hover:text-foreground",

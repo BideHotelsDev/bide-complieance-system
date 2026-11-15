@@ -517,12 +517,12 @@ function FieldInput({
       const opts =
         f.type === "yes_no"
           ? [
-              { value: "yes", label: "Yes" },
-              { value: "no", label: "No" },
+              { value: "yes", label: "Yes", tone: f.fail_on === "yes" ? ("fail" as const) : undefined },
+              { value: "no", label: "No", tone: f.fail_on === "no" ? ("fail" as const) : undefined },
             ]
           : [
               { value: "pass", label: "Pass" },
-              { value: "fail", label: "Fail" },
+              { value: "fail", label: "Fail", tone: "fail" as const },
             ]
       return (
         <div>
@@ -552,7 +552,7 @@ function FieldInput({
                   labelledBy={`${labelId}-${it}`}
                   options={[
                     { value: "pass", label: "Pass" },
-                    { value: "fail", label: "Fail" },
+                    { value: "fail", label: "Fail", tone: "fail" },
                   ]}
                   onChange={(r) => onChange({ ...v, [it]: r })}
                 />

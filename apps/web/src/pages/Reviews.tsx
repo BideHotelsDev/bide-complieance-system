@@ -165,11 +165,14 @@ export function ReviewsPage() {
             onDecided={decided}
           />
         ) : list.data ? (
-          <div className="rounded-[10px] border border-divider bg-surface">
-            <EmptyState icon={<Check className="size-6" />} title="You're up to date">
-              Pick another queue on the left, or come back when staff send more checks.
-            </EmptyState>
-          </div>
+          // An empty queue already says so in the list; this side only prompts when there is something to pick.
+          rows.length > 0 ? (
+            <div className="rounded-[10px] border border-divider bg-surface">
+              <EmptyState icon={<Check className="size-6" />} title="Pick a submission">
+                Choose one on the left to check its answers and photos.
+              </EmptyState>
+            </div>
+          ) : null
         ) : (
           <Skeleton className="h-[480px]" />
         )}

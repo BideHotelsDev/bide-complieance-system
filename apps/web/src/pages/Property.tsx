@@ -20,6 +20,7 @@ import type { PropertyDetail } from "@/features/overview/property-types"
 import { toDate } from "@/lib/format"
 import { useParams } from "@/lib/params"
 import { useMe } from "@/lib/session"
+import { NotFoundPage } from "@/pages/NotFound"
 
 const monthYear = (d: string) =>
   toDate(d).toLocaleDateString("en-GB", { month: "short", year: "numeric", timeZone: "Europe/London" })
@@ -85,7 +86,13 @@ export function PropertyPage() {
   if (q.error) {
     if (q.error.status === 403) return <NoPermission message="This property isn't one of yours." />
     if (q.error.status === 404)
-      return <ErrorState title="Property not found" message={`There is no property with the code ${code}.`} />
+      return (
+        <NotFoundPage
+          title="Property not found"
+          message={`There is no property with the code ${code}.`}
+          back={{ to: "/properties", label: "Back to Properties" }}
+        />
+      )
     return <ErrorState message={q.error.message} onRetry={() => void q.refetch()} />
   }
   const d = q.data
@@ -104,7 +111,7 @@ export function PropertyPage() {
   const statusBadge =
     d.score_status === "red" ? (
       <Pill tone="red" dot>
-        {d.red_line ? "Red · red-line" : "Red"}
+        {d.red_line ? "Red · life safety" : "Red"}
       </Pill>
     ) : (
       <Pill tone={d.score_status} dot>
@@ -203,7 +210,11 @@ export function PropertyPage() {
         </SummaryCard>
       </section>
 
-      <div role="tablist" aria-label="Property sections" className="flex gap-5 overflow-x-auto border-b border-divider">
+      <div
+        role="tablist"
+        aria-label="Property sections"
+        className="flex gap-5 overflow-x-auto overflow-y-hidden shadow-[inset_0_-1px_0_var(--color-divider)] [scrollbar-width:none]"
+      >
         {tabs.map((t) => (
           <button
             key={t.key}
@@ -212,7 +223,7 @@ export function PropertyPage() {
             aria-selected={tab === t.key}
             onClick={() => set({ tab: t.key === "register" ? undefined : t.key, item: undefined })}
             className={cn(
-              "-mb-px inline-flex shrink-0 items-center gap-1.5 border-b-2 py-2 text-[13px] whitespace-nowrap",
+              "inline-flex shrink-0 items-center gap-1.5 border-b-2 py-2 text-[13px] whitespace-nowrap",
               tab === t.key
                 ? "border-foreground font-medium text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground",

@@ -17,7 +17,7 @@ import { cn } from "@bide-comply/ui/lib/utils"
 
 import type { EvidenceFile, SignoffProperty, SignRequest } from "@/features/queues/types"
 import { QueueDetail, rowCls } from "@/features/queues/ui"
-import { fmtDate, fmtDateTime, fmtDay } from "@/lib/format"
+import { dueLabel, fmtDateTime } from "@/lib/format"
 import { useParams } from "@/lib/params"
 import { useProperty } from "@/lib/property"
 import { useMe } from "@/lib/session"
@@ -89,9 +89,10 @@ export function SignoffsPage() {
             <Skeleton className="h-7 w-80" />
           ) : canSign ? (
             <h1 className="m-0 text-[22px] font-semibold">
+              {/* Some of these are decisions, not signatures, so the count says "need you". */}
               {awaiting === 0
-                ? "Nothing needs your signature"
-                : `${awaiting} ${awaiting === 1 ? "thing needs" : "things need"} your signature`}
+                ? "Nothing needs you"
+                : `${awaiting} ${awaiting === 1 ? "thing needs" : "things need"} you`}
             </h1>
           ) : (
             <h1 className="m-0 text-[22px] font-semibold">Sign-offs</h1>
@@ -231,7 +232,11 @@ function PropertyBlock({
           {p.insurer ? (
             <>
               <div className="text-[12px] text-muted-foreground">{p.insurer.label}</div>
-              <div className="mt-0.5 text-[14px] font-semibold">Due {fmtDay(p.insurer.due_on)}</div>
+              <div
+                className={cn("mt-0.5 text-[14px] font-semibold", dueLabel(p.insurer.due_on).overdue && "text-st-red")}
+              >
+                {dueLabel(p.insurer.due_on, { day: true }).text}
+              </div>
             </>
           ) : (
             <>
@@ -280,7 +285,7 @@ function RequestItem({ r, on, onPick }: { r: SignRequest; on: boolean; onPick: (
     ) : r.status === "scheduled" ? (
       <Pill tone="grey">Scheduled</Pill>
     ) : r.due_on ? (
-      <Pill tone={new Date(r.due_on) < new Date() ? "red" : "amber"}>Due {fmtDate(r.due_on)}</Pill>
+      <Pill tone={dueLabel(r.due_on).overdue ? "red" : "amber"}>{dueLabel(r.due_on).text}</Pill>
     ) : (
       <Pill tone="amber">Open</Pill>
     )
@@ -431,6 +436,11 @@ function SignPanel({
                 {c.text}
               </span>
             ))}
+            {r.preconditions!.some((c) => !c.done) && (
+              <span className="text-[12.5px] text-muted-foreground">
+                These don't stop you signing. Open ones stay tracked until they're done.
+              </span>
+            )}
           </div>
         )}
         {canSign ? (

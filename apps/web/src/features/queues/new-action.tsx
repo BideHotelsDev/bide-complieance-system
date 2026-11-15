@@ -69,6 +69,13 @@ export function NewActionDialog({
     onError: (e: ApiError) => toastError(e.message),
   })
   const ok = f.property_id && description.trim().length > 2
+  // The button stays reachable; pressing it early says what's missing instead of a silent disabled state.
+  const [tried, setTried] = React.useState(false)
+  const descRef = React.useRef<HTMLTextAreaElement>(null)
+  React.useEffect(() => {
+    if (open) setTried(false)
+  }, [open])
+  const missing = !ok && tried
   return (
     <QDialog
       open={open}
@@ -82,7 +89,14 @@ export function NewActionDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button disabled={!ok || create.isPending} onClick={() => create.mutate()}>
+          <Button
+            disabled={create.isPending}
+            onClick={() => {
+              if (ok) return create.mutate()
+              setTried(true)
+              descRef.current?.focus()
+            }}
+          >
             {create.isPending ? "Raising…" : "Raise Action"}
           </Button>
         </>
@@ -99,12 +113,20 @@ export function NewActionDialog({
       </Field>
       <Field label="What needs fixing?">
         <textarea
+          ref={descRef}
           rows={3}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="e.g. Fire door to room 7 doesn't close fully"
           className={textareaCls}
+          aria-invalid={missing || undefined}
+          aria-describedby={missing ? "new-action-missing" : undefined}
         />
+        {missing && (
+          <span id="new-action-missing" role="alert" className="text-[12.5px] text-st-red">
+            {f.property_id ? "Say what needs fixing in a few words." : "Choose a property first."}
+          </span>
+        )}
       </Field>
       <div className="grid grid-cols-2 gap-2.5">
         <Field label="Type">

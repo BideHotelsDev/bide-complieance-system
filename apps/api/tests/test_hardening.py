@@ -238,6 +238,24 @@ def test_download_with_a_non_latin1_file_name(login):
         )
 
 
+def test_only_file_downloads_can_be_framed_and_only_by_our_own_pages(login):
+    c = login(DAVID)
+    with engine.connect() as conn:
+        prop = str(conn.execute(select(property_.c.id).limit(1)).scalar_one())
+    slot = c.post(
+        "/api/uploads",
+        json={"content_type": "application/pdf", "size": len(PDF), "file_name": "fra.pdf", "property_id": prop},
+    ).json()
+    c.put(slot["upload"]["url"], content=PDF, headers={"Content-Type": "application/pdf"})
+    c.post(f"/api/uploads/{slot['evidence_id']}/complete", json={})
+    download = c.get(c.get(f"/api/evidence/{slot['evidence_id']}").json()["url"])
+    assert download.headers["x-frame-options"] == "SAMEORIGIN"
+    assert "frame-ancestors 'self'" in download.headers["content-security-policy"]
+    page = c.get("/api/me")
+    assert page.headers["x-frame-options"] == "DENY"
+    assert "frame-ancestors 'none'" in page.headers["content-security-policy"]
+
+
 def test_quotes_and_backslashes_cannot_break_the_header():
     h = content_disposition('a"b\\c\r\nd.pdf', inline=False)
     ascii_part = h.split("; filename*=")[0]

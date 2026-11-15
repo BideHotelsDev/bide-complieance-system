@@ -1,7 +1,7 @@
 """Who am I, the sidebar counts, Home, My to-do, Properties, global search and the in-app inbox."""
 
 import uuid
-from datetime import timedelta
+from datetime import date, timedelta
 
 from fastapi import APIRouter, Query
 from sqlalchemy import func, or_, select, update
@@ -32,6 +32,16 @@ from bide_comply.services.common import fmt_day, initials, problem
 from bide_comply.services.register import scores
 
 router = APIRouter(prefix="/api", tags=["home"])
+
+
+def _insurer_line(name: str, due_on: date) -> str:
+    """Home banner: a missed insurer deadline reads as overdue, never as upcoming."""
+    late = (clock.today() - due_on).days
+    if late > 0:
+        return f"Insurance proof for {name} is {late} day{'s' if late != 1 else ''} overdue (due {fmt_day(due_on)})."
+    if late == 0:
+        return f"Insurance proof for {name} is due today."
+    return f"Insurance proof for {name} is due {fmt_day(due_on)}."
 
 
 @router.get("/me")
@@ -167,7 +177,7 @@ def overview(pr: Current, conn: ConnDep, property: uuid.UUID | None = None, peri
     if red:
         banner = {
             "text": f"{len(red)} {'property is' if len(red) == 1 else 'properties are'} red.",
-            "extra": f"Insurance proof for {insurer.name} is due {fmt_day(insurer.due_on)}." if insurer else None,
+            "extra": _insurer_line(insurer.name, insurer.due_on) if insurer else None,
             "link": "/actions?view=urgent",
         }
     ls_open = sum((s["gate"] or {}).get("class_a_open", 0) for s in summaries if s["gate"])
