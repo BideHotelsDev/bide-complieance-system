@@ -284,6 +284,45 @@ def test_strong_hub_sign_in_skips_only_the_code_admins_still_need_the_app(app, f
     assert c.get("/api/me").status_code == 401
 
 
+@pytest.mark.parametrize("amr", [["password", "otp"], ["magic_link", "otp"]])
+def test_admin_with_recent_hub_two_step_skips_the_authenticator_too(app, fake, amr):
+    p = _person(("system_owner",))
+    c = TestClient(app)
+    c.headers.update({"X-Requested-With": "bide-comply"})
+    sid = str(uuid.uuid4())
+    assert _sign_in(c, fake, p, sid=sid, amr=amr) == f"{WEB}/actions"
+    assert c.get("/api/me").status_code == 200
+    (s,) = _sessions(p["id"])
+    # Still an admin session: it counts as confirmed and keeps the admin idle timeout.
+    assert s["hub_sid"] == sid and s["totp_ok"] and s["idle_expires_at"] is not None
+    with engine.connect() as conn:
+        q = select(audit_event.c.summary).where(audit_event.c.action == "sign_in", audit_event.c.actor_id == p["id"])
+        assert conn.execute(q).scalars().all() == ["Signed in (Bide Hub, two-step on the Hub)"]
+
+
+@pytest.mark.parametrize(
+    ("amr", "age_hours"),
+    [(["google"], 0), (["password", "otp"], 13), (["password"], 0), (["otp"], None)],
+)
+def test_admin_still_needs_the_authenticator_without_a_recent_hub_two_step(app, fake, amr, age_hours):
+    p = _person(("system_owner",))
+    c = TestClient(app)
+    auth_time = None if age_hours is None else int(time.time()) - age_hours * 3600
+    # A strong Hub sign-in still skips the device code; a password-only one gets the code first.
+    first = _sign_in(c, fake, p, amr=amr, auth_time=auth_time)
+    assert first == (f"{WEB}/signin/code" if amr == ["password"] else f"{WEB}/signin/totp-setup")
+    assert c.get("/api/me").status_code == 401
+
+
+def test_hub_two_step_counts_only_for_its_own_age_setting(app, fake, monkeypatch):
+    monkeypatch.setattr(settings, "hub_two_step_hours", 1)
+    p = _person(("system_owner",))
+    two_hours_ago = int(time.time()) - 2 * 3600
+    assert _sign_in(TestClient(app), fake, p, amr=["password", "otp"], auth_time=two_hours_ago) == (
+        f"{WEB}/signin/totp-setup"
+    )
+
+
 def test_strong_hub_sign_in_trusts_a_revoked_device_again(app, fake):
     p = _person()
     c = TestClient(app)
