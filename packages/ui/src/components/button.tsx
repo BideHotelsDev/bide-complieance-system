@@ -6,7 +6,7 @@ import { cn } from "../lib/utils"
 
 // Design: Foundations › Buttons. One primary button per view; 30px on desktop, 48px in the staff app.
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md text-[13px] font-medium whitespace-nowrap transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 cursor-pointer",
+  "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md text-[0.8125rem] font-medium whitespace-nowrap transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 cursor-pointer",
   {
     variants: {
       variant: {
@@ -19,7 +19,7 @@ const buttonVariants = cva(
       },
       size: {
         default: "h-[30px] px-3 coarse:h-10",
-        sm: "h-7 px-2.5 text-[12.5px] coarse:h-9",
+        sm: "h-7 px-2.5 text-[0.78125rem] coarse:h-9",
         lg: "h-[38px] px-4 text-sm coarse:h-11",
         field: "h-12 px-5 text-base rounded-lg w-full",
         icon: "size-[30px] coarse:size-10",

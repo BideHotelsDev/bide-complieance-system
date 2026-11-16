@@ -45,31 +45,31 @@ export function SignInPage() {
   return (
     <Page className="px-6 pt-12">
       <Mark size={44} />
-      <h1 className="m-0 mt-6 text-[26px] font-semibold">Sign in</h1>
-      <p className="m-0 mt-1.5 text-[16px] text-muted-foreground">
+      <h1 className="m-0 mt-6 text-[1.625rem] font-semibold">Sign in</h1>
+      <p className="m-0 mt-1.5 text-[1rem] text-muted-foreground">
         {bide ? "Use your Bide account to see today's checks." : "Use your Bide Google account to see today's checks."}
       </p>
       {reason && (
-        <p role="alert" className="mt-4 rounded-xl bg-st-red-bg px-3.5 py-2.5 text-[15px] text-st-red">
+        <p role="alert" className="mt-4 rounded-xl bg-st-red-bg px-3.5 py-2.5 text-[0.9375rem] text-st-red">
           {ERRORS[reason] ?? "Sign-in didn't work. Try again."}
         </p>
       )}
       <a
         href={bide ? "/api/auth/bide/login?app=field&next=%2F" : "/api/auth/google/start?app=field&next=%2F"}
-        className="mt-6 flex h-[52px] items-center justify-center gap-2 rounded-xl bg-primary text-[17px] font-semibold text-primary-foreground no-underline"
+        className="mt-6 flex h-[52px] items-center justify-center gap-2 rounded-xl bg-primary text-[1.0625rem] font-semibold text-primary-foreground no-underline"
       >
         {bide ? "Sign in with Bide" : "Sign in with Google"}
       </a>
-      <p className="mt-4 text-[14px] text-muted-foreground">
+      <p className="mt-4 text-[0.875rem] text-muted-foreground">
         Contractors: use the link Bide emailed you. It works once, within 7 days, no password needed.
       </p>
       {dev.data && (
         <section className="mt-6 border-t border-divider pt-4 pb-8">
-          <h2 className="m-0 mb-2 text-[13.5px] font-medium text-muted-foreground">
+          <h2 className="m-0 mb-2 text-[0.84375rem] font-medium text-muted-foreground">
             Development sign-in (not available in production)
           </h2>
           {devSignIn.error && (
-            <p role="alert" className="text-[14px] text-st-red">
+            <p role="alert" className="text-[0.875rem] text-st-red">
               {devSignIn.error.message}
             </p>
           )}
@@ -79,10 +79,10 @@ export function SignInPage() {
                 key={p.id}
                 type="button"
                 onClick={() => devSignIn.mutate(p.id)}
-                className="flex min-h-12 items-center justify-between gap-3 rounded-lg px-2 text-left text-[15px] hover:bg-hover"
+                className="flex min-h-12 items-center justify-between gap-3 rounded-lg px-2 text-left text-[0.9375rem] hover:bg-hover"
               >
                 <span>{p.name}</span>
-                <span className="truncate text-[13px] text-muted-foreground">{p.title}</span>
+                <span className="truncate text-[0.8125rem] text-muted-foreground">{p.title}</span>
               </button>
             ))}
           </div>
@@ -114,7 +114,7 @@ function CodeBoxes({ value, onChange }: { value: string; onChange: (v: string) =
           <div
             key={i}
             className={cn(
-              "tabular flex h-14 w-12 items-center justify-center rounded-xl border border-border bg-surface text-[24px] font-semibold",
+              "tabular flex h-14 w-12 items-center justify-center rounded-xl border border-border bg-surface text-[1.5rem] font-semibold",
               focused && i === Math.min(value.length, 5) && "border-focus outline-2 outline-focus/30",
             )}
           >
@@ -167,39 +167,39 @@ export function CodePage({ stage }: { stage: "code" | "totp" | "totp-setup" }) {
         <Mark size={44} />
         {stage === "code" ? (
           <>
-            <h1 className="m-0 mt-6 text-[24px] font-semibold">Check your email</h1>
-            <p className="m-0 mt-1.5 text-[16px] text-muted-foreground">
+            <h1 className="m-0 mt-6 text-[1.5rem] font-semibold">Check your email</h1>
+            <p className="m-0 mt-1.5 text-[1rem] text-muted-foreground">
               This is the first time you've signed in on this phone. We've sent a 6-digit code to{" "}
               <strong className="text-foreground">{pending.data?.email_masked ?? "your email"}</strong>
             </p>
           </>
         ) : stage === "totp-setup" ? (
           <>
-            <h1 className="m-0 mt-6 text-[24px] font-semibold">Set up your authenticator app</h1>
-            <p className="m-0 mt-1.5 text-[16px] text-muted-foreground">
+            <h1 className="m-0 mt-6 text-[1.5rem] font-semibold">Set up your authenticator app</h1>
+            <p className="m-0 mt-1.5 text-[1rem] text-muted-foreground">
               Admin accounts confirm sign-in with an authenticator app. Add this key to it, then enter the 6-digit code.
             </p>
             {setup.data && (
-              <p className="mt-3 rounded-lg bg-hover px-3 py-2 font-mono text-[14px] break-all">{setup.data.secret}</p>
+              <p className="mt-3 rounded-lg bg-hover px-3 py-2 font-mono text-[0.875rem] break-all">{setup.data.secret}</p>
             )}
           </>
         ) : (
           <>
-            <h1 className="m-0 mt-6 text-[24px] font-semibold">Confirm it's you</h1>
-            <p className="m-0 mt-1.5 text-[16px] text-muted-foreground">
+            <h1 className="m-0 mt-6 text-[1.5rem] font-semibold">Confirm it's you</h1>
+            <p className="m-0 mt-1.5 text-[1rem] text-muted-foreground">
               Enter the 6-digit code from your authenticator app.
             </p>
           </>
         )}
         <CodeBoxes value={code} onChange={setCode} />
         {err && (
-          <p role="alert" className="m-0 mt-3 text-[15px] text-st-red">
+          <p role="alert" className="m-0 mt-3 text-[0.9375rem] text-st-red">
             {err}
           </p>
         )}
         {stage === "code" && (
           <>
-            <p className="m-0 mt-4 text-[14.5px] text-muted-foreground">
+            <p className="m-0 mt-4 text-[0.90625rem] text-muted-foreground">
               The code works for 10 minutes.{" "}
               <button
                 type="button"
@@ -210,7 +210,7 @@ export function CodePage({ stage }: { stage: "code" | "totp" | "totp-setup" }) {
                 {resend.isSuccess ? "New code sent" : "Send a new code"}
               </button>
             </p>
-            <div className="mt-4 flex gap-3 rounded-xl border border-divider bg-surface px-4 py-3.5 text-[15px]">
+            <div className="mt-4 flex gap-3 rounded-xl border border-divider bg-surface px-4 py-3.5 text-[0.9375rem]">
               <ShieldCheck aria-hidden className="mt-0.5 size-5 shrink-0" />
               <span>
                 After this, the phone is trusted for 90 days. If it is lost, ask{" "}
@@ -224,7 +224,7 @@ export function CodePage({ stage }: { stage: "code" | "totp" | "totp-setup" }) {
             Continue
           </PrimaryButton>
           {pending.data && (
-            <p className="m-0 mt-3 text-center text-[13.5px] text-muted-foreground">
+            <p className="m-0 mt-3 text-center text-[0.84375rem] text-muted-foreground">
               Signed in with {pending.data.via === "bide" ? "Bide" : "Google"} as {pending.data.name} ·{" "}
               <button type="button" className="min-h-10 font-medium text-link" onClick={() => void notYou()}>
                 Not you?

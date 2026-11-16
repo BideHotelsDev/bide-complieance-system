@@ -35,7 +35,7 @@ export function NativeSelect({
   return (
     <span
       className={cn(
-        "relative inline-flex h-[30px] items-center rounded-md border border-border bg-surface text-[13px] focus-within:outline-2 focus-within:outline-focus",
+        "relative inline-flex h-[30px] items-center rounded-md border border-border bg-surface text-[0.8125rem] focus-within:outline-2 focus-within:outline-focus",
         disabled && "opacity-60",
         className,
       )}
@@ -91,7 +91,7 @@ export function ToggleChip({
       title={title}
       onClick={onToggle}
       className={cn(
-        "inline-flex h-7 items-center gap-1 rounded-md border px-2.5 text-[12.5px] font-medium whitespace-nowrap transition-colors",
+        "inline-flex h-7 items-center gap-1 rounded-md border px-2.5 text-[0.78125rem] font-medium whitespace-nowrap transition-colors",
         on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-surface text-ink2 hover:bg-hover",
         (disabled || locked) && "cursor-default",
         disabled && !locked && "opacity-70 hover:bg-surface",
@@ -122,7 +122,7 @@ export function Panel({
     >
       {(title || action) && (
         <div className="mb-3 flex items-center gap-3">
-          {title && <h2 className="m-0 text-[14px] font-semibold">{title}</h2>}
+          {title && <h2 className="m-0 text-[0.875rem] font-semibold">{title}</h2>}
           {action && <div className="ml-auto flex items-center gap-2">{action}</div>}
         </div>
       )}
@@ -133,7 +133,7 @@ export function Panel({
 
 export function FieldLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
   return (
-    <label htmlFor={htmlFor} className="mb-1.5 block text-[12.5px] font-medium text-ink2">
+    <label htmlFor={htmlFor} className="mb-1.5 block text-[0.78125rem] font-medium text-ink2">
       {children}
     </label>
   )
@@ -170,7 +170,7 @@ export function ButtonGroup<T extends string | number>({
           disabled={disabled}
           onClick={() => onChange(o.value)}
           className={cn(
-            "h-[28px] flex-1 rounded-[5px] px-3 text-[13px] font-medium transition-colors disabled:cursor-default",
+            "h-[28px] flex-1 rounded-[5px] px-3 text-[0.8125rem] font-medium transition-colors disabled:cursor-default",
             value === o.value ? "bg-primary text-primary-foreground" : "text-ink2 hover:bg-hover",
           )}
         >

@@ -21,13 +21,13 @@ export function PropertySwitcher() {
         <button
           type="button"
           aria-label={`Choose property, currently ${property?.name ?? allLabel}`}
-          className="flex w-full items-center gap-2.5 rounded-[10px] border border-border bg-surface px-2.5 py-2 text-left text-[13px]"
+          className="flex w-full items-center gap-2.5 rounded-[10px] border border-border bg-surface px-2.5 py-2 text-left text-[0.8125rem]"
         >
-          <span className="inline-flex size-[30px] shrink-0 items-center justify-center rounded-lg bg-primary text-[11px] font-bold text-primary-foreground">
+          <span className="inline-flex size-[30px] shrink-0 items-center justify-center rounded-lg bg-primary text-[0.6875rem] font-bold text-primary-foreground">
             {property ? property.code : <Building2 className="size-4" />}
           </span>
           <span className="flex min-w-0 flex-1 flex-col leading-tight">
-            <span className="truncate text-[14px] font-semibold">
+            <span className="truncate text-[0.875rem] font-semibold">
               {property?.name ?? (single ? me.properties[0].name : allLabel)}
             </span>
             <span className="truncate text-xs text-muted-foreground">
@@ -58,9 +58,9 @@ export function PropertySwitcher() {
                     setPropertyId(p.id)
                     setOpen(false)
                   }}
-                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] hover:bg-hover"
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[0.8125rem] hover:bg-hover"
                 >
-                  <span className="inline-flex h-5 w-7 shrink-0 items-center justify-center rounded bg-hover text-[10.5px] font-semibold text-ink2">
+                  <span className="inline-flex h-5 w-7 shrink-0 items-center justify-center rounded bg-hover text-[0.65625rem] font-semibold text-ink2">
                     {p.code || "All"}
                   </span>
                   <span className="flex-1 truncate">{p.name}</span>

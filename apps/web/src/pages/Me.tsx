@@ -100,10 +100,10 @@ function About({ me }: { me: Me }) {
   return (
     <Card title="You" bodyClassName="flex flex-col gap-4 p-4">
       <div className="flex items-center gap-3">
-        <Avatar initials={me.initials} className="size-11 text-[14px]" />
+        <Avatar initials={me.initials} className="size-11 text-[0.875rem]" />
         <div className="min-w-0">
-          <div className="truncate text-[16px] font-semibold">{me.name}</div>
-          <div className="truncate text-[13px] text-muted-foreground">{me.title}</div>
+          <div className="truncate text-[1rem] font-semibold">{me.name}</div>
+          <div className="truncate text-[0.8125rem] text-muted-foreground">{me.title}</div>
         </div>
       </div>
       <Dl
@@ -135,7 +135,7 @@ function About({ me }: { me: Me }) {
             : []),
         ]}
       />
-      <p className="m-0 text-[12.5px] text-muted-foreground">
+      <p className="m-0 text-[0.78125rem] text-muted-foreground">
         {me.can["people.manage"]
           ? "You can change roles and properties in Settings › People and roles."
           : `Something wrong here? Ask ${contactPhrase(me.contact)} to change your roles or properties.`}
@@ -176,7 +176,7 @@ function Preferences({ me }: { me: Me }) {
           <li className="flex items-center gap-3 border-b border-divider px-4 py-3">
             <span className="min-w-0 flex-1">
               <span className="block font-medium">In the app</span>
-              <span className="block text-[13px] text-muted-foreground">
+              <span className="block text-[0.8125rem] text-muted-foreground">
                 Always on. Shown below and on your Home page.
               </span>
             </span>
@@ -189,9 +189,9 @@ function Preferences({ me }: { me: Me }) {
               <li key={c.key} className="flex items-center gap-3 border-b border-divider px-4 py-3">
                 <label htmlFor={id} className="min-w-0 flex-1 cursor-pointer">
                   <span className="block font-medium">{c.label}</span>
-                  <span className="block text-[13px] text-muted-foreground">{c.line}</span>
+                  <span className="block text-[0.8125rem] text-muted-foreground">{c.line}</span>
                 </label>
-                <span className={cn("text-[13px]", on ? "text-st-green" : "text-muted-foreground")}>
+                <span className={cn("text-[0.8125rem]", on ? "text-st-green" : "text-muted-foreground")}>
                   {on ? "On" : "Muted"}
                 </span>
                 <Switch id={id} checked={on} onCheckedChange={(v) => setChannel(c.key, v)} disabled={save.isPending} />
@@ -199,7 +199,7 @@ function Preferences({ me }: { me: Me }) {
             )
           })}
         </ul>
-        <p className="m-0 px-4 py-3 text-[12.5px] text-muted-foreground">
+        <p className="m-0 px-4 py-3 text-[0.78125rem] text-muted-foreground">
           Class A (life-safety) alerts can't be muted. They always reach you on every channel, whatever you choose here.
         </p>
       </Card>
@@ -238,7 +238,7 @@ function Preferences({ me }: { me: Me }) {
             ]}
           />
         </div>
-        <p className="m-0 text-[12.5px] text-muted-foreground">
+        <p className="m-0 text-[0.78125rem] text-muted-foreground">
           Appearance applies on this device straight away. The colours and logo for everyone are set in Settings ›
           Appearance.
         </p>
@@ -316,7 +316,7 @@ function Notifications() {
                   {n.class === "A" && <Pill tone="red">Life safety</Pill>}
                   {!n.read && <span className="sr-only">(unread)</span>}
                 </span>
-                {n.body && <span className="mt-0.5 block text-[13px] text-muted-foreground">{n.body}</span>}
+                {n.body && <span className="mt-0.5 block text-[0.8125rem] text-muted-foreground">{n.body}</span>}
               </span>
               <time
                 dateTime={n.created_at}

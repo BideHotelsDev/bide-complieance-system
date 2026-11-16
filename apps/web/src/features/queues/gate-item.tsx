@@ -92,7 +92,7 @@ export function GateItemDialog({
       width={560}
       title={
         <span className="flex items-center gap-2">
-          <span className="font-mono text-[13px] text-muted-foreground">{item.ref}</span>
+          <span className="font-mono text-[0.8125rem] text-muted-foreground">{item.ref}</span>
           <ClassBadge klass={item.class} />
           <span className="min-w-0">Mark item</span>
         </span>
@@ -110,7 +110,7 @@ export function GateItemDialog({
       }
     >
       {item.evidence_required && (
-        <div className="text-[13px]">
+        <div className="text-[0.8125rem]">
           <span className="text-muted-foreground">Evidence required: </span>
           {item.evidence_required}
         </div>
@@ -163,7 +163,7 @@ export function GateItemDialog({
         />
       </Field>
       {(item.evidence.length > 0 || files.length > 0) && (
-        <ul className="m-0 flex list-none flex-col gap-1 p-0 text-[13px]">
+        <ul className="m-0 flex list-none flex-col gap-1 p-0 text-[0.8125rem]">
           {[...item.evidence, ...files].map((f) => (
             <li key={f.id} className="truncate rounded-md border border-divider px-2.5 py-1.5">
               {f.name}

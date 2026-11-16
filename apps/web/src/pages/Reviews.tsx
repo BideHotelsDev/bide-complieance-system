@@ -92,8 +92,8 @@ export function ReviewsPage() {
         className="flex flex-col rounded-[10px] border border-divider bg-surface lg:sticky lg:top-0 lg:h-screen lg:w-[320px] lg:shrink-0 lg:rounded-none lg:border-y-0 lg:border-l-0"
       >
         <div className="px-3.5 pt-[18px]">
-          <h1 className="m-0 mb-0.5 text-[18px] font-semibold">Evidence review</h1>
-          <p className="m-0 mb-2 text-[12px] text-muted-foreground">
+          <h1 className="m-0 mb-0.5 text-[1.125rem] font-semibold">Evidence review</h1>
+          <p className="m-0 mb-2 text-[0.75rem] text-muted-foreground">
             Life-safety certificates always; everything else as a 1 in 10 weekly spot-check.
           </p>
           <LineTabs
@@ -142,7 +142,7 @@ export function ReviewsPage() {
         )}
         <div className="flex items-start gap-2 border-t border-divider p-3.5 text-muted-foreground">
           <EyeOff aria-hidden className="mt-0.5 size-4 shrink-0" />
-          <span className="text-[12px]">Your own submissions never appear here. They route to another verifier.</span>
+          <span className="text-[0.75rem]">Your own submissions never appear here. They route to another verifier.</span>
         </div>
       </section>
 
@@ -210,7 +210,7 @@ function QueueRow({ r, on, onPick }: { r: QueueCard; on: boolean; onPick: () => 
         </Pill>
       </span>
       <span className="font-medium">{r.title}</span>
-      <span className="text-[12px] text-muted-foreground">{r.detail}</span>
+      <span className="text-[0.75rem] text-muted-foreground">{r.detail}</span>
     </button>
   )
 }
@@ -333,13 +333,13 @@ function Submission({
                 to="/properties/$code"
                 params={{ code: s.property_code }}
                 search={{ item: s.ref }}
-                className="mono-id text-[12px] hover:text-link"
+                className="mono-id text-[0.75rem] hover:text-link"
                 title="Open this check on the register"
               >
                 {s.ref}
               </Link>
             ) : (
-              <span className="mono-id text-[12px]">{s.ref}</span>
+              <span className="mono-id text-[0.75rem]">{s.ref}</span>
             )}
             <Pill tone={st.tone}>{st.label}</Pill>
             <Pill tone="grey">{s.verification_rule}</Pill>
@@ -347,15 +347,15 @@ function Submission({
               <FlagBadge key={f} flag={f} />
             ))}
           </div>
-          <h2 className="m-0 mt-1.5 text-[18px] font-semibold">{s.title}</h2>
+          <h2 className="m-0 mt-1.5 text-[1.125rem] font-semibold">{s.title}</h2>
           <p className="m-0 mt-0.5 text-muted-foreground">{s.subtitle}</p>
           {(s.actions?.length ?? 0) > 0 && (
-            <p className="m-0 mt-1 text-[13px]">
+            <p className="m-0 mt-1 text-[0.8125rem]">
               {s.actions!.length === 1 ? "Action raised from this check: " : "Actions raised from this check: "}
               {s.actions!.map((a, n) => (
                 <React.Fragment key={a.ref}>
                   {n > 0 && ", "}
-                  <Link to="/actions" search={{ sel: a.ref }} className="font-mono text-[12px] text-link">
+                  <Link to="/actions" search={{ sel: a.ref }} className="font-mono text-[0.75rem] text-link">
                     {a.ref}
                   </Link>
                   {a.status === "closed" && <span className="text-muted-foreground"> (closed)</span>}
@@ -366,7 +366,7 @@ function Submission({
         </div>
         <div className="flex items-center gap-2">
           {pos && (
-            <span className="tabular text-[12.5px] text-muted-foreground">
+            <span className="tabular text-[0.78125rem] text-muted-foreground">
               {pos.i + 1} of {pos.n}
             </span>
           )}
@@ -386,13 +386,13 @@ function Submission({
               Evidence · {s.photo_count} {s.photo_count === 1 ? "photo" : "photos"}
             </span>
             {s.photos.length > 0 && (
-              <span className="text-[12px] text-muted-foreground">
+              <span className="text-[0.75rem] text-muted-foreground">
                 {camera ? "In-app camera only" : "Includes uploaded files"}
               </span>
             )}
           </div>
           {s.photos.length === 0 ? (
-            <div className="rounded-lg bg-hover px-4 py-10 text-center text-[13px] text-muted-foreground">
+            <div className="rounded-lg bg-hover px-4 py-10 text-center text-[0.8125rem] text-muted-foreground">
               No photos with this check.
             </div>
           ) : (
@@ -412,11 +412,11 @@ function Submission({
                         className="size-full object-cover"
                       />
                     ) : (
-                      <span className="flex size-full items-center justify-center p-4 text-center text-[13px] text-st-grey">
+                      <span className="flex size-full items-center justify-center p-4 text-center text-[0.8125rem] text-st-grey">
                         {p.file_name}
                       </span>
                     )}
-                    <span className="absolute inset-x-2 bottom-2 rounded-[5px] bg-black/80 px-2 py-[5px] text-left font-mono text-[10.5px] text-white">
+                    <span className="absolute inset-x-2 bottom-2 rounded-[5px] bg-black/80 px-2 py-[5px] text-left font-mono text-[0.65625rem] text-white">
                       {p.stamp}
                       {p.taken && (
                         <>
@@ -427,7 +427,7 @@ function Submission({
                     </span>
                   </a>
                   {p.required && (
-                    <figcaption className="mt-1 text-[12px] text-muted-foreground">
+                    <figcaption className="mt-1 text-[0.75rem] text-muted-foreground">
                       Required: {p.required.toLowerCase()}
                     </figcaption>
                   )}
@@ -463,7 +463,7 @@ function Submission({
           </dl>
           <div className="h-px bg-divider" />
           <span className="font-semibold">Proof of presence</span>
-          <dl className="m-0 grid grid-cols-[120px_1fr] gap-y-1.5 text-[12.5px]">
+          <dl className="m-0 grid grid-cols-[120px_1fr] gap-y-1.5 text-[0.78125rem]">
             <dt className="text-muted-foreground">Submitted by</dt>
             <dd className="m-0">{s.presence.submitted_by}</dd>
             <dt className="text-muted-foreground">Work done</dt>
@@ -494,7 +494,7 @@ function Submission({
             {s.presence.photo_hash && (
               <>
                 <dt className="text-muted-foreground">Photo hash</dt>
-                <dd className="m-0 font-mono text-[12px] text-subtle">{s.presence.photo_hash}</dd>
+                <dd className="m-0 font-mono text-[0.75rem] text-subtle">{s.presence.photo_hash}</dd>
               </>
             )}
             {(s.presence.captured_offline || s.presence.back_filed) && (
@@ -536,7 +536,7 @@ function Submission({
       ) : null}
 
       {s.amendments.length > 0 && (
-        <section aria-label="Corrections" className="rounded-[10px] border border-divider bg-surface p-3.5 text-[13px]">
+        <section aria-label="Corrections" className="rounded-[10px] border border-divider bg-surface p-3.5 text-[0.8125rem]">
           <div className="mb-1.5 font-semibold">Corrections</div>
           {s.amendments.map((a, i) => (
             <div key={i} className="border-t border-divider py-1.5 first:border-0">
@@ -553,7 +553,7 @@ function Submission({
         <>
           <div className="flex flex-wrap items-center gap-3 rounded-[10px] border border-divider bg-surface p-3.5">
             <label className="flex min-w-0 flex-[1_1_320px] flex-col gap-[5px]">
-              <span className="text-[12px] font-medium text-ink2">
+              <span className="text-[0.75rem] font-medium text-ink2">
                 Comment <span className="font-normal text-muted-foreground">(required to reject)</span>
               </span>
               <input
@@ -567,12 +567,12 @@ function Submission({
                 }}
                 placeholder="e.g. Log book photo is blurred, retake it"
                 className={cn(
-                  "h-8 rounded-md border border-border bg-surface px-2.5 text-[13px] outline-none placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-focus",
+                  "h-8 rounded-md border border-border bg-surface px-2.5 text-[0.8125rem] outline-none placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-focus",
                   needComment && !comment.trim() && "border-st-red",
                 )}
               />
               {needComment && !comment.trim() && (
-                <span role="alert" className="text-[12px] text-st-red">
+                <span role="alert" className="text-[0.75rem] text-st-red">
                   Say what needs redoing, so the person knows what to fix.
                 </span>
               )}
@@ -592,13 +592,13 @@ function Submission({
               <Button disabled={!canAct || verify.isPending} onClick={() => act("approved")}>
                 <Check />
                 Approve
-                <kbd className="ml-0.5 inline-flex h-[18px] items-center rounded border border-white/20 bg-white/10 px-1 font-sans text-[11px] text-primary-foreground/80">
+                <kbd className="ml-0.5 inline-flex h-[18px] items-center rounded border border-white/20 bg-white/10 px-1 font-sans text-[0.6875rem] text-primary-foreground/80">
                   A
                 </kbd>
               </Button>
             </div>
           </div>
-          <p className="m-0 text-[12px] text-muted-foreground">
+          <p className="m-0 text-[0.75rem] text-muted-foreground">
             Reject reopens the task for a redo with your reason. Needs action raises an Action. Approve marks it
             Verified and locks the record. Corrections after that are amendments with a reason.
           </p>
@@ -744,7 +744,7 @@ function BulkDialog({
           />
         )}
       </div>
-      <span className="text-[13px] text-muted-foreground">
+      <span className="text-[0.8125rem] text-muted-foreground">
         Your name goes on each approval. Failed checks aren't included; open those one by one.
       </span>
     </QDialog>

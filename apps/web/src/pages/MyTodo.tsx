@@ -143,7 +143,7 @@ export function MyTodoPage() {
     <div className="flex flex-col gap-4">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="m-0 text-[22px] font-semibold tracking-[-0.01em]">
+          <h1 className="m-0 text-[1.375rem] font-semibold tracking-[-0.01em]">
             {hello(me.data?.name, me.data?.first_name)}
           </h1>
           <p className="m-0 mt-1 max-w-3xl text-muted-foreground">
@@ -156,7 +156,7 @@ export function MyTodoPage() {
         </div>
         <AppLink
           href="/me"
-          className="inline-flex h-9 items-center rounded-lg border border-border bg-surface px-3.5 text-[13.5px] font-medium text-foreground no-underline hover:bg-hover"
+          className="inline-flex h-9 items-center rounded-lg border border-border bg-surface px-3.5 text-[0.84375rem] font-medium text-foreground no-underline hover:bg-hover"
         >
           Notification settings
         </AppLink>
@@ -187,11 +187,11 @@ export function MyTodoPage() {
                 countTone="red"
                 aside={
                   view === "actions" ? (
-                    <AppLink href="/actions" className="text-[13px] text-link no-underline hover:underline">
+                    <AppLink href="/actions" className="text-[0.8125rem] text-link no-underline hover:underline">
                       All actions
                     </AppLink>
                   ) : (
-                    <span className="text-[12.5px] text-muted-foreground">Life safety, and anything due today</span>
+                    <span className="text-[0.78125rem] text-muted-foreground">Life safety, and anything due today</span>
                   )
                 }
               >
@@ -214,7 +214,7 @@ export function MyTodoPage() {
                 count={reviewTotal}
                 countTone="blue"
                 aside={
-                  <AppLink href="/reviews" className="text-[13px] text-link no-underline hover:underline">
+                  <AppLink href="/reviews" className="text-[0.8125rem] text-link no-underline hover:underline">
                     Open evidence review
                   </AppLink>
                 }
@@ -260,16 +260,16 @@ export function MyTodoPage() {
           <aside className="flex max-w-[360px] min-w-0 flex-[1_1_300px] flex-col gap-4">
             <section aria-labelledby="wk" className="overflow-hidden rounded-xl border border-divider bg-surface">
               <div className="flex items-center justify-between gap-2.5 border-b border-divider px-[18px] py-3.5">
-                <h2 id="wk" className="m-0 text-[15px] font-semibold">
+                <h2 id="wk" className="m-0 text-[0.9375rem] font-semibold">
                   Coming up this week
                 </h2>
               </div>
               {t.coming.length === 0 ? (
-                <p className="m-0 px-[18px] py-4 text-[13px] text-muted-foreground">Nothing scheduled this week.</p>
+                <p className="m-0 px-[18px] py-4 text-[0.8125rem] text-muted-foreground">Nothing scheduled this week.</p>
               ) : (
                 <ol className="m-0 list-none py-1.5 pl-0">
                   {t.coming.map((c, i) => (
-                    <li key={i} className="grid grid-cols-[64px_1fr] gap-2.5 px-[18px] py-2">
+                    <li key={i} className="grid grid-cols-[4rem_1fr] gap-2.5 px-[18px] py-2">
                       <span className="font-semibold text-muted-foreground">
                         {c.label.split(" ").slice(0, 2).join(" ")}
                       </span>
@@ -279,7 +279,7 @@ export function MyTodoPage() {
                 </ol>
               )}
             </section>
-            <div className="flex items-start gap-2.5 rounded-[10px] bg-st-grey-bg px-3.5 py-3 text-[13.5px]">
+            <div className="flex items-start gap-2.5 rounded-[10px] bg-st-grey-bg px-3.5 py-3 text-[0.84375rem]">
               <Info aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
               <span>
                 My to-do only shows what is waiting for <strong className="font-semibold">you</strong>.
@@ -307,7 +307,7 @@ export function MyTodoPage() {
 }
 
 const BTN =
-  "inline-flex h-[30px] items-center rounded-lg border border-border bg-surface px-2.5 text-[13px] font-medium text-foreground no-underline hover:bg-hover"
+  "inline-flex h-[30px] items-center rounded-lg border border-border bg-surface px-2.5 text-[0.8125rem] font-medium text-foreground no-underline hover:bg-hover"
 
 function Section({
   id,
@@ -327,7 +327,7 @@ function Section({
   return (
     <section aria-labelledby={id} className="overflow-hidden rounded-xl border border-divider bg-surface">
       <div className="flex items-center justify-between gap-2.5 border-b border-divider px-[18px] py-3.5">
-        <h2 id={id} className="m-0 flex items-center text-[15px] font-semibold">
+        <h2 id={id} className="m-0 flex items-center text-[0.9375rem] font-semibold">
           {title}
           <Pill tone={count ? countTone : "grey"} className="ml-1.5">
             {count}
@@ -360,7 +360,7 @@ function Row({
       </span>
       <span className="min-w-0">
         <span className="font-semibold">{title}</span>
-        <span className="block text-[12.5px] text-muted-foreground">{detail}</span>
+        <span className="block text-[0.78125rem] text-muted-foreground">{detail}</span>
       </span>
       <span className="col-start-2 flex flex-wrap gap-2 sm:col-start-auto">{right}</span>
     </div>
@@ -413,10 +413,10 @@ function CallDialog({ card, onClose }: { card: Card; onClose: () => void }) {
           <DialogDescription>{card.title}</DialogDescription>
         </DialogHeader>
         <label className="flex flex-col gap-1.5">
-          <span className="text-[12.5px] font-medium text-ink2">Who you spoke to and what was agreed (optional)</span>
+          <span className="text-[0.78125rem] font-medium text-ink2">Who you spoke to and what was agreed (optional)</span>
           <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} maxLength={1000} />
         </label>
-        <p className="m-0 text-[12.5px] text-muted-foreground">
+        <p className="m-0 text-[0.78125rem] text-muted-foreground">
           This is saved with your name and the time, and stops the escalation. It can't be undone.
         </p>
         <DialogFooter>

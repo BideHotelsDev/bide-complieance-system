@@ -34,14 +34,14 @@ export function StatCard({
 }
 
 export function StatTitle({ children }: { children: React.ReactNode }) {
-  return <div className="text-[13px] font-medium text-ink2">{children}</div>
+  return <div className="text-[0.8125rem] font-medium text-ink2">{children}</div>
 }
 
 export function StatBig({ value, sub }: { value: React.ReactNode; sub?: React.ReactNode }) {
   return (
     <div className="mt-1 flex items-baseline gap-2">
-      <span className="tabular text-[28px] leading-none font-semibold tracking-[-0.02em]">{value}</span>
-      {sub && <span className="text-[12.5px] text-muted-foreground">{sub}</span>}
+      <span className="tabular text-[1.75rem] leading-none font-semibold tracking-[-0.02em]">{value}</span>
+      {sub && <span className="text-[0.78125rem] text-muted-foreground">{sub}</span>}
     </div>
   )
 }
@@ -130,7 +130,7 @@ export function Ring({
 
 export function Legend({ items }: { items: Seg[] }) {
   return (
-    <ul className="m-0 mt-1.5 flex min-w-0 list-none flex-col gap-[3px] p-0 text-[12.5px]">
+    <ul className="m-0 mt-1.5 flex min-w-0 list-none flex-col gap-[3px] p-0 text-[0.78125rem]">
       {items.map((s) => (
         <li key={s.label} className="flex items-center gap-1.5">
           <span
@@ -158,7 +158,7 @@ export function BarRow({
   color?: string
 }) {
   return (
-    <div className="grid grid-cols-[84px_1fr_26px] items-center gap-2 text-[12.5px]">
+    <div className="grid grid-cols-[6rem_1fr_1.75rem] items-center gap-2 text-[0.78125rem]">
       <span className="truncate">{label}</span>
       <span className="block h-2.5 rounded bg-hover">
         <span
@@ -235,7 +235,7 @@ export function LineTabs({
             onClick={() => onChange(t.key)}
             className={cn(
               "inline-flex shrink-0 items-center gap-1.5 border-b-2 whitespace-nowrap",
-              size === "sm" ? "py-2 text-[13px]" : "py-2.5 text-[14px]",
+              size === "sm" ? "py-2 text-[0.8125rem]" : "py-2.5 text-[0.875rem]",
               on
                 ? "border-foreground font-semibold text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground",
@@ -247,7 +247,7 @@ export function LineTabs({
               (size === "sm" ? (
                 <span className="tabular">{t.count}</span>
               ) : (
-                <span className="tabular inline-flex h-[22px] items-center rounded-full bg-st-grey-bg px-2 text-[12.5px] font-medium text-st-grey">
+                <span className="tabular inline-flex h-[22px] items-center rounded-full bg-st-grey-bg px-2 text-[0.78125rem] font-medium text-st-grey">
                   {t.count}
                 </span>
               ))}
@@ -295,9 +295,9 @@ export function QDialog({
         >
           <div className="flex items-start gap-3 px-5 pt-[18px]">
             <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <DialogPrimitive.Title className="m-0 text-[16px] font-semibold">{title}</DialogPrimitive.Title>
+              <DialogPrimitive.Title className="m-0 text-[1rem] font-semibold">{title}</DialogPrimitive.Title>
               {sub ? (
-                <DialogPrimitive.Description className="m-0 text-[13.5px] text-muted-foreground">
+                <DialogPrimitive.Description className="m-0 text-[0.84375rem] text-muted-foreground">
                   {sub}
                 </DialogPrimitive.Description>
               ) : (
@@ -314,7 +314,7 @@ export function QDialog({
               <X className="size-4" />
             </DialogPrimitive.Close>
           </div>
-          <div className="flex flex-col gap-3 overflow-y-auto px-5 py-3.5 text-[14px]">{children}</div>
+          <div className="flex flex-col gap-3 overflow-y-auto px-5 py-3.5 text-[0.875rem]">{children}</div>
           <div className="flex flex-wrap justify-end gap-2 border-t border-divider px-5 pt-3 pb-4">{footer}</div>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
@@ -335,7 +335,7 @@ export function Field({
 }) {
   return (
     <label className={cn("flex flex-col gap-[5px]", className)}>
-      <span className="text-[12.5px] font-medium text-ink2">
+      <span className="text-[0.78125rem] font-medium text-ink2">
         {label}
         {hint && <span className="font-normal text-muted-foreground"> {hint}</span>}
       </span>
@@ -345,9 +345,9 @@ export function Field({
 }
 
 export const inputCls =
-  "h-9 w-full rounded-lg border border-border bg-surface px-3 text-[14px] text-foreground coarse:h-10 coarse:text-base outline-none placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-focus"
+  "h-9 w-full rounded-lg border border-border bg-surface px-3 text-[0.875rem] text-foreground coarse:h-10 coarse:text-base outline-none placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-focus"
 export const textareaCls =
-  "w-full resize-y rounded-lg border border-border bg-surface px-3 py-2 text-[13.5px] text-foreground coarse:text-base outline-none placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-focus"
+  "w-full resize-y rounded-lg border border-border bg-surface px-3 py-2 text-[0.84375rem] text-foreground coarse:text-base outline-none placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-focus"
 
 export function Note({
   icon,
@@ -361,7 +361,7 @@ export function Note({
   return (
     <div
       className={cn(
-        "flex items-start gap-2.5 rounded-[10px] bg-st-grey-bg px-3.5 py-3 text-[13.5px] text-ink2",
+        "flex items-start gap-2.5 rounded-[10px] bg-st-grey-bg px-3.5 py-3 text-[0.84375rem] text-ink2",
         className,
       )}
     >
@@ -553,7 +553,7 @@ export function QueueDetail({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-10 items-center gap-1.5 rounded-md px-2.5 text-[14px] font-medium hover:bg-hover"
+              className="inline-flex h-10 items-center gap-1.5 rounded-md px-2.5 text-[0.875rem] font-medium hover:bg-hover"
             >
               <ArrowLeft aria-hidden className="size-4" />
               Back to the list

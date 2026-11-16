@@ -86,7 +86,7 @@ export function SignaturePad({
           if (dirty.current && canvas.current) onChange(canvas.current.toDataURL("image/png"))
         }}
       />
-      <div className="mt-1.5 flex items-center justify-between text-[13.5px] text-muted-foreground">
+      <div className="mt-1.5 flex items-center justify-between text-[0.84375rem] text-muted-foreground">
         <span>{value ? "Signed" : "Sign with your finger"}</span>
         <button
           type="button"

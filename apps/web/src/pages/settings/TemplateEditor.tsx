@@ -274,14 +274,14 @@ function Editor({ detail, refetch }: { detail: Detail; refetch: () => Promise<De
             <ArrowLeft />
           </Link>
         </Button>
-        <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-[14px]">
+        <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-[0.875rem]">
           <Link to="/settings/library" className="text-muted-foreground no-underline hover:text-foreground">
             Library
           </Link>
           <span aria-hidden className="text-muted-foreground">
             /
           </span>
-          <h1 className="m-0 truncate text-[14px] font-semibold">{settings.name || "Untitled template"}</h1>
+          <h1 className="m-0 truncate text-[0.875rem] font-semibold">{settings.name || "Untitled template"}</h1>
         </nav>
         {detail.status === "archived" ? (
           <Pill tone="grey">Archived</Pill>
@@ -291,7 +291,7 @@ function Editor({ detail, refetch }: { detail: Detail; refetch: () => Promise<De
           <Pill tone="grey">v{detail.current_version} live</Pill>
         )}
         {detail.status === "proposed" && <Pill tone="outline">Proposed addition</Pill>}
-        <span aria-live="polite" className={cn("text-[12.5px]", saveError ? "text-st-red" : "text-muted-foreground")}>
+        <span aria-live="polite" className={cn("text-[0.78125rem]", saveError ? "text-st-red" : "text-muted-foreground")}>
           {saveError
             ? `Not saved: ${saveError}`
             : saving
@@ -323,7 +323,7 @@ function Editor({ detail, refetch }: { detail: Detail; refetch: () => Promise<De
           aria-label="Template settings"
           className="border-b border-divider bg-surface p-4 lg:border-r lg:border-b-0"
         >
-          <h2 className="m-0 mb-3 text-[15px] font-semibold">Settings</h2>
+          <h2 className="m-0 mb-3 text-[0.9375rem] font-semibold">Settings</h2>
           <fieldset disabled={!canEdit} className="m-0 flex flex-col gap-3.5 border-0 p-0">
             <Labeled label="Name" htmlFor="t-name">
               <TextInput
@@ -395,7 +395,7 @@ function Editor({ detail, refetch }: { detail: Detail; refetch: () => Promise<De
               </Labeled>
             </div>
             <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
-              <legend className="mb-1.5 text-[12.5px] font-medium text-ink2">When the window closes</legend>
+              <legend className="mb-1.5 text-[0.78125rem] font-medium text-ink2">When the window closes</legend>
               {(
                 [
                   ["late", "Completable late", "Stays Overdue and escalates until done"],
@@ -417,7 +417,7 @@ function Editor({ detail, refetch }: { detail: Detail; refetch: () => Promise<De
                     onChange={() => setS({ late_rule: v })}
                   />
                   <span>
-                    <span className="block text-[13.5px] font-medium">{label}</span>
+                    <span className="block text-[0.84375rem] font-medium">{label}</span>
                     <span className="block text-xs text-muted-foreground">{help}</span>
                   </span>
                 </label>
@@ -459,7 +459,7 @@ function Editor({ detail, refetch }: { detail: Detail; refetch: () => Promise<De
               onChange={(r) => setS({ applies_to: r })}
             />
             <div className="flex flex-col gap-2.5 border-t border-divider pt-3.5">
-              <label className="flex items-center justify-between gap-3 text-[13.5px]">
+              <label className="flex items-center justify-between gap-3 text-[0.84375rem]">
                 Location check (geofence)
                 <Switch
                   aria-label="Geofence required"
@@ -467,7 +467,7 @@ function Editor({ detail, refetch }: { detail: Detail; refetch: () => Promise<De
                   onCheckedChange={(v) => setS({ geofence_required: v })}
                 />
               </label>
-              <div className="flex items-center justify-between gap-3 text-[13.5px] text-muted-foreground">
+              <div className="flex items-center justify-between gap-3 text-[0.84375rem] text-muted-foreground">
                 <span className="flex items-center gap-2">
                   QR scan at location{" "}
                   <Pill tone="grey" title="Planned for phase 2">
@@ -481,7 +481,7 @@ function Editor({ detail, refetch }: { detail: Detail; refetch: () => Promise<De
               <button
                 type="button"
                 onClick={() => setArchiving(true)}
-                className="mt-1 self-start text-[12.5px] text-st-red hover:underline"
+                className="mt-1 self-start text-[0.78125rem] text-st-red hover:underline"
               >
                 Archive this template…
               </button>
@@ -492,10 +492,10 @@ function Editor({ detail, refetch }: { detail: Detail; refetch: () => Promise<De
         {/* Form builder */}
         <section aria-labelledby="form-h" className="flex flex-col gap-2.5 bg-background p-4 md:p-6">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 id="form-h" className="m-0 text-[15px] font-semibold">
+            <h2 id="form-h" className="m-0 text-[0.9375rem] font-semibold">
               Form · {plural(form.length, "field")}
             </h2>
-            <span className="text-[12.5px] text-muted-foreground">Drag to reorder. Required fields are marked.</span>
+            <span className="text-[0.78125rem] text-muted-foreground">Drag to reorder. Required fields are marked.</span>
           </div>
           <div
             className="flex flex-col gap-2.5"
@@ -570,7 +570,7 @@ function Editor({ detail, refetch }: { detail: Detail; refetch: () => Promise<De
             )}
           </div>
           {canEdit && <AddFieldMenu onAdd={add} />}
-          <p className="m-0 mt-1 text-[12.5px] text-muted-foreground">
+          <p className="m-0 mt-1 text-[0.78125rem] text-muted-foreground">
             Publishing v{nextVersion} changes future tasks only. Past submissions keep the v{detail.current_version}{" "}
             form they were completed on.
           </p>
@@ -581,7 +581,7 @@ function Editor({ detail, refetch }: { detail: Detail; refetch: () => Promise<De
           aria-label="Phone preview"
           className="border-t border-divider bg-sidebar p-4 lg:col-span-2 xl:col-span-1 xl:border-t-0 xl:border-l"
         >
-          <div className="mb-3 text-[12.5px] font-medium text-ink2">Live preview · staff app</div>
+          <div className="mb-3 text-[0.78125rem] font-medium text-ink2">Live preview · staff app</div>
           <div className="xl:sticky xl:top-16">
             <PhonePreview
               form={form}
@@ -701,12 +701,12 @@ function VersionHistory({ versions, current }: { versions: Version[]; current: n
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-[340px] p-0">
-        <div className="border-b border-divider px-3.5 py-2.5 text-[13px] font-semibold">Version history</div>
+        <div className="border-b border-divider px-3.5 py-2.5 text-[0.8125rem] font-semibold">Version history</div>
         <ol className="m-0 max-h-80 list-none overflow-y-auto p-0">
           {versions.map((v) => (
             <li key={v.version} className="flex gap-3 border-b border-divider px-3.5 py-2.5 last:border-0">
-              <span className="mono-id w-7 shrink-0 pt-0.5 text-[12.5px] font-semibold">v{v.version}</span>
-              <div className="min-w-0 flex-1 text-[13px]">
+              <span className="mono-id w-7 shrink-0 pt-0.5 text-[0.78125rem] font-semibold">v{v.version}</span>
+              <div className="min-w-0 flex-1 text-[0.8125rem]">
                 <div className="flex items-center gap-2">
                   {v.status === "draft" ? (
                     <Pill tone="amber">Draft</Pill>
@@ -772,7 +772,7 @@ function AppliesTo({
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-[12.5px] font-medium text-ink2">Applies to</span>
+        <span className="text-[0.78125rem] font-medium text-ink2">Applies to</span>
         {conds.length > 1 && !disabled && (
           <Segmented
             label="Match"
@@ -787,7 +787,7 @@ function AppliesTo({
         )}
       </div>
       <div className="flex flex-wrap items-center gap-1.5">
-        {conds.length === 0 && <span className="text-[13px] text-muted-foreground">Every property</span>}
+        {conds.length === 0 && <span className="text-[0.8125rem] text-muted-foreground">Every property</span>}
         {conds.map((c, i) => (
           <Pill key={i} tone="grey" className="pr-1">
             {condLabel(c)}
@@ -820,7 +820,7 @@ function AppliesTo({
                       key={f}
                       type="button"
                       onClick={() => pick({ feature: f })}
-                      className="block w-full rounded px-2 py-1.5 text-left text-[13px] hover:bg-hover"
+                      className="block w-full rounded px-2 py-1.5 text-left text-[0.8125rem] hover:bg-hover"
                     >
                       {humanise(f)}
                     </button>
@@ -834,7 +834,7 @@ function AppliesTo({
                   key={j.label}
                   type="button"
                   onClick={() => pick({ jurisdiction: j.value })}
-                  className="block w-full rounded px-2 py-1.5 text-left text-[13px] hover:bg-hover"
+                  className="block w-full rounded px-2 py-1.5 text-left text-[0.8125rem] hover:bg-hover"
                 >
                   {j.label}
                 </button>
@@ -847,7 +847,7 @@ function AppliesTo({
                   key={r.value}
                   type="button"
                   onClick={() => pick({ licence_regime: r.value })}
-                  className="block w-full rounded px-2 py-1.5 text-left text-[13px] hover:bg-hover"
+                  className="block w-full rounded px-2 py-1.5 text-left text-[0.8125rem] hover:bg-hover"
                 >
                   {r.label}
                 </button>

@@ -32,7 +32,7 @@ export function QuickViews({
           aria-selected={v.on}
           onClick={() => onPick(v.key)}
           className={cn(
-            "inline-flex h-8 shrink-0 items-center gap-2 rounded-full border px-3 text-[13px] font-medium transition-colors coarse:h-10",
+            "inline-flex h-8 shrink-0 items-center gap-2 rounded-full border px-3 text-[0.8125rem] font-medium transition-colors coarse:h-10",
             v.on
               ? "border-primary bg-primary text-primary-foreground"
               : "border-border bg-surface text-ink2 hover:bg-hover",
@@ -41,7 +41,7 @@ export function QuickViews({
           {v.label}
           <span
             className={cn(
-              "tabular inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[11.5px] font-semibold",
+              "tabular inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[0.71875rem] font-semibold",
               v.on ? "bg-white/20 text-primary-foreground" : "bg-hover text-ink2",
             )}
           >
@@ -105,7 +105,7 @@ export function SearchBox({
         onChange={(e) => setLocal(e.target.value)}
         placeholder={placeholder}
         aria-label={placeholder}
-        className="min-w-0 flex-1 bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-foreground"
+        className="min-w-0 flex-1 bg-transparent text-[0.8125rem] text-foreground outline-none placeholder:text-muted-foreground"
       />
       {local && count != null && <span className="tabular shrink-0 text-xs">{count} results</span>}
       {local ? (
@@ -122,7 +122,7 @@ export function SearchBox({
         </button>
       ) : (
         autoFocusKey && (
-          <kbd className="rounded border border-border px-1 font-sans text-[11px] text-subtle coarse:hidden">
+          <kbd className="rounded border border-border px-1 font-sans text-[0.6875rem] text-subtle coarse:hidden">
             {autoFocusKey}
           </kbd>
         )
@@ -143,7 +143,7 @@ export function FacetButton({ facet, onChange }: { facet: Facet; onChange: (valu
           aria-haspopup="listbox"
           aria-expanded={open}
           className={cn(
-            "inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-[13px] whitespace-nowrap transition-colors coarse:h-10",
+            "inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-[0.8125rem] whitespace-nowrap transition-colors coarse:h-10",
             facet.active
               ? "border-st-blue bg-st-blue-bg text-st-blue"
               : "border-border bg-surface text-ink2 hover:bg-hover",
@@ -167,7 +167,7 @@ export function FacetButton({ facet, onChange }: { facet: Facet; onChange: (valu
               <div key={o.value} className="group flex items-center rounded-md hover:bg-hover">
                 <label
                   className={cn(
-                    "flex flex-1 cursor-pointer items-center gap-2 px-2 py-1.5 text-[13px] coarse:py-2.5",
+                    "flex flex-1 cursor-pointer items-center gap-2 px-2 py-1.5 text-[0.8125rem] coarse:py-2.5",
                     o.count === 0 && !o.checked && "text-subtle",
                   )}
                 >
@@ -234,7 +234,7 @@ export function FilterBar({
         <button
           type="button"
           onClick={onClearAll}
-          className="h-8 rounded-md px-2 text-[13px] text-link hover:bg-hover coarse:h-10"
+          className="h-8 rounded-md px-2 text-[0.8125rem] text-link hover:bg-hover coarse:h-10"
         >
           Clear all filters
         </button>
@@ -247,7 +247,7 @@ export function FilterBar({
 /* A sentence says exactly what is on screen, so nobody misreads a filtered list as the whole picture. */
 export function Summary({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <p aria-live="polite" className={cn("m-0 text-[13px] text-muted-foreground", className)}>
+    <p aria-live="polite" className={cn("m-0 text-[0.8125rem] text-muted-foreground", className)}>
       {children}
     </p>
   )
@@ -277,7 +277,7 @@ export function Segmented<T extends string>({
           onClick={() => onChange(o.value)}
           className={cn(
             "inline-flex items-center gap-1.5 rounded-[5px] px-2.5 font-medium transition-colors",
-            size === "sm" ? "h-6 text-xs coarse:h-9" : "h-[26px] text-[13px] coarse:h-9",
+            size === "sm" ? "h-6 text-xs coarse:h-9" : "h-[26px] text-[0.8125rem] coarse:h-9",
             value === o.value
               ? "bg-surface text-foreground shadow-[0_0_0_1px_var(--c-border)]"
               : "text-muted-foreground",

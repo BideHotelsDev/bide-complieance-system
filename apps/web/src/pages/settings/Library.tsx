@@ -324,17 +324,17 @@ function AreaLink({ a, on, onPick, tone }: { a: Area; on: boolean; onPick: () =>
       aria-current={on ? "true" : undefined}
       onClick={onPick}
       className={cn(
-        "flex h-9 shrink-0 items-center justify-between gap-3 rounded-md px-2.5 text-left text-[13.5px] whitespace-nowrap",
+        "flex h-9 shrink-0 items-center justify-between gap-3 rounded-md px-2.5 text-left text-[0.84375rem] whitespace-nowrap",
         on ? "bg-hover font-medium text-foreground" : "text-ink2 hover:bg-hover/60",
       )}
     >
       <span>{a.label}</span>
       {tone === "amber" ? (
-        <Pill tone="amber" className="h-[18px] px-1.5 text-[11.5px]">
+        <Pill tone="amber" className="h-[18px] px-1.5 text-[0.71875rem]">
           {a.count}
         </Pill>
       ) : (
-        <span className="tabular text-[12.5px] text-muted-foreground">{a.count}</span>
+        <span className="tabular text-[0.78125rem] text-muted-foreground">{a.count}</span>
       )}
     </button>
   )
@@ -445,7 +445,7 @@ function NewTemplateDialog({ onClose, defaultArea }: { onClose: () => void; defa
           />
         </Labeled>
         {error && (
-          <div role="alert" className="text-[13px] text-st-red">
+          <div role="alert" className="text-[0.8125rem] text-st-red">
             {error}
           </div>
         )}

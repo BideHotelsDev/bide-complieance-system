@@ -124,16 +124,16 @@ export function RegisterSheet({ refId, onClose }: { refId: string; onClose: () =
                 { label: "Next due", value: d.next_due_text },
               ]}
             />
-            {d.guidance && <p className="m-0 text-[13px] text-ink2">{d.guidance}</p>}
+            {d.guidance && <p className="m-0 text-[0.8125rem] text-ink2">{d.guidance}</p>}
             <section>
-              <h3 className="m-0 mb-2 text-[13.5px] font-semibold">Evidence</h3>
+              <h3 className="m-0 mb-2 text-[0.84375rem] font-semibold">Evidence</h3>
               {d.evidence.length === 0 ? (
-                <p className="m-0 text-[13px] text-muted-foreground">Nothing filed yet.</p>
+                <p className="m-0 text-[0.8125rem] text-muted-foreground">Nothing filed yet.</p>
               ) : (
                 <ul className="m-0 flex list-none flex-col gap-2 p-0">
                   {d.evidence.map((e) => (
                     <li key={e.id} className="flex items-center gap-2.5 rounded-lg border border-divider p-2.5">
-                      <span className="inline-flex h-10 w-8 shrink-0 items-center justify-center rounded bg-hover text-[10px] font-semibold text-muted-foreground">
+                      <span className="inline-flex h-10 w-8 shrink-0 items-center justify-center rounded bg-hover text-[0.625rem] font-semibold text-muted-foreground">
                         {e.kind === "pdf" ? "PDF" : "IMG"}
                       </span>
                       <span className="min-w-0 flex-1">
@@ -159,9 +159,9 @@ export function RegisterSheet({ refId, onClose }: { refId: string; onClose: () =
               )}
             </section>
             <section>
-              <h3 className="m-0 mb-2 text-[13.5px] font-semibold">Linked Actions</h3>
+              <h3 className="m-0 mb-2 text-[0.84375rem] font-semibold">Linked Actions</h3>
               {d.actions.length === 0 ? (
-                <p className="m-0 text-[13px] text-muted-foreground">No Actions raised from this item.</p>
+                <p className="m-0 text-[0.8125rem] text-muted-foreground">No Actions raised from this item.</p>
               ) : (
                 <ul className="m-0 flex list-none flex-col gap-2 p-0">
                   {d.actions.map((a) => (
@@ -197,7 +197,7 @@ export function RegisterSheet({ refId, onClose }: { refId: string; onClose: () =
               )}
             </section>
             <section>
-              <h3 className="m-0 mb-2 text-[13.5px] font-semibold">History</h3>
+              <h3 className="m-0 mb-2 text-[0.84375rem] font-semibold">History</h3>
               <ol className="m-0 ml-[5px] flex list-none flex-col gap-2.5 border-l border-divider p-0">
                 {d.history.map((h, i) => {
                   const when = h.at ? fmtDate(h.at) : h.date ? fmtDate(h.date) : null

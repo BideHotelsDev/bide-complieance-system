@@ -36,9 +36,9 @@ export function Sheet({
               <X className="size-5" aria-hidden />
             </DialogClose>
           )}
-          <DialogTitle className="pr-10 text-[19px] leading-snug">{title}</DialogTitle>
+          <DialogTitle className="pr-10 text-[1.1875rem] leading-snug">{title}</DialogTitle>
           {description ? (
-            <DialogDescription className="mt-1 text-[14.5px]">{description}</DialogDescription>
+            <DialogDescription className="mt-1 text-[0.90625rem]">{description}</DialogDescription>
           ) : (
             <DialogDescription className="sr-only">{typeof title === "string" ? title : ""}</DialogDescription>
           )}

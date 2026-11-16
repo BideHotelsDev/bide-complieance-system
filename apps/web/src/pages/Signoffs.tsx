@@ -88,14 +88,14 @@ export function SignoffsPage() {
           {!res.data ? (
             <Skeleton className="h-7 w-80" />
           ) : canSign ? (
-            <h1 className="m-0 text-[22px] font-semibold">
+            <h1 className="m-0 text-[1.375rem] font-semibold">
               {/* Some of these are decisions, not signatures, so the count says "need you". */}
               {awaiting === 0
                 ? "Nothing needs you"
                 : `${awaiting} ${awaiting === 1 ? "thing needs" : "things need"} you`}
             </h1>
           ) : (
-            <h1 className="m-0 text-[22px] font-semibold">Sign-offs</h1>
+            <h1 className="m-0 text-[1.375rem] font-semibold">Sign-offs</h1>
           )}
           <p className="m-0 mt-1 max-w-[640px] text-muted-foreground">
             {canSign && one
@@ -103,7 +103,7 @@ export function SignoffsPage() {
               : "What each dutyholder has waiting. Bide does and evidences the work; only the property's dutyholder directors can sign."}
           </p>
           {isAdmin && !canSign && (
-            <p className="m-0 mt-2 text-[13px] text-muted-foreground">
+            <p className="m-0 mt-2 text-[0.8125rem] text-muted-foreground">
               You can see these but not sign them. Requests that you decide are in{" "}
               <Link to="/approvals" className="text-link">
                 Approvals
@@ -140,21 +140,21 @@ export function SignoffsPage() {
 
         {(history.data?.rows.length ?? 0) > 0 && (
           <section className="overflow-hidden rounded-[10px] border border-divider bg-surface" aria-labelledby="signed">
-            <h2 id="signed" className="m-0 border-b border-divider px-4 py-3.5 text-[14px] font-semibold">
+            <h2 id="signed" className="m-0 border-b border-divider px-4 py-3.5 text-[0.875rem] font-semibold">
               Signed
             </h2>
             <ul className="m-0 list-none p-0">
               {history.data!.rows.map((h) => (
                 <li
                   key={h.id}
-                  className="flex flex-wrap items-center gap-x-3 gap-y-0.5 border-b border-divider px-4 py-3 text-[13px] last:border-0"
+                  className="flex flex-wrap items-center gap-x-3 gap-y-0.5 border-b border-divider px-4 py-3 text-[0.8125rem] last:border-0"
                 >
                   <span className="font-medium">{h.subject}</span>
                   <span className="text-muted-foreground">
                     {h.property} · {h.signed_name} · {fmtDateTime(h.signed_at)}
                   </span>
                   <span
-                    className="ml-auto font-mono text-[11.5px] text-subtle"
+                    className="ml-auto font-mono text-[0.71875rem] text-subtle"
                     title="Fingerprint of the signed version"
                   >
                     {h.fingerprint}
@@ -208,7 +208,7 @@ function PropertyBlock({
         aria-label={`${p.property} status`}
       >
         <div className="border-r border-divider px-4 py-3.5">
-          <div className="text-[12px] text-muted-foreground">
+          <div className="text-[0.75rem] text-muted-foreground">
             {p.property}
             {p.town ? ` · ${p.town}` : ""}
           </div>
@@ -221,27 +221,27 @@ function PropertyBlock({
           </div>
         </div>
         <div className="border-r border-divider px-4 py-3.5">
-          <div className="text-[12px] text-muted-foreground">Life-safety checklist items open</div>
-          <div className="tabular text-[20px] font-semibold">{p.gate_a_open ?? "—"}</div>
+          <div className="text-[0.75rem] text-muted-foreground">Life-safety checklist items open</div>
+          <div className="tabular text-[1.25rem] font-semibold">{p.gate_a_open ?? "—"}</div>
         </div>
         <div className="border-r border-divider px-4 py-3.5">
-          <div className="text-[12px] text-muted-foreground">Urgent actions open</div>
-          <div className="tabular text-[20px] font-semibold">{p.urgent_open}</div>
+          <div className="text-[0.75rem] text-muted-foreground">Urgent actions open</div>
+          <div className="tabular text-[1.25rem] font-semibold">{p.urgent_open}</div>
         </div>
         <div className="px-4 py-3.5">
           {p.insurer ? (
             <>
-              <div className="text-[12px] text-muted-foreground">{p.insurer.label}</div>
+              <div className="text-[0.75rem] text-muted-foreground">{p.insurer.label}</div>
               <div
-                className={cn("mt-0.5 text-[14px] font-semibold", dueLabel(p.insurer.due_on).overdue && "text-st-red")}
+                className={cn("mt-0.5 text-[0.875rem] font-semibold", dueLabel(p.insurer.due_on).overdue && "text-st-red")}
               >
                 {dueLabel(p.insurer.due_on, { day: true }).text}
               </div>
             </>
           ) : (
             <>
-              <div className="text-[12px] text-muted-foreground">Dutyholder</div>
-              <div className="mt-0.5 text-[14px] font-semibold">{p.dutyholder ?? "To confirm"}</div>
+              <div className="text-[0.75rem] text-muted-foreground">Dutyholder</div>
+              <div className="mt-0.5 text-[0.875rem] font-semibold">{p.dutyholder ?? "To confirm"}</div>
             </>
           )}
         </div>
@@ -251,11 +251,11 @@ function PropertyBlock({
         className="overflow-hidden rounded-[10px] border border-divider bg-surface"
         aria-labelledby={`todo-${p.code}`}
       >
-        <h2 id={`todo-${p.code}`} className="m-0 border-b border-divider px-4 py-3.5 text-[14px] font-semibold">
+        <h2 id={`todo-${p.code}`} className="m-0 border-b border-divider px-4 py-3.5 text-[0.875rem] font-semibold">
           {mine && !showName ? "Awaiting you" : `Awaiting signature${showName ? ` · ${p.property}` : ""}`}
         </h2>
         {p.requests.length === 0 && (
-          <p className="m-0 px-4 py-6 text-center text-[13px] text-muted-foreground">
+          <p className="m-0 px-4 py-6 text-center text-[0.8125rem] text-muted-foreground">
             Nothing waiting at {p.property}.
           </p>
         )}
@@ -296,7 +296,7 @@ function RequestItem({ r, on, onPick }: { r: SignRequest; on: boolean; onPick: (
       </span>
       <span className="min-w-0">
         <span className="font-medium">{r.title}</span>
-        <span className={cn("block text-[12px]", !muted && "text-muted-foreground")}>{r.detail}</span>
+        <span className={cn("block text-[0.75rem]", !muted && "text-muted-foreground")}>{r.detail}</span>
       </span>
       {badge}
     </>
@@ -382,7 +382,7 @@ function SignPanel({
         <ClassBadge klass="A" />
         <span className="font-semibold">{heading}</span>
         {version && (
-          <span className="ml-auto font-mono text-[12px] text-muted-foreground">
+          <span className="ml-auto font-mono text-[0.75rem] text-muted-foreground">
             {version.charAt(0).toUpperCase() + version.slice(1)}
           </span>
         )}
@@ -412,7 +412,7 @@ function SignPanel({
               </div>
             )}
             <div className="flex items-center gap-2 px-3 py-2.5">
-              <span className="min-w-0 flex-1 truncate text-[12.5px]">
+              <span className="min-w-0 flex-1 truncate text-[0.78125rem]">
                 {r.file_name ?? doc.data?.file_name ?? r.title}
               </span>
               {doc.data && (
@@ -426,8 +426,8 @@ function SignPanel({
           </div>
         )}
         {(r.preconditions?.length ?? 0) > 0 && (
-          <div className="flex flex-col gap-1.5 text-[12.5px]">
-            <span className="text-[13px] font-semibold">Before you sign</span>
+          <div className="flex flex-col gap-1.5 text-[0.78125rem]">
+            <span className="text-[0.8125rem] font-semibold">Before you sign</span>
             {r.preconditions!.map((c) => (
               <span key={c.text} className="flex gap-2">
                 <Pill tone={c.done ? "green" : "amber"} className="shrink-0">
@@ -437,7 +437,7 @@ function SignPanel({
               </span>
             ))}
             {r.preconditions!.some((c) => !c.done) && (
-              <span className="text-[12.5px] text-muted-foreground">
+              <span className="text-[0.78125rem] text-muted-foreground">
                 These don't stop you signing. Open ones stay tracked until they're done.
               </span>
             )}
@@ -455,13 +455,13 @@ function SignPanel({
               <span>{statement(r, p)}</span>
             </label>
             <label className="flex flex-col gap-[5px]">
-              <span className="text-[12px] font-medium text-ink2">Type your full name to sign</span>
+              <span className="text-[0.75rem] font-medium text-ink2">Type your full name to sign</span>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Full name"
                 autoComplete="name"
-                className="h-9 rounded-md border border-border bg-surface px-2.5 text-[15px] outline-none focus-visible:outline-2 focus-visible:outline-focus"
+                className="h-9 rounded-md border border-border bg-surface px-2.5 text-[0.9375rem] outline-none focus-visible:outline-2 focus-visible:outline-focus"
               />
             </label>
             <Button
@@ -478,7 +478,7 @@ function SignPanel({
             Only {p.dutyholder ?? "the dutyholder"}'s directors can sign this. You can see what is waiting and chase it.
           </Callout>
         )}
-        <p className="m-0 text-[12px] text-muted-foreground">
+        <p className="m-0 text-[0.75rem] text-muted-foreground">
           Recorded with your name, the time and a fingerprint of this exact version (SGN-01). If the {docWord} changes
           later, it will need signing again.
         </p>

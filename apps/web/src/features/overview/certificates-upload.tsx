@@ -48,7 +48,7 @@ export const isRequired = (c: CertRow) => c.status === "missing" || c.status ===
 
 const NEW = "__new"
 const selectCls =
-  "h-9 w-full rounded-md border border-border bg-surface px-2.5 text-[13.5px] outline-none focus-visible:outline-2 focus-visible:outline-focus"
+  "h-9 w-full rounded-md border border-border bg-surface px-2.5 text-[0.84375rem] outline-none focus-visible:outline-2 focus-visible:outline-focus"
 
 export function UploadCertificateDialog({
   open,
@@ -170,7 +170,7 @@ export function UploadCertificateDialog({
             </div>
           )}
           {target && (
-            <div className="text-[13.5px]">
+            <div className="text-[0.84375rem]">
               <div className="font-medium">{target.title}</div>
               <div className="text-muted-foreground">{[target.property, target.why].filter(Boolean).join(" · ")}</div>
             </div>

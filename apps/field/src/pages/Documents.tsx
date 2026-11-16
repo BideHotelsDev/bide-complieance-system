@@ -56,14 +56,14 @@ export function DocumentsPage() {
       ) : (
         <>
           {q.data.all_set ? (
-            <div className="flex items-start gap-3 rounded-xl border border-st-green/25 bg-st-green-bg px-4 py-3.5 text-[15px] text-st-green">
+            <div className="flex items-start gap-3 rounded-xl border border-st-green/25 bg-st-green-bg px-4 py-3.5 text-[0.9375rem] text-st-green">
               <Check aria-hidden className="mt-0.5 size-5 shrink-0" />
               <span>
                 <strong>You're all set.</strong> Everything your roles need is on file.
               </span>
             </div>
           ) : needs > 0 ? (
-            <div className="flex items-start gap-3 rounded-xl border border-st-red/25 bg-st-red-bg px-4 py-3.5 text-[15px] text-st-red">
+            <div className="flex items-start gap-3 rounded-xl border border-st-red/25 bg-st-red-bg px-4 py-3.5 text-[0.9375rem] text-st-red">
               <CircleAlert aria-hidden className="mt-0.5 size-5 shrink-0" />
               <span>
                 <strong>
@@ -79,8 +79,8 @@ export function DocumentsPage() {
                 {q.data.rows.map((r) => (
                   <li key={r.id} className="flex items-center gap-3 border-b border-divider px-3.5 py-3 last:border-0">
                     <div className="min-w-0 flex-1">
-                      <div className="text-[16px] font-semibold">{r.title}</div>
-                      {r.detail && <div className="text-[14px] text-muted-foreground">{r.detail}</div>}
+                      <div className="text-[1rem] font-semibold">{r.title}</div>
+                      {r.detail && <div className="text-[0.875rem] text-muted-foreground">{r.detail}</div>}
                     </div>
                     <Pill tone={TONE[r.status]}>{r.label}</Pill>
                   </li>
@@ -89,8 +89,8 @@ export function DocumentsPage() {
             </Card>
           )}
           <Card className="px-4 py-3.5">
-            <div className="text-[16px] font-semibold">Did a new course?</div>
-            <p className="m-0 mt-1 mb-3 text-[15px] text-muted-foreground">
+            <div className="text-[1rem] font-semibold">Did a new course?</div>
+            <p className="m-0 mt-1 mb-3 text-[0.9375rem] text-muted-foreground">
               Upload the certificate and {q.data.checker ?? "the register keeper"} will check it.
             </p>
             <SecondaryButton onClick={() => setOpen(true)}>Upload a certificate</SecondaryButton>
@@ -138,7 +138,7 @@ function UploadSheet({ open, onClose, types }: { open: boolean; onClose: () => v
           <button
             type="button"
             onClick={onClose}
-            className="h-12 flex-1 rounded-xl border border-border bg-surface text-[16px] font-semibold"
+            className="h-12 flex-1 rounded-xl border border-border bg-surface text-[1rem] font-semibold"
           >
             Cancel
           </button>
@@ -146,7 +146,7 @@ function UploadSheet({ open, onClose, types }: { open: boolean; onClose: () => v
             type="button"
             disabled={!file || !type || busy}
             onClick={() => void send()}
-            className="flex h-12 flex-[1.6] items-center justify-center gap-2 rounded-xl bg-primary text-[16px] font-semibold text-primary-foreground disabled:opacity-50"
+            className="flex h-12 flex-[1.6] items-center justify-center gap-2 rounded-xl bg-primary text-[1rem] font-semibold text-primary-foreground disabled:opacity-50"
           >
             {busy && <Spinner />}
             Upload
@@ -165,7 +165,7 @@ function UploadSheet({ open, onClose, types }: { open: boolean; onClose: () => v
       </div>
       <div>
         <FieldLabel htmlFor="doc-file">Certificate</FieldLabel>
-        <label className="flex h-12 cursor-pointer items-center justify-center truncate rounded-xl border border-dashed border-subtle bg-surface px-3 text-[15.5px] font-semibold">
+        <label className="flex h-12 cursor-pointer items-center justify-center truncate rounded-xl border border-dashed border-subtle bg-surface px-3 text-[0.96875rem] font-semibold">
           {file ? file.name : "Choose a photo or PDF"}
           <input
             id="doc-file"

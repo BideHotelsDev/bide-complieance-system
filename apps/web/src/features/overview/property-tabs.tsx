@@ -164,7 +164,7 @@ export function OpeningTab({ property }: { property: PropertyDetail }) {
         <Link
           to="/gates/$code"
           params={{ code: property.code }}
-          className="ml-auto inline-flex h-[30px] items-center rounded-md bg-primary px-3 text-[13px] font-medium text-primary-foreground no-underline"
+          className="ml-auto inline-flex h-[30px] items-center rounded-md bg-primary px-3 text-[0.8125rem] font-medium text-primary-foreground no-underline"
         >
           Open the checklist
         </Link>

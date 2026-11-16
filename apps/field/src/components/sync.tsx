@@ -42,7 +42,7 @@ export function OfflineBanner() {
   return (
     <div
       role="status"
-      className="sticky top-0 z-30 flex items-center gap-2 bg-foreground px-4 py-2.5 text-[14px] text-background"
+      className="sticky top-0 z-30 flex items-center gap-2 bg-foreground px-4 py-2.5 text-[0.875rem] text-background"
     >
       <CloudOff aria-hidden className="size-4 shrink-0" />
       <span>
@@ -119,15 +119,15 @@ export function WaitingList() {
   if (!queue.length) return null
   return (
     <section aria-label="Waiting to send" className="flex flex-col gap-2.5">
-      <h2 className="m-0 mt-2 text-[14px] font-semibold text-st-amber">On this phone · {queue.length}</h2>
+      <h2 className="m-0 mt-2 text-[0.875rem] font-semibold text-st-amber">On this phone · {queue.length}</h2>
       {queue.map((q) => {
         const st = itemStatus(q, online)
         return (
           <div key={q.id} className="rounded-xl border border-divider bg-surface px-3.5 py-3">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <div className="text-[16px] font-semibold">{q.title}</div>
-                <div className="text-[13.5px] text-muted-foreground">
+                <div className="text-[1rem] font-semibold">{q.title}</div>
+                <div className="text-[0.84375rem] text-muted-foreground">
                   Done {fmtTime(q.device_time)} · {q.photos.length} photo{q.photos.length === 1 ? "" : "s"}
                 </div>
               </div>
@@ -135,13 +135,13 @@ export function WaitingList() {
                 {st.tone === "red" ? "Not sent" : st.tone === "blue" ? "Sending" : "Waiting"}
               </Pill>
             </div>
-            <p className={`m-0 mt-1.5 text-[13.5px] ${st.tone === "red" ? "text-st-red" : "text-muted-foreground"}`}>
+            <p className={`m-0 mt-1.5 text-[0.84375rem] ${st.tone === "red" ? "text-st-red" : "text-muted-foreground"}`}>
               {st.tone === "red" && <TriangleAlert aria-hidden className="mr-1 inline size-3.5 align-[-2px]" />}
               {st.text}
             </p>
             {q.status === "failed" && confirming === q.id && (
               <div role="group" aria-label="Delete this check?" className="mt-2 rounded-lg bg-st-red-bg p-3">
-                <p className="m-0 text-[14px]">
+                <p className="m-0 text-[0.875rem]">
                   Delete this check
                   {q.photos.length ? ` and its ${q.photos.length} photo${q.photos.length === 1 ? "" : "s"}` : ""} from
                   this phone? It hasn't been sent, so it can't be got back.
@@ -150,14 +150,14 @@ export function WaitingList() {
                   <button
                     type="button"
                     autoFocus
-                    className="h-11 flex-1 rounded-lg border border-border bg-surface text-[15px] font-semibold"
+                    className="h-11 flex-1 rounded-lg border border-border bg-surface text-[0.9375rem] font-semibold"
                     onClick={() => setConfirming(null)}
                   >
                     Keep it
                   </button>
                   <button
                     type="button"
-                    className="h-11 flex-1 rounded-lg border border-st-red text-[15px] font-semibold text-st-red"
+                    className="h-11 flex-1 rounded-lg border border-st-red text-[0.9375rem] font-semibold text-st-red"
                     onClick={() => {
                       setConfirming(null)
                       void removeQueued(q.id)
@@ -172,7 +172,7 @@ export function WaitingList() {
               <div className="mt-2 flex gap-2">
                 <button
                   type="button"
-                  className="h-11 flex-1 rounded-lg border border-border text-[15px] font-semibold"
+                  className="h-11 flex-1 rounded-lg border border-border text-[0.9375rem] font-semibold"
                   onClick={() => void syncQueue({ includeFailed: true })}
                 >
                   Try again

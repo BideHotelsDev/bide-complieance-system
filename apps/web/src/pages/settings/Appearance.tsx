@@ -216,7 +216,7 @@ export function AppearancePage() {
           canEdit && (
             <>
               {(hasDraft || pending) && (
-                <span className="text-[12px] text-muted-foreground">
+                <span className="text-[0.75rem] text-muted-foreground">
                   {saving ? "Saving draft…" : "Draft · not live"}
                 </span>
               )}
@@ -224,7 +224,7 @@ export function AppearancePage() {
                 type="button"
                 disabled={!hasDraft || busy}
                 onClick={() => discard.mutate()}
-                className="inline-flex h-[30px] items-center rounded-md border border-border bg-surface px-3 text-[13px] font-medium hover:bg-hover disabled:opacity-40"
+                className="inline-flex h-[30px] items-center rounded-md border border-border bg-surface px-3 text-[0.8125rem] font-medium hover:bg-hover disabled:opacity-40"
               >
                 Reset to published
               </button>
@@ -233,7 +233,7 @@ export function AppearancePage() {
                 disabled={!(hasDraft || pending) || !publishable || busy || saving}
                 title={!publishable ? "Fix the contrast checks first" : undefined}
                 onClick={() => publish.mutate()}
-                className="inline-flex h-[30px] items-center rounded-md bg-primary px-3 text-[13px] font-medium text-primary-foreground hover:opacity-90 disabled:opacity-40"
+                className="inline-flex h-[30px] items-center rounded-md bg-primary px-3 text-[0.8125rem] font-medium text-primary-foreground hover:opacity-90 disabled:opacity-40"
               >
                 {publish.isPending ? "Publishing…" : "Publish theme"}
               </button>
@@ -296,7 +296,7 @@ export function AppearancePage() {
                         setMode(pr.default_mode === "dark" ? "dark" : "light")
                       }}
                       className={cn(
-                        "overflow-hidden rounded-[10px] bg-surface p-0 text-left text-[12.5px]",
+                        "overflow-hidden rounded-[10px] bg-surface p-0 text-left text-[0.78125rem]",
                         on ? "border-2 border-foreground" : "border border-border hover:bg-hover",
                       )}
                     >
@@ -331,7 +331,7 @@ export function AppearancePage() {
                   value={branding.appName ?? ""}
                   maxLength={40}
                   onChange={(e) => changeBrand({ appName: e.target.value })}
-                  className="h-8 w-full rounded-md border border-border bg-surface px-2.5 text-[13px] outline-none focus:outline-2 focus:outline-focus"
+                  className="h-8 w-full rounded-md border border-border bg-surface px-2.5 text-[0.8125rem] outline-none focus:outline-2 focus:outline-focus"
                 />
               </div>
               <div className="grid grid-cols-3 gap-2.5">
@@ -385,7 +385,7 @@ export function AppearancePage() {
                         type="button"
                         aria-pressed={on}
                         onClick={() => change((t) => withPrimary(t, s))}
-                        className="flex flex-col items-center gap-1.5 rounded-md p-1 text-[12px] text-ink2"
+                        className="flex flex-col items-center gap-1.5 rounded-md p-1 text-[0.75rem] text-ink2"
                       >
                         <span
                           className={cn(
@@ -401,36 +401,36 @@ export function AppearancePage() {
                     )
                   })}
                 </div>
-                <div className="mt-1.5 font-mono text-[12px] text-muted-foreground">
+                <div className="mt-1.5 font-mono text-[0.75rem] text-muted-foreground">
                   {(swatchOf(tokens)?.name ?? "Custom") + " · " + tokens[mode].primary}
                 </div>
               </div>
               <div>
-                <div className="mb-0.5 text-[12.5px] font-medium text-ink2">Contrast checks · WCAG 2.2 AA</div>
+                <div className="mb-0.5 text-[0.78125rem] font-medium text-ink2">Contrast checks · WCAG 2.2 AA</div>
                 <ul className="m-0 list-none p-0">
                   {shown.map((c) => (
                     <li
                       key={c.label}
-                      className="grid grid-cols-[1fr_auto_auto] items-center gap-2.5 border-b border-divider py-2 text-[12.5px]"
+                      className="grid grid-cols-[1fr_auto_auto] items-center gap-2.5 border-b border-divider py-2 text-[0.78125rem]"
                     >
                       <span>
                         {c.label} ({c.min}:1)
                       </span>
-                      <span className="font-mono text-[12px] text-muted-foreground tabular">{c.ratio}:1</span>
+                      <span className="font-mono text-[0.75rem] text-muted-foreground tabular">{c.ratio}:1</span>
                       <Pill tone={c.ok ? "green" : "red"}>{c.ok ? "Pass" : "Fail"}</Pill>
                     </li>
                   ))}
                 </ul>
               </div>
               {failing.length > 0 && (
-                <div role="alert" className="rounded-lg bg-st-red-bg px-3 py-2.5 text-[12.5px] text-st-red">
+                <div role="alert" className="rounded-lg bg-st-red-bg px-3 py-2.5 text-[0.78125rem] text-st-red">
                   This theme can't be published:{" "}
                   {failing.map((c) => `${c.label.toLowerCase()} is ${c.ratio}:1`).join("; ")}. Try a darker shade, or
                   switch to {mode === "light" ? "dark" : "light"} mode to see that variant.
                 </div>
               )}
               {failing.length === 0 && otherFailing.length > 0 && (
-                <div role="alert" className="rounded-lg bg-st-red-bg px-3 py-2.5 text-[12.5px] text-st-red">
+                <div role="alert" className="rounded-lg bg-st-red-bg px-3 py-2.5 text-[0.78125rem] text-st-red">
                   This theme can't be published: the {mode === "light" ? "dark" : "light"} variant fails{" "}
                   {otherFailing.map((c) => c.label.toLowerCase()).join("; ")}. Switch to{" "}
                   {mode === "light" ? "dark" : "light"} mode to see it.
@@ -464,7 +464,7 @@ export function AppearancePage() {
                     options={q.data.fonts.map((f) => ({ value: f, label: f === "Jost" ? "Jost (Bide brand)" : f }))}
                     className="h-8 w-full"
                   />
-                  <Hint className="mt-1 text-[11.5px]">Also: IBM Plex Sans, Source Sans 3</Hint>
+                  <Hint className="mt-1 text-[0.71875rem]">Also: IBM Plex Sans, Source Sans 3</Hint>
                 </div>
                 <div>
                   <FieldLabel>Corner radius</FieldLabel>
@@ -488,7 +488,7 @@ export function AppearancePage() {
                   options={TONES}
                   className="h-8 w-full"
                 />
-                <Hint className="mt-1 text-[11.5px]">
+                <Hint className="mt-1 text-[0.71875rem]">
                   Sets the wording style of reminders, alerts and empty states. Edit individual messages under Settings
                   › <a href="/settings/content">Content</a>.
                 </Hint>
@@ -531,14 +531,14 @@ export function AppearancePage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section aria-label={title} className="flex flex-col gap-3.5 rounded-[10px] border border-divider bg-surface p-4">
-      <h2 className="m-0 text-[14px] font-semibold">{title}</h2>
+      <h2 className="m-0 text-[0.875rem] font-semibold">{title}</h2>
       {children}
     </section>
   )
 }
 
 function Hint({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <p className={cn("m-0 text-[12px] text-muted-foreground", className)}>{children}</p>
+  return <p className={cn("m-0 text-[0.75rem] text-muted-foreground", className)}>{children}</p>
 }
 
 function LogoSlot({
@@ -587,13 +587,13 @@ function LogoSlot({
   }
   return (
     <div>
-      <div className="mb-1.5 text-[12.5px] font-medium text-ink2">{label}</div>
+      <div className="mb-1.5 text-[0.78125rem] font-medium text-ink2">{label}</div>
       <button
         type="button"
         aria-label={`Upload ${label.replace(" · ", ", ")}`}
         onClick={() => input.current?.click()}
         className={cn(
-          "flex h-14 w-full items-center justify-center rounded-md border border-dashed border-border text-[13px] font-medium text-muted-foreground hover:opacity-90",
+          "flex h-14 w-full items-center justify-center rounded-md border border-dashed border-border text-[0.8125rem] font-medium text-muted-foreground hover:opacity-90",
         )}
         style={{ background: colours.surface }}
       >
@@ -643,27 +643,27 @@ function TuneStatus({
         <button
           type="button"
           disabled={disabled}
-          className="inline-flex h-[22px] items-center rounded-md border border-border bg-surface px-2 text-[12px] font-medium hover:bg-hover disabled:opacity-40"
+          className="inline-flex h-[22px] items-center rounded-md border border-border bg-surface px-2 text-[0.75rem] font-medium hover:bg-hover disabled:opacity-40"
         >
           Tune…
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-80 p-3">
-        <div className="mb-2 text-[13px] font-semibold">Status colours · {mode === "dark" ? "Dark" : "Light"}</div>
-        <p className="m-0 mb-2.5 text-[12px] text-muted-foreground">
+        <div className="mb-2 text-[0.8125rem] font-semibold">Status colours · {mode === "dark" ? "Dark" : "Light"}</div>
+        <p className="m-0 mb-2.5 text-[0.75rem] text-muted-foreground">
           Text colour and its tint. The contrast checks update as you change them.
         </p>
         <div className="flex flex-col gap-2">
           {STATUS_PAIRS.map((p) => (
             <div key={p.key} className="grid grid-cols-[64px_1fr_1fr] items-center gap-2">
               <span
-                className="inline-flex h-[22px] items-center justify-center rounded-full text-[12px] font-medium"
+                className="inline-flex h-[22px] items-center justify-center rounded-full text-[0.75rem] font-medium"
                 style={{ color: tokens[mode][p.key], background: tokens[mode][`${p.key}Bg`] }}
               >
                 {p.label}
               </span>
               {[p.key, `${p.key}Bg`].map((k) => (
-                <label key={k} className="flex items-center gap-1.5 text-[12px]">
+                <label key={k} className="flex items-center gap-1.5 text-[0.75rem]">
                   <input
                     type="color"
                     aria-label={`${p.label} ${k.endsWith("Bg") ? "tint" : "text"}`}
@@ -705,8 +705,8 @@ function LivePreview({ tokens, branding, mode }: { tokens: DraftTokens; branding
   return (
     <section aria-label="Live preview" className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <h2 className="m-0 text-[14px] font-semibold">Live preview</h2>
-        <span className="text-[12px] text-muted-foreground">Dashboard · {mode === "dark" ? "Dark" : "Light"}</span>
+        <h2 className="m-0 text-[0.875rem] font-semibold">Live preview</h2>
+        <span className="text-[0.75rem] text-muted-foreground">Dashboard · {mode === "dark" ? "Dark" : "Light"}</span>
       </div>
       {/* The draft is applied here only, as CSS variables on this container. */}
       <div
@@ -723,19 +723,19 @@ function LivePreview({ tokens, branding, mode }: { tokens: DraftTokens; branding
             ) : (
               <Mark size={20} />
             )}
-            <span className="truncate text-[13px] font-semibold">{branding.appName || "bide Comply"}</span>
+            <span className="truncate text-[0.8125rem] font-semibold">{branding.appName || "bide Comply"}</span>
           </div>
-          <span className="flex h-7 items-center rounded-md bg-hover px-2 text-[12.5px] font-medium">Overview</span>
+          <span className="flex h-7 items-center rounded-md bg-hover px-2 text-[0.78125rem] font-medium">Overview</span>
           {["Properties", "Actions", "Verification"].map((n) => (
-            <span key={n} className="flex h-7 items-center px-2 text-[12.5px] text-muted-foreground">
+            <span key={n} className="flex h-7 items-center px-2 text-[0.78125rem] text-muted-foreground">
               {n}
             </span>
           ))}
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-3 p-[18px]">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[17px] font-semibold">Group overview</span>
-            <span className="inline-flex h-7 items-center rounded-md bg-primary px-3 text-[12.5px] font-medium text-primary-foreground">
+            <span className="text-[1.0625rem] font-semibold">Group overview</span>
+            <span className="inline-flex h-7 items-center rounded-md bg-primary px-3 text-[0.78125rem] font-medium text-primary-foreground">
               Preview digest
             </span>
           </div>
@@ -746,13 +746,13 @@ function LivePreview({ tokens, branding, mode }: { tokens: DraftTokens; branding
               ["Advisories", k?.decisions.advisories],
             ].map(([label, v]) => (
               <div key={String(label)} className="rounded-lg border border-divider bg-surface px-3 py-2.5">
-                <div className="text-[11.5px] text-muted-foreground">{label}</div>
-                <div className="tabular text-[20px] font-semibold">{v ?? "—"}</div>
+                <div className="text-[0.71875rem] text-muted-foreground">{label}</div>
+                <div className="tabular text-[1.25rem] font-semibold">{v ?? "—"}</div>
               </div>
             ))}
           </div>
           <div className="overflow-hidden rounded-lg border border-divider bg-surface">
-            <div className="grid grid-cols-[1fr_90px_80px] border-b border-divider px-3 py-2 text-[11.5px] text-muted-foreground">
+            <div className="grid grid-cols-[1fr_90px_80px] border-b border-divider px-3 py-2 text-[0.71875rem] text-muted-foreground">
               <span>Property</span>
               <span>Score</span>
               <span>Status</span>
@@ -769,7 +769,7 @@ function LivePreview({ tokens, branding, mode }: { tokens: DraftTokens; branding
                 <div
                   key={p.id}
                   className={cn(
-                    "grid grid-cols-[1fr_90px_80px] items-center px-3 text-[12.5px]",
+                    "grid grid-cols-[1fr_90px_80px] items-center px-3 text-[0.78125rem]",
                     compact ? "py-1.5" : "py-2.5",
                     i < props.length - 1 && "border-b border-divider",
                   )}
@@ -778,7 +778,7 @@ function LivePreview({ tokens, branding, mode }: { tokens: DraftTokens; branding
                   <span className="tabular">{notReady ? "Gate" : p.score != null ? `${p.score}%` : "—"}</span>
                   <span
                     className={cn(
-                      "inline-flex h-[22px] w-fit items-center rounded-full px-2 text-[12px] font-medium",
+                      "inline-flex h-[22px] w-fit items-center rounded-full px-2 text-[0.75rem] font-medium",
                       tone === "red" && "bg-st-red-bg text-st-red",
                       tone === "amber" && "bg-st-amber-bg text-st-amber",
                       tone === "green" && "bg-st-green-bg text-st-green",
@@ -791,12 +791,12 @@ function LivePreview({ tokens, branding, mode }: { tokens: DraftTokens; branding
               )
             })}
             {!ov.data && (
-              <div className="px-3 py-6 text-center text-[12.5px] text-muted-foreground">
+              <div className="px-3 py-6 text-center text-[0.78125rem] text-muted-foreground">
                 {ov.isError ? "Sample numbers aren't available for your role." : "Loading…"}
               </div>
             )}
           </div>
-          <span className="inline-flex items-center gap-1 text-[12.5px] font-medium text-link">
+          <span className="inline-flex items-center gap-1 text-[0.78125rem] font-medium text-link">
             View all {actions ?? ""} Actions <ArrowRight aria-hidden className="size-3.5" />
           </span>
         </div>
@@ -823,7 +823,7 @@ function History({
   const rows: (ThemeVersion | null)[] = [...(hasDraft ? [null] : []), ...data.history]
   return (
     <section aria-label="Version history" className="overflow-hidden rounded-[10px] border border-divider bg-surface">
-      <h2 className="m-0 border-b border-divider px-4 py-3 text-[14px] font-semibold">Version history</h2>
+      <h2 className="m-0 border-b border-divider px-4 py-3 text-[0.875rem] font-semibold">Version history</h2>
       <ul className="m-0 list-none p-0">
         {rows.map((v) =>
           v === null ? (
@@ -833,7 +833,7 @@ function History({
             >
               <Pill tone="amber">Draft</Pill>
               <span className="min-w-0 truncate">{draftName}</span>
-              <span className="text-[12px] text-muted-foreground">Not published</span>
+              <span className="text-[0.75rem] text-muted-foreground">Not published</span>
             </li>
           ) : (
             <li
@@ -844,7 +844,7 @@ function History({
               <span className="min-w-0 truncate">
                 v{v.version} · {v.name}
               </span>
-              <span className="flex items-center gap-2.5 text-[12px] text-muted-foreground">
+              <span className="flex items-center gap-2.5 text-[0.75rem] text-muted-foreground">
                 {v.version === 1 && !v.by
                   ? "At launch"
                   : `${v.by ?? "Someone"} · ${v.published_at ? fmtDate(v.published_at) : ""}`}
@@ -856,7 +856,7 @@ function History({
                       type="button"
                       disabled={busy}
                       onClick={() => onRollback(v.version)}
-                      className="inline-flex h-7 items-center rounded-md border border-border bg-surface px-2.5 text-[12.5px] font-medium text-foreground hover:bg-hover disabled:opacity-40"
+                      className="inline-flex h-7 items-center rounded-md border border-border bg-surface px-2.5 text-[0.78125rem] font-medium text-foreground hover:bg-hover disabled:opacity-40"
                     >
                       Roll back
                     </button>
@@ -867,7 +867,7 @@ function History({
           ),
         )}
       </ul>
-      <p className="m-0 px-4 py-2.5 text-[12px] text-muted-foreground">
+      <p className="m-0 px-4 py-2.5 text-[0.75rem] text-muted-foreground">
         Every published theme is kept. Rolling back is one click and is logged in the audit trail.
       </p>
     </section>

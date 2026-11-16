@@ -109,7 +109,7 @@ export function AppShell() {
           </div>
           {!focus && <PhoneTabBar />}
           <Sheet open={menu} onOpenChange={(o) => setMenuAt(o ? path : null)}>
-            <SheetContent side="left" className="w-[280px] gap-0 p-0 md:hidden">
+            <SheetContent side="left" className="w-[17.5rem] max-w-[85vw] gap-0 p-0 md:hidden">
               <SheetTitle className="sr-only">Menu</SheetTitle>
               <Sidebar
                 inSheet

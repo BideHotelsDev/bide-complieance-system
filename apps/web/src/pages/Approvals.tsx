@@ -70,14 +70,14 @@ export function ApprovalsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <nav aria-label="Breadcrumb" className="text-[12.5px] text-muted-foreground">
+      <nav aria-label="Breadcrumb" className="text-[0.78125rem] text-muted-foreground">
         <Link to="/todo" className="text-muted-foreground no-underline hover:text-foreground">
           My to-do
         </Link>{" "}
         / <span className="text-foreground">Approvals</span>
       </nav>
       <header>
-        <h1 className="m-0 text-[22px] font-semibold tracking-[-0.01em]">Approvals</h1>
+        <h1 className="m-0 text-[1.375rem] font-semibold tracking-[-0.01em]">Approvals</h1>
         <p className="m-0 mt-1 max-w-[760px] text-muted-foreground">
           Changes to what gets checked. Someone else must approve them.
         </p>
@@ -137,7 +137,7 @@ export function ApprovalsPage() {
                 rows.length > 0 ? (
                   <EmptyState title="Pick a request">Choose a request on the left to see what it changes.</EmptyState>
                 ) : (
-                  <p className="m-0 p-5 text-[13px] text-muted-foreground">
+                  <p className="m-0 p-5 text-[0.8125rem] text-muted-foreground">
                     When someone asks to switch off a check, mark one not applicable or pause it, the request opens
                     here.
                   </p>
@@ -169,9 +169,9 @@ function RequestRow({ r, on, onPick }: { r: ApprovalCard; on: boolean; onPick: (
     >
       <span className="min-w-0">
         <span className="font-semibold">{r.title}</span>
-        <span className="block text-[12.5px] text-muted-foreground">{r.sub}</span>
+        <span className="block text-[0.78125rem] text-muted-foreground">{r.sub}</span>
         {r.status !== "waiting" && r.decided_by && (
-          <span className="block text-[12.5px] text-muted-foreground">
+          <span className="block text-[0.78125rem] text-muted-foreground">
             {r.status === "approved" ? "Approved" : "Declined"} by {r.decided_by}
           </span>
         )}
@@ -245,14 +245,14 @@ function Detail({ id, onDecided }: { id: string; onDecided: () => void }) {
   return (
     <>
       <div className="flex items-center justify-between gap-2.5 border-b border-divider px-[18px] py-3.5">
-        <h2 className="m-0 text-[15px] font-semibold">{a.title}</h2>
+        <h2 className="m-0 text-[0.9375rem] font-semibold">{a.title}</h2>
         <span className="flex items-center gap-2">
           {!waiting && <StatusBadge s={a.status} />}
           <ClassBadge klass={a.class} />
         </span>
       </div>
       <div className="flex flex-col gap-4 p-[18px]">
-        <dl className="m-0 grid grid-cols-[150px_1fr] gap-y-2.5 max-sm:grid-cols-1">
+        <dl className="m-0 grid grid-cols-[9.375rem_1fr] gap-y-2.5 max-sm:grid-cols-1">
           {a.facts.map((f) => (
             <React.Fragment key={f.label}>
               <dt className="text-muted-foreground">{f.label}</dt>
@@ -262,7 +262,7 @@ function Detail({ id, onDecided }: { id: string; onDecided: () => void }) {
           {a.ref && (
             <>
               <dt className="text-muted-foreground">Register item</dt>
-              <dd className="m-0 font-mono text-[12px]">
+              <dd className="m-0 font-mono text-[0.75rem]">
                 {a.property_code ? (
                   <Link
                     to="/properties/$code"
@@ -303,7 +303,7 @@ function Detail({ id, onDecided }: { id: string; onDecided: () => void }) {
         {waiting && a.can_decide && (
           <>
             <label className="flex flex-col gap-1.5">
-              <span className="text-[12.5px] font-medium text-ink2">
+              <span className="text-[0.78125rem] font-medium text-ink2">
                 Your note <span className="font-normal text-muted-foreground">(required if you decline)</span>
               </span>
               <textarea
@@ -316,10 +316,10 @@ function Detail({ id, onDecided }: { id: string; onDecided: () => void }) {
                   setMissing(null)
                 }}
                 placeholder="e.g. Confirmed on site visit, no cameras installed"
-                className={cn(textareaCls, "text-[14px]", missing && !note.trim() && "border-st-red")}
+                className={cn(textareaCls, "text-[0.875rem]", missing && !note.trim() && "border-st-red")}
               />
               {missing && !note.trim() && (
-                <span role="alert" className="text-[12px] text-st-red">
+                <span role="alert" className="text-[0.75rem] text-st-red">
                   {missing === "decline"
                     ? "Say why you're declining, so they know what to do next."
                     : "Write your question here first."}

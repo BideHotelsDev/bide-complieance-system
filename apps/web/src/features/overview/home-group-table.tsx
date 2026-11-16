@@ -72,7 +72,7 @@ export function GroupTable({ overview }: { overview: Overview }) {
     })
   return (
     <div className="-mx-1 overflow-x-auto">
-      <table className="w-full border-collapse text-[13.5px]">
+      <table className="w-full border-collapse text-[0.84375rem]">
         <caption className="sr-only">Group table: one row per property</caption>
         <thead>
           <tr>

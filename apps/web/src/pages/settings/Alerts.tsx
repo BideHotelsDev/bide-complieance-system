@@ -148,7 +148,7 @@ export function AlertsPage() {
                 type="button"
                 disabled={!changed || save.isPending}
                 onClick={() => save.mutate()}
-                className="inline-flex h-9 items-center rounded-md bg-primary px-3.5 text-[13.5px] font-medium text-primary-foreground hover:opacity-90 disabled:opacity-40"
+                className="inline-flex h-9 items-center rounded-md bg-primary px-3.5 text-[0.84375rem] font-medium text-primary-foreground hover:opacity-90 disabled:opacity-40"
               >
                 {save.isPending ? "Saving…" : "Save rules"}
               </button>
@@ -208,8 +208,8 @@ export function AlertsPage() {
             </section>
 
             <section aria-label="Other alerts" className="rounded-[10px] border border-divider bg-surface pt-[18px]">
-              <h2 className="m-0 mb-1 px-[18px] text-[14px] font-semibold">Other alerts</h2>
-              <p className="m-0 px-[18px] text-[13px] text-muted-foreground">
+              <h2 className="m-0 mb-1 px-[18px] text-[0.875rem] font-semibold">Other alerts</h2>
+              <p className="m-0 px-[18px] text-[0.8125rem] text-muted-foreground">
                 Sent as they happen. Quiet hours hold them overnight unless they are Class A.
               </p>
               <ul className="m-0 mt-2 list-none p-0">
@@ -230,7 +230,7 @@ export function AlertsPage() {
           <div className="flex flex-col gap-4">
             <Panel title="Quiet hours" aria-label="Quiet hours">
               <div className="flex items-center justify-between gap-3">
-                <label htmlFor="quiet-switch" className="text-[13.5px]">
+                <label htmlFor="quiet-switch" className="text-[0.84375rem]">
                   Hold non-urgent alerts overnight
                 </label>
                 <Switch
@@ -247,7 +247,7 @@ export function AlertsPage() {
               <div className="mt-3 grid grid-cols-2 gap-3">
                 {(["from", "until"] as const).map((k) => (
                   <div key={k}>
-                    <div className="mb-1.5 text-[12.5px] font-medium text-ink2">{k === "from" ? "From" : "Until"}</div>
+                    <div className="mb-1.5 text-[0.78125rem] font-medium text-ink2">{k === "from" ? "From" : "Until"}</div>
                     <NativeSelect
                       label={k === "from" ? "Quiet hours from" : "Quiet hours until"}
                       value={quiet[k]}
@@ -262,7 +262,7 @@ export function AlertsPage() {
                   </div>
                 ))}
               </div>
-              <p className="m-0 mt-3 text-[12.5px] text-muted-foreground">Class A alerts always go through.</p>
+              <p className="m-0 mt-3 text-[0.78125rem] text-muted-foreground">Class A alerts always go through.</p>
             </Panel>
 
             <TestRules examples={q.data.examples} />
@@ -277,7 +277,7 @@ function StepMarker({ step }: { step: number }) {
   return (
     <span
       className={cn(
-        "flex size-11 shrink-0 items-center justify-center rounded-lg text-[15px] font-semibold",
+        "flex size-11 shrink-0 items-center justify-center rounded-lg text-[0.9375rem] font-semibold",
         step === 1 && "bg-st-amber-bg text-st-amber",
         step === 2 && "bg-st-red-bg text-st-red",
         step >= 3 && "bg-st-red text-on-status",
@@ -338,7 +338,7 @@ function RuleTitle({ rule, canEdit, onDays }: { rule: Rule; canEdit: boolean; on
               aria-label="After how many days"
               value={rule.days}
               onChange={(e) => onDays(Number(e.target.value))}
-              className="mx-0.5 h-7 rounded-md border border-border bg-surface px-1.5 align-middle text-[14px] font-medium focus:outline-2 focus:outline-focus"
+              className="mx-0.5 h-7 rounded-md border border-border bg-surface px-1.5 align-middle text-[0.875rem] font-medium focus:outline-2 focus:outline-focus"
             >
               {choices.map((n) => (
                 <option key={n} value={n}>
@@ -375,15 +375,15 @@ function RuleBody({
   return (
     <div className="flex flex-col gap-2.5">
       <div>
-        <h3 className="m-0 flex flex-wrap items-center gap-x-1 text-[14px] leading-7 font-semibold">
+        <h3 className="m-0 flex flex-wrap items-center gap-x-1 text-[0.875rem] leading-7 font-semibold">
           <RuleTitle rule={rule} canEdit={canEdit} onDays={(days) => onChange((r) => ({ ...r, days }))} />
           {propertyScoped && rule.own_rule && (
-            <span className="ml-1.5 inline-flex h-5 items-center rounded-full bg-st-blue-bg px-2 text-[11.5px] font-medium text-st-blue">
+            <span className="ml-1.5 inline-flex h-5 items-center rounded-full bg-st-blue-bg px-2 text-[0.71875rem] font-medium text-st-blue">
               This property's own rule
             </span>
           )}
         </h3>
-        {rule.note && <p className="m-0 text-[13px] text-muted-foreground">{rule.note}</p>}
+        {rule.note && <p className="m-0 text-[0.8125rem] text-muted-foreground">{rule.note}</p>}
       </div>
       <Recipients
         rule={rule}
@@ -419,7 +419,7 @@ function RuleBody({
         })}
       </div>
       {rule.class_a && (
-        <div className="rounded-lg bg-st-grey-bg px-3 py-2.5 text-[13.5px] text-foreground">
+        <div className="rounded-lg bg-st-grey-bg px-3 py-2.5 text-[0.84375rem] text-foreground">
           Also asks {firstPerson ?? "the Super Admin"} to record the stop-sell decision: close affected rooms in Mews,
           or agree an interim measure with the assessor.
         </div>
@@ -444,7 +444,7 @@ function Recipients({
       {rule.recipients.map((r) => (
         <li
           key={`${r.kind}-${r.role ?? ""}-${r.id ?? ""}`}
-          className="inline-flex h-7 items-center gap-1 rounded-full bg-hover pr-1 pl-2.5 text-[13px]"
+          className="inline-flex h-7 items-center gap-1 rounded-full bg-hover pr-1 pl-2.5 text-[0.8125rem]"
         >
           {r.label}
           {canEdit && rule.recipients.length > 1 ? (
@@ -496,7 +496,7 @@ function AddRecipient({ existing, onAdd }: { existing: Recipient[]; onAdd: (r: R
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-[13px] font-medium text-link hover:bg-hover"
+          className="inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-[0.8125rem] font-medium text-link hover:bg-hover"
         >
           <Plus aria-hidden className="size-3.5" /> Add
         </button>
@@ -508,7 +508,7 @@ function AddRecipient({ existing, onAdd }: { existing: Recipient[]; onAdd: (r: R
           onChange={(e) => setText(e.target.value)}
           placeholder="Find a person or role"
           aria-label="Find a person or role"
-          className="mb-1 h-8 w-full rounded-md border border-border bg-surface px-2.5 text-[13px] outline-none focus:outline-2 focus:outline-focus"
+          className="mb-1 h-8 w-full rounded-md border border-border bg-surface px-2.5 text-[0.8125rem] outline-none focus:outline-2 focus:outline-focus"
         />
         <div className="max-h-72 overflow-y-auto">
           {roles.length > 0 && (
@@ -519,14 +519,14 @@ function AddRecipient({ existing, onAdd }: { existing: Recipient[]; onAdd: (r: R
               key={r.kind}
               type="button"
               onClick={() => pick(r)}
-              className="block w-full rounded-md px-2 py-1.5 text-left text-[13px] hover:bg-hover"
+              className="block w-full rounded-md px-2 py-1.5 text-left text-[0.8125rem] hover:bg-hover"
             >
               {r.label}
             </button>
           ))}
           <div className="px-2 pt-2 pb-1 text-xs font-medium text-muted-foreground">People</div>
-          {people.isLoading && <div className="px-2 py-1.5 text-[13px] text-muted-foreground">Loading people…</div>}
-          {people.isError && <div className="px-2 py-1.5 text-[13px] text-muted-foreground">Couldn't load people.</div>}
+          {people.isLoading && <div className="px-2 py-1.5 text-[0.8125rem] text-muted-foreground">Loading people…</div>}
+          {people.isError && <div className="px-2 py-1.5 text-[0.8125rem] text-muted-foreground">Couldn't load people.</div>}
           {persons.map((p) => (
             <button
               key={p.id}
@@ -534,12 +534,12 @@ function AddRecipient({ existing, onAdd }: { existing: Recipient[]; onAdd: (r: R
               onClick={() => pick({ kind: "person", id: p.id, label: p.name })}
               className="flex w-full flex-col rounded-md px-2 py-1.5 text-left hover:bg-hover"
             >
-              <span className="text-[13px]">{p.name}</span>
+              <span className="text-[0.8125rem]">{p.name}</span>
               {p.title && <span className="text-xs text-muted-foreground">{p.title}</span>}
             </button>
           ))}
           {people.data && persons.length === 0 && roles.length === 0 && (
-            <div className="px-2 py-1.5 text-[13px] text-muted-foreground">Nobody matches “{text}”.</div>
+            <div className="px-2 py-1.5 text-[0.8125rem] text-muted-foreground">Nobody matches “{text}”.</div>
           )}
         </div>
       </PopoverContent>
@@ -556,7 +556,7 @@ function TestRules({ examples }: { examples: AlertsData["examples"] }) {
   })
   return (
     <Panel title="Test the rules" aria-label="Test the rules">
-      <p className="m-0 mb-3 text-[13px] text-muted-foreground">
+      <p className="m-0 mb-3 text-[0.8125rem] text-muted-foreground">
         Pick an example to see exactly who would hear about it, and when.
       </p>
       <NativeSelect
@@ -567,7 +567,7 @@ function TestRules({ examples }: { examples: AlertsData["examples"] }) {
         className="h-9 w-full"
       />
       {t.isError ? (
-        <p className="m-0 mt-3 text-[13px] text-st-red">{t.error.message}</p>
+        <p className="m-0 mt-3 text-[0.8125rem] text-st-red">{t.error.message}</p>
       ) : !t.data ? (
         <div className="mt-3 flex flex-col gap-2">
           <Skeleton className="h-4" />
@@ -575,13 +575,13 @@ function TestRules({ examples }: { examples: AlertsData["examples"] }) {
           <Skeleton className="h-4" />
         </div>
       ) : (
-        <ol aria-live="polite" className="m-0 mt-3 flex list-decimal flex-col gap-1.5 pl-5 text-[13px]">
+        <ol aria-live="polite" className="m-0 mt-3 flex list-decimal flex-col gap-1.5 pl-5 text-[0.8125rem]">
           {t.data.steps.map((s, i) => (
             <li key={i}>{s}</li>
           ))}
         </ol>
       )}
-      <p className="m-0 mt-3 text-[12px] text-subtle">Uses the saved rules. Save first to test a change.</p>
+      <p className="m-0 mt-3 text-[0.75rem] text-subtle">Uses the saved rules. Save first to test a change.</p>
     </Panel>
   )
 }

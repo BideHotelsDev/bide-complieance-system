@@ -106,18 +106,18 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
                 onValueChange={setQ}
                 placeholder="Search checks, actions, people, certificates…"
                 aria-label="Search everything"
-                className="h-12 flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
+                className="h-12 flex-1 bg-transparent text-[0.9375rem] outline-none placeholder:text-muted-foreground"
               />
-              <kbd className="rounded border border-border px-1.5 text-[11px] text-subtle">Esc</kbd>
+              <kbd className="rounded border border-border px-1.5 text-[0.6875rem] text-subtle">Esc</kbd>
             </div>
             <Command.List className="max-h-[420px] overflow-y-auto p-1.5">
               {debounced.length >= 2 && res.data && groups.length === 0 && (
-                <Command.Empty className="px-3 py-8 text-center text-[13px] text-muted-foreground">
+                <Command.Empty className="px-3 py-8 text-center text-[0.8125rem] text-muted-foreground">
                   No results for "{debounced}".
                 </Command.Empty>
               )}
               {debounced.length < 2 && groups[0].items.length === 0 && (
-                <div className="px-3 py-6 text-center text-[13px] text-muted-foreground">
+                <div className="px-3 py-6 text-center text-[0.8125rem] text-muted-foreground">
                   Type to search checks, actions, people and certificates.
                 </div>
               )}
@@ -133,7 +133,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
                         key={it.link + it.id}
                         value={it.link + it.id}
                         onSelect={() => go(it)}
-                        className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-2 text-[13.5px] data-[selected=true]:bg-hover"
+                        className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-2 text-[0.84375rem] data-[selected=true]:bg-hover"
                       >
                         {it.class ? <ClassBadge klass={it.class} /> : <FileText className="size-4 text-subtle" />}
                         <span className="min-w-0 flex-1 truncate">

@@ -240,7 +240,7 @@ function PackForm({
     <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
       <section className="rounded-[10px] border border-divider bg-surface" aria-label="Pack builder">
         <div className={head}>
-          <h2 className="m-0 text-[14px] font-semibold">1. Who is it for, and what period?</h2>
+          <h2 className="m-0 text-[0.875rem] font-semibold">1. Who is it for, and what period?</h2>
         </div>
         <div className="grid gap-4 p-4 sm:grid-cols-2">
           <Field label="Property" htmlFor="pk-property">
@@ -302,15 +302,15 @@ function PackForm({
             )}
           </Field>
           {form.date_from > form.date_to && (
-            <p role="alert" className="m-0 text-[13px] text-st-red sm:col-span-2">
+            <p role="alert" className="m-0 text-[0.8125rem] text-st-red sm:col-span-2">
               The end date is before the start date.
             </p>
           )}
         </div>
 
         <div className={cn(head, "border-t")}>
-          <h2 className="m-0 text-[14px] font-semibold">2. What to include</h2>
-          <span className="ml-auto text-[13px] text-muted-foreground">
+          <h2 className="m-0 text-[0.875rem] font-semibold">2. What to include</h2>
+          <span className="ml-auto text-[0.8125rem] text-muted-foreground">
             Pre-ticked for {FOR_WHOM[form.audience] ?? "this audience"}
           </span>
         </div>
@@ -324,7 +324,7 @@ function PackForm({
                 key={s.key}
                 htmlFor={id}
                 className={cn(
-                  "flex h-10 cursor-pointer items-center gap-3 rounded-lg border px-3.5 text-[14px]",
+                  "flex h-10 cursor-pointer items-center gap-3 rounded-lg border px-3.5 text-[0.875rem]",
                   on ? "border-border" : "border-divider",
                 )}
               >
@@ -334,14 +334,14 @@ function PackForm({
             )
           })}
           {form.sections.length === 0 && (
-            <p role="alert" className="m-0 text-[13px] text-st-red sm:col-span-2">
+            <p role="alert" className="m-0 text-[0.8125rem] text-st-red sm:col-span-2">
               Choose what to include.
             </p>
           )}
         </fieldset>
 
         <div className={cn(head, "border-t")}>
-          <h2 className="m-0 text-[14px] font-semibold">3. Format</h2>
+          <h2 className="m-0 text-[0.875rem] font-semibold">3. Format</h2>
         </div>
         <div className="flex flex-wrap items-center gap-2.5 p-4">
           <div role="radiogroup" aria-label="Format" className="flex flex-wrap gap-2.5">
@@ -354,7 +354,7 @@ function PackForm({
               <label
                 key={v}
                 className={cn(
-                  "flex h-10 cursor-pointer items-center gap-2.5 rounded-lg border px-3.5 text-[14px]",
+                  "flex h-10 cursor-pointer items-center gap-2.5 rounded-lg border px-3.5 text-[0.875rem]",
                   form.format === v ? "border-border" : "border-divider",
                 )}
               >
@@ -427,7 +427,7 @@ function BuildResult({
   return (
     <div
       aria-live="polite"
-      className="flex flex-wrap items-center gap-3 border-t border-divider bg-background px-4 py-3 text-[13.5px]"
+      className="flex flex-wrap items-center gap-3 border-t border-divider bg-background px-4 py-3 text-[0.84375rem]"
     >
       {!s || s.status === "queued" || s.status === "building" ? (
         <>
@@ -485,42 +485,42 @@ const Cover = React.forwardRef<
       tabIndex={-1}
       className="rounded-[10px] border border-divider bg-surface p-4 outline-none"
     >
-      <h2 id="cover-h" className="m-0 mb-3 text-[13px] font-medium text-muted-foreground">
+      <h2 id="cover-h" className="m-0 mb-3 text-[0.8125rem] font-medium text-muted-foreground">
         Cover page preview
       </h2>
       {!valid ? (
-        <p className="m-0 text-[13px] text-muted-foreground">
+        <p className="m-0 text-[0.8125rem] text-muted-foreground">
           Choose a period and at least one section to see the cover page.
         </p>
       ) : error ? (
-        <p className="m-0 text-[13px] text-st-red">{error.message}</p>
+        <p className="m-0 text-[0.8125rem] text-st-red">{error.message}</p>
       ) : loading || !preview ? (
         <LoadingRows rows={4} label="Loading preview" />
       ) : (
         <>
           <div className="flex min-h-[380px] flex-col rounded-lg border border-border p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-            <div className="flex items-center gap-2 text-[14px] font-semibold">
+            <div className="flex items-center gap-2 text-[0.875rem] font-semibold">
               <Mark size={22} /> bide Comply
             </div>
-            <div className="mt-6 text-[19px] leading-snug font-semibold tracking-[-0.01em]">
+            <div className="mt-6 text-[1.1875rem] leading-snug font-semibold tracking-[-0.01em]">
               {[name, ...rest].join(", ")}
               <br />
               Compliance record
             </div>
-            <div className="mt-2.5 text-[13.5px] text-muted-foreground">
+            <div className="mt-2.5 text-[0.84375rem] text-muted-foreground">
               {preview.period} · prepared for {forWhom}
             </div>
             {preview.dutyholder && (
-              <div className="mt-2.5 text-[13.5px] text-muted-foreground">Dutyholder: {preview.dutyholder}</div>
+              <div className="mt-2.5 text-[0.84375rem] text-muted-foreground">Dutyholder: {preview.dutyholder}</div>
             )}
-            <div className="mt-auto pt-6 text-[12.5px]">
+            <div className="mt-auto pt-6 text-[0.78125rem]">
               Contents: {preview.contents.map((c) => shortSection(c)).join(" · ")}
             </div>
-            <div className="mt-2 text-[12.5px] text-muted-foreground">
+            <div className="mt-2 text-[0.78125rem] text-muted-foreground">
               Every page stamped with export time and a fingerprint, so changes can be detected.
             </div>
           </div>
-          <p className="m-0 mt-3 text-[13px] text-muted-foreground tabular">
+          <p className="m-0 mt-3 text-[0.8125rem] text-muted-foreground tabular">
             Estimated: {preview.estimate.pages} pages, {preview.estimate.photos} photos, {preview.estimate.certificates}{" "}
             {preview.estimate.certificates === 1 ? "certificate" : "certificates"}.
           </p>
@@ -569,14 +569,14 @@ function ScheduledCard({ onManage }: { onManage: () => void }) {
       ) : q.error ? (
         <ErrorState message={q.error.message} onRetry={() => void q.refetch()} />
       ) : q.data.rows.length === 0 ? (
-        <p className="m-0 p-4 text-[13px] text-muted-foreground">No scheduled reports.</p>
+        <p className="m-0 p-4 text-[0.8125rem] text-muted-foreground">No scheduled reports.</p>
       ) : (
         <ul className="m-0 list-none p-0">
           {q.data.rows.map((r) => (
             <li key={r.id} className="flex items-start gap-3 border-b border-divider px-4 py-3 last:border-b-0">
               <span className="min-w-0 flex-1">
                 <span className="block font-semibold">{r.name}</span>
-                <span className="block text-[12.5px] text-muted-foreground">
+                <span className="block text-[0.78125rem] text-muted-foreground">
                   {r.schedule} · {r.target}
                 </span>
               </span>
@@ -633,12 +633,12 @@ function ScheduledTab() {
               <FileText className="size-5 shrink-0 text-muted-foreground" aria-hidden />
               <span className="min-w-0 flex-1">
                 <span className="block font-semibold">{r.name}</span>
-                <span className="block text-[13px] text-muted-foreground">
+                <span className="block text-[0.8125rem] text-muted-foreground">
                   {r.schedule} · {r.target}
                   {r.last_run_at ? ` · last sent ${fmtDateTime(r.last_run_at)}` : " · not sent yet"}
                 </span>
               </span>
-              <label className="flex items-center gap-2 text-[13px]" htmlFor={`sch-${r.id}`}>
+              <label className="flex items-center gap-2 text-[0.8125rem]" htmlFor={`sch-${r.id}`}>
                 <span className={r.enabled ? "text-st-green" : "text-muted-foreground"}>
                   {r.enabled ? "On" : "Off"}
                 </span>
@@ -695,7 +695,7 @@ function PastExports() {
         </EmptyState>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-[13.5px]">
+          <table className="w-full border-collapse text-[0.84375rem]">
             <thead className="bg-background">
               <tr className="border-b border-divider">
                 <th scope="col" className={th}>

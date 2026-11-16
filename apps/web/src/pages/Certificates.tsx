@@ -189,11 +189,11 @@ export function CertificatesPage() {
 
       <section aria-labelledby="tlh" className="rounded-xl border border-divider bg-surface px-[18px] py-4">
         <div className="flex items-baseline justify-between gap-3">
-          <h2 id="tlh" className="m-0 text-[15px] font-semibold">
+          <h2 id="tlh" className="m-0 text-[0.9375rem] font-semibold">
             Expiry timeline · next 12 months
           </h2>
           {tl && (
-            <span className="text-[12.5px] text-muted-foreground">
+            <span className="text-[0.78125rem] text-muted-foreground">
               Today: {fmtDay(tl.today)} {tl.today.slice(0, 4)}
             </span>
           )}
@@ -209,7 +209,7 @@ export function CertificatesPage() {
               label={marksLabel}
             />
             {tl.marks.length === 0 && (
-              <p className="m-0 text-[13px] text-muted-foreground">Nothing expires in the next 12 months.</p>
+              <p className="m-0 text-[0.8125rem] text-muted-foreground">Nothing expires in the next 12 months.</p>
             )}
           </div>
         ) : res.isError ? null : (
@@ -279,14 +279,14 @@ export function CertificatesPage() {
                 mobileCard={(c) => (
                   <div className="flex flex-col gap-1.5">
                     <div className="font-medium">{c.title}</div>
-                    <div className="text-[12.5px] text-muted-foreground">
+                    <div className="text-[0.78125rem] text-muted-foreground">
                       {[c.property, c.why, c.provider].filter(Boolean).join(" · ")}
                     </div>
                     <div className="flex items-center gap-2">
                       <Pill tone={TONE[c.status]}>{c.status_label}</Pill>
                       {c.action_ref && <span className="mono-id text-muted-foreground">{c.action_ref}</span>}
                       {canFile && c.property_id && (
-                        <span className="ml-auto text-[12.5px] font-medium text-link">
+                        <span className="ml-auto text-[0.78125rem] font-medium text-link">
                           {isRequired(c) ? "Upload" : "Upload new"}
                         </span>
                       )}
@@ -294,7 +294,7 @@ export function CertificatesPage() {
                   </div>
                 )}
               />
-              <div className="flex flex-wrap items-center gap-3 border-t border-divider text-[12.5px] text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-3 border-t border-divider text-[0.78125rem] text-muted-foreground">
                 {d.total > d.page_size ? (
                   <div className="flex-1">
                     <Pagination

@@ -144,14 +144,14 @@ export function Camera({ title, hint, index, total, stampPrefix, exampleUrl, sit
         >
           <X aria-hidden className="size-5" />
         </button>
-        <span className="rounded-full bg-white/10 px-3 py-1.5 text-[14px] font-semibold">
+        <span className="rounded-full bg-white/10 px-3 py-1.5 text-[0.875rem] font-semibold">
           Photo {index} of {total}
         </span>
         {here === null ? (
           <span className="size-12" />
         ) : (
           <span
-            className={`flex h-9 items-center gap-1.5 rounded-full px-3 text-[14px] font-semibold text-on-status ${here ? "bg-st-green" : "bg-st-amber"}`}
+            className={`flex h-9 items-center gap-1.5 rounded-full px-3 text-[0.875rem] font-semibold text-on-status ${here ? "bg-st-green" : "bg-st-amber"}`}
           >
             <MapPin aria-hidden className="size-4" />
             {here ? "On site" : "Away from site"}
@@ -159,8 +159,8 @@ export function Camera({ title, hint, index, total, stampPrefix, exampleUrl, sit
         )}
       </div>
       <div className="px-6 pt-3 text-center">
-        <h2 className="m-0 text-[18px] font-semibold">{title}</h2>
-        {hint && <p className="m-0 mt-0.5 text-[14.5px] text-white/75">{hint}</p>}
+        <h2 className="m-0 text-[1.125rem] font-semibold">{title}</h2>
+        {hint && <p className="m-0 mt-0.5 text-[0.90625rem] text-white/75">{hint}</p>}
       </div>
       <div className="relative mx-3.5 mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl bg-white/10">
         {stream && !fallback ? (
@@ -172,7 +172,7 @@ export function Camera({ title, hint, index, total, stampPrefix, exampleUrl, sit
             aria-label="Live camera view"
           />
         ) : (
-          <div className="flex flex-1 flex-col items-center justify-center gap-2 px-8 text-center text-[14.5px] text-white/70">
+          <div className="flex flex-1 flex-col items-center justify-center gap-2 px-8 text-center text-[0.90625rem] text-white/70">
             {fallback ? "Tap the shutter to open the camera." : "Starting the camera…"}
           </div>
         )}
@@ -182,14 +182,14 @@ export function Camera({ title, hint, index, total, stampPrefix, exampleUrl, sit
             <button
               type="button"
               onClick={() => setExample(false)}
-              className="mt-2 h-12 rounded-xl bg-white/15 text-[15px] font-semibold"
+              className="mt-2 h-12 rounded-xl bg-white/15 text-[0.9375rem] font-semibold"
             >
               Back to camera
             </button>
           </div>
         )}
         <Corners />
-        <div className="relative mx-3 mt-auto mb-3 rounded-md bg-black/70 px-2.5 py-1.5 font-mono text-[12px] leading-snug">
+        <div className="relative mx-3 mt-auto mb-3 rounded-md bg-black/70 px-2.5 py-1.5 font-mono text-[0.75rem] leading-snug">
           {stampPrefix} · {fmtStamp(now)}
         </div>
       </div>
@@ -221,7 +221,7 @@ export function Camera({ title, hint, index, total, stampPrefix, exampleUrl, sit
             type="button"
             aria-label="Show example photo"
             onClick={() => setExample(true)}
-            className="size-12 rounded-lg bg-white/15 text-[12px] leading-tight font-semibold"
+            className="size-12 rounded-lg bg-white/15 text-[0.75rem] leading-tight font-semibold"
           >
             See example
           </button>
@@ -229,7 +229,7 @@ export function Camera({ title, hint, index, total, stampPrefix, exampleUrl, sit
           <span className="size-12" />
         )}
       </div>
-      <p className="pb-safe-4 m-0 px-8 pt-3 text-center text-[13px] text-white/60">
+      <p className="pb-safe-4 m-0 px-8 pt-3 text-center text-[0.8125rem] text-white/60">
         Evidence photos are taken here, not picked from your gallery. The original is kept unaltered.
       </p>
       <input

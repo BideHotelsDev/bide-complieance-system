@@ -50,7 +50,7 @@ export function ActionDialog({
     <>
       {/* The body scrolls and the buttons stay in view, however tall the form or small the screen. */}
       {children && (
-        <div className="flex min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain px-5 pt-3 pb-5 text-[13.5px]">
+        <div className="flex min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain px-5 pt-3 pb-5 text-[0.84375rem]">
           {children}
         </div>
       )}
@@ -67,9 +67,9 @@ export function ActionDialog({
         )}
       >
         <div className="shrink-0 px-5 pt-5 pb-1">
-          <DialogTitle className="text-[17px] leading-snug font-semibold">{title}</DialogTitle>
+          <DialogTitle className="text-[1.0625rem] leading-snug font-semibold">{title}</DialogTitle>
           {subtitle ? (
-            <DialogDescription className="mt-1 text-[13.5px] text-muted-foreground">{subtitle}</DialogDescription>
+            <DialogDescription className="mt-1 text-[0.84375rem] text-muted-foreground">{subtitle}</DialogDescription>
           ) : (
             <DialogDescription className="sr-only">{typeof title === "string" ? title : "Dialog"}</DialogDescription>
           )}
@@ -134,11 +134,11 @@ export function Labeled({
       aria-describedby={htmlFor ? undefined : note}
     >
       {htmlFor ? (
-        <label htmlFor={htmlFor} className="text-[12.5px] font-medium text-ink2">
+        <label htmlFor={htmlFor} className="text-[0.78125rem] font-medium text-ink2">
           {label}
         </label>
       ) : (
-        <span id={labelId} className="text-[12.5px] font-medium text-ink2">
+        <span id={labelId} className="text-[0.78125rem] font-medium text-ink2">
           {label}
         </span>
       )}
@@ -158,7 +158,7 @@ export function Labeled({
 }
 
 const control =
-  "h-8 w-full min-w-0 rounded-md border border-border bg-surface px-2.5 text-[13.5px] text-foreground coarse:h-10 coarse:text-base outline-none focus-visible:outline-2 focus-visible:outline-focus disabled:opacity-60 aria-[invalid=true]:border-st-red"
+  "h-8 w-full min-w-0 rounded-md border border-border bg-surface px-2.5 text-[0.84375rem] text-foreground coarse:h-10 coarse:text-base outline-none focus-visible:outline-2 focus-visible:outline-focus disabled:opacity-60 aria-[invalid=true]:border-st-red"
 
 export function TextInput({ className, ...props }: React.ComponentProps<"input">) {
   return <input className={cn(control, className)} {...props} />

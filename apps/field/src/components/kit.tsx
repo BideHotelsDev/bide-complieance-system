@@ -35,8 +35,8 @@ export function TabScreen({
       <header className="border-b border-divider bg-surface px-[18px] pt-5 pb-3.5">
         {header ?? (
           <>
-            <h1 className="m-0 text-[24px] leading-tight font-semibold">{title}</h1>
-            {subtitle && <p className="m-0 mt-1 text-[14.5px] text-muted-foreground">{subtitle}</p>}
+            <h1 className="m-0 text-[1.5rem] leading-tight font-semibold">{title}</h1>
+            {subtitle && <p className="m-0 mt-1 text-[0.90625rem] text-muted-foreground">{subtitle}</p>}
           </>
         )}
       </header>
@@ -61,7 +61,7 @@ export function TabBar() {
           key={t.to}
           to={t.to}
           activeOptions={{ exact: true }}
-          className="flex min-h-[60px] flex-col items-center justify-center gap-1 text-[12px] font-medium text-muted-foreground no-underline aria-[current=page]:font-semibold aria-[current=page]:text-foreground"
+          className="flex min-h-[60px] flex-col items-center justify-center gap-1 text-[0.75rem] font-medium text-muted-foreground no-underline aria-[current=page]:font-semibold aria-[current=page]:text-foreground"
         >
           <t.icon aria-hidden className="size-[22px]" strokeWidth={1.75} />
           {t.label}
@@ -101,8 +101,8 @@ export function FlowScreen({
           <ChevronLeft aria-hidden className="size-6" />
         </Link>
         <div className="min-w-0 flex-1">
-          <h1 className="m-0 truncate text-[17px] leading-tight font-semibold">{title}</h1>
-          {subtitle && <p className="m-0 mt-0.5 truncate text-[14px] text-muted-foreground">{subtitle}</p>}
+          <h1 className="m-0 truncate text-[1.0625rem] leading-tight font-semibold">{title}</h1>
+          {subtitle && <p className="m-0 mt-0.5 truncate text-[0.875rem] text-muted-foreground">{subtitle}</p>}
         </div>
         {right}
       </header>
@@ -117,7 +117,7 @@ export function FlowScreen({
 }
 
 export function SectionLabel({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <h2 className={cn("m-0 mt-2 text-[14px] font-semibold text-muted-foreground", className)}>{children}</h2>
+  return <h2 className={cn("m-0 mt-2 text-[0.875rem] font-semibold text-muted-foreground", className)}>{children}</h2>
 }
 
 export function FieldLabel({
@@ -133,10 +133,10 @@ export function FieldLabel({
 }) {
   return (
     <div className="mb-2">
-      <label htmlFor={htmlFor} id={id} className="block text-[16px] leading-snug font-semibold">
+      <label htmlFor={htmlFor} id={id} className="block text-[1rem] leading-snug font-semibold">
         {children}
       </label>
-      {help && <p className="m-0 mt-0.5 text-[14px] text-muted-foreground">{help}</p>}
+      {help && <p className="m-0 mt-0.5 text-[0.875rem] text-muted-foreground">{help}</p>}
     </div>
   )
 }
@@ -152,7 +152,7 @@ export function PrimaryButton({ className, ...props }: React.ComponentProps<"but
       type="button"
       {...props}
       className={cn(
-        "flex h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 text-[17px] font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:bg-subtle disabled:text-primary-foreground disabled:opacity-70",
+        "flex h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 text-[1.0625rem] font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:bg-subtle disabled:text-primary-foreground disabled:opacity-70",
         className,
       )}
     />
@@ -165,7 +165,7 @@ export function SecondaryButton({ className, ...props }: React.ComponentProps<"b
       type="button"
       {...props}
       className={cn(
-        "flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-[16px] font-semibold text-foreground hover:bg-hover disabled:opacity-50",
+        "flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-[1rem] font-semibold text-foreground hover:bg-hover disabled:opacity-50",
         className,
       )}
     />
@@ -197,7 +197,7 @@ export function Choice<T extends string>({
             aria-pressed={on}
             onClick={() => onChange(o.value)}
             className={cn(
-              "h-12 rounded-xl border text-[16px] font-semibold transition-colors",
+              "h-12 rounded-xl border text-[1rem] font-semibold transition-colors",
               !on && "border-border bg-surface text-foreground hover:bg-hover",
               on &&
                 (o.tone === "fail"
@@ -239,7 +239,7 @@ export function SelectBox({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={cn(
-          "h-12 w-full appearance-none rounded-xl border border-border bg-surface pr-10 pl-3.5 text-[16px] text-foreground",
+          "h-12 w-full appearance-none rounded-xl border border-border bg-surface pr-10 pl-3.5 text-[1rem] text-foreground",
           hint && "pr-40",
           !value && "text-muted-foreground",
         )}
@@ -251,7 +251,7 @@ export function SelectBox({
           </option>
         ))}
       </select>
-      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center gap-1.5 text-[13.5px] text-muted-foreground">
+      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center gap-1.5 text-[0.84375rem] text-muted-foreground">
         {hint}
         <ChevronDown aria-hidden className="size-4" />
       </span>
@@ -264,7 +264,7 @@ export function TextInput({ className, ...props }: React.ComponentProps<"input">
     <input
       {...props}
       className={cn(
-        "h-12 w-full rounded-xl border border-border bg-surface px-3.5 text-[16px] text-foreground",
+        "h-12 w-full rounded-xl border border-border bg-surface px-3.5 text-[1rem] text-foreground",
         className,
       )}
     />
@@ -277,7 +277,7 @@ export function TextArea({ className, ...props }: React.ComponentProps<"textarea
       rows={3}
       {...props}
       className={cn(
-        "min-h-[88px] w-full rounded-xl border border-border bg-surface px-3.5 py-3 text-[16px] leading-snug text-foreground",
+        "min-h-[88px] w-full rounded-xl border border-border bg-surface px-3.5 py-3 text-[1rem] leading-snug text-foreground",
         className,
       )}
     />
@@ -309,8 +309,8 @@ export function Toggle({
       className="flex min-h-[56px] w-full items-center gap-3 px-3.5 py-2.5 text-left disabled:opacity-60"
     >
       <span className="min-w-0 flex-1">
-        <span className="block text-[15.5px]">{label}</span>
-        {hint && <span className="block text-[13.5px] text-muted-foreground">{hint}</span>}
+        <span className="block text-[0.96875rem]">{label}</span>
+        {hint && <span className="block text-[0.84375rem] text-muted-foreground">{hint}</span>}
       </span>
       <span
         aria-hidden
@@ -358,7 +358,7 @@ export function ErrorBox({ message, onRetry }: { message: string; onRetry?: () =
       role="alert"
       className="flex flex-col items-center gap-3 rounded-xl border border-divider bg-surface px-5 py-8 text-center"
     >
-      <p className="m-0 text-[15px]">{message}</p>
+      <p className="m-0 text-[0.9375rem]">{message}</p>
       {onRetry && (
         <SecondaryButton className="w-auto px-6" onClick={onRetry}>
           Try again

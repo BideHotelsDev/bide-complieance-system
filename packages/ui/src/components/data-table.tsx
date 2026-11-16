@@ -124,7 +124,7 @@ export function DataTable<T extends { id: string }>({
               key={c.id}
               className={cn(
                 rowH,
-                "px-3 py-1.5 align-middle text-[13.5px]",
+                "px-3 py-1.5 align-middle text-[0.84375rem]",
                 meta.align === "right" && "tabular text-right",
                 i === 0 && "sticky left-0 bg-inherit",
                 meta.className,
@@ -141,7 +141,7 @@ export function DataTable<T extends { id: string }>({
   return (
     <div className="relative">
       {selectable && selectedIds.length > 0 && bulkBar && (
-        <div className="sticky top-0 z-20 flex items-center gap-2 border-b border-border bg-primary px-3 py-2 text-[13px] text-primary-foreground">
+        <div className="sticky top-0 z-20 flex items-center gap-2 border-b border-border bg-primary px-3 py-2 text-[0.8125rem] text-primary-foreground">
           <span className="font-medium">{selectedIds.length} selected</span>
           <div className="flex items-center gap-1.5">{bulkBar(selectedIds)}</div>
           <button type="button" className="ml-auto underline" onClick={() => setSel({})}>
@@ -273,7 +273,7 @@ export function Pagination({
   const to = Math.min(total, page * pageSize)
   const last = Math.max(1, Math.ceil(total / pageSize))
   return (
-    <div className="flex flex-wrap items-center gap-3 px-3 py-2.5 text-[13px] text-muted-foreground">
+    <div className="flex flex-wrap items-center gap-3 px-3 py-2.5 text-[0.8125rem] text-muted-foreground">
       <span className="tabular">
         {from}–{to} of {total} {noun}
       </span>

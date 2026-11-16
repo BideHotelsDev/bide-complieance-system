@@ -43,7 +43,7 @@ export function PhoneTopBar({ onSearch }: { onSearch: () => void }) {
     >
       <Link to="/" className="flex min-w-0 flex-1 items-center gap-2 text-foreground no-underline">
         <Mark size={22} />
-        <span className="truncate text-[15px] font-semibold">
+        <span className="truncate text-[0.9375rem] font-semibold">
           <AppName />
         </span>
       </Link>
@@ -126,7 +126,7 @@ export function PhoneTabBar() {
           to={t.to}
           aria-current={active(t) ? "page" : undefined}
           className={cn(
-            "flex h-16 flex-1 flex-col items-center gap-0.5 pt-2 text-[11px] no-underline",
+            "flex h-16 flex-1 flex-col items-center gap-0.5 pt-2 text-[0.6875rem] no-underline",
             active(t) ? "font-semibold text-foreground" : "text-muted-foreground",
           )}
         >

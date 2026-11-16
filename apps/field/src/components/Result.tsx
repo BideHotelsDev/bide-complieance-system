@@ -26,10 +26,10 @@ export function FailedResult({ task, result }: { task: TaskDetail; result: Submi
         <span className="flex size-[52px] items-center justify-center rounded-xl bg-st-red-bg text-st-red">
           <TriangleAlert aria-hidden className="size-6" />
         </span>
-        <h1 ref={heading} tabIndex={-1} className="m-0 mt-4 text-[24px] leading-tight font-semibold outline-none">
+        <h1 ref={heading} tabIndex={-1} className="m-0 mt-4 text-[1.5rem] leading-tight font-semibold outline-none">
           {rs?.title ?? "Logged as Failed. Thank you for reporting it."}
         </h1>
-        <p className="m-0 mt-2 text-[16px] leading-snug text-muted-foreground">
+        <p className="m-0 mt-2 text-[1rem] leading-snug text-muted-foreground">
           {what.length ? `${what.join(". ")}. ` : ""}
           {classA
             ? "This is a life-safety problem, so it has gone straight to the people who fix it."
@@ -37,17 +37,17 @@ export function FailedResult({ task, result }: { task: TaskDetail; result: Submi
         </p>
         {result.action && (
           <div className="mt-5 rounded-xl border border-st-red/30 bg-st-red-bg/40 px-4 py-3.5">
-            <span className="inline-flex h-6 items-center rounded-full border border-foreground px-2 text-[12.5px] font-semibold">
+            <span className="inline-flex h-6 items-center rounded-full border border-foreground px-2 text-[0.78125rem] font-semibold">
               {rs ? `${rs.priority_label} · ${rs.due_label}` : result.action.ref}
             </span>
-            <div className="mt-2 text-[16px] leading-snug font-semibold">{what[0] ?? task.title}</div>
-            <div className="mt-1 text-[14.5px] text-muted-foreground">
+            <div className="mt-2 text-[1rem] leading-snug font-semibold">{what[0] ?? task.title}</div>
+            <div className="mt-1 text-[0.90625rem] text-muted-foreground">
               {result.action.owner ? `Owner: ${result.action.owner} · ` : ""}raised automatically from your check
               <span className="mono-id ml-1">{result.action.ref}</span>
             </div>
           </div>
         )}
-        <ul className="m-0 mt-5 flex list-none flex-col gap-4 p-0 text-[15.5px] leading-snug">
+        <ul className="m-0 mt-5 flex list-none flex-col gap-4 p-0 text-[0.96875rem] leading-snug">
           {alerted.length > 0 && (
             <Line icon={<Bell aria-hidden className="size-4" />}>
               <strong>{listWords(alerted)}</strong> {alerted.length === 1 ? "has" : "have"} been alerted.
@@ -67,7 +67,7 @@ export function FailedResult({ task, result }: { task: TaskDetail; result: Submi
       <footer className="pb-safe-4 sticky bottom-0 flex flex-col gap-2.5 border-t border-divider bg-surface px-4 pt-3">
         <Link
           to="/"
-          className="flex h-[52px] items-center justify-center rounded-xl bg-primary text-[17px] font-semibold text-primary-foreground no-underline"
+          className="flex h-[52px] items-center justify-center rounded-xl bg-primary text-[1.0625rem] font-semibold text-primary-foreground no-underline"
         >
           Back to Today
         </Link>
@@ -75,14 +75,14 @@ export function FailedResult({ task, result }: { task: TaskDetail; result: Submi
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="flex h-12 items-center justify-center rounded-xl border border-border bg-surface text-[16px] font-semibold text-foreground"
+            className="flex h-12 items-center justify-center rounded-xl border border-border bg-surface text-[1rem] font-semibold text-foreground"
           >
             Add a note or photo
           </button>
         ) : (
           <Link
             to="/report"
-            className="flex h-12 items-center justify-center rounded-xl border border-border bg-surface text-[16px] font-semibold text-foreground no-underline"
+            className="flex h-12 items-center justify-center rounded-xl border border-border bg-surface text-[1rem] font-semibold text-foreground no-underline"
           >
             Report something else
           </Link>

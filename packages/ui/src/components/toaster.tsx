@@ -23,7 +23,7 @@ export function Toaster({
       toastOptions={{
         classNames: {
           toast:
-            "!bg-[var(--c-foreground)] !text-[var(--c-background)] !border-0 !rounded-lg !text-[13.5px] !shadow-lg !font-sans",
+            "!bg-[var(--c-foreground)] !text-[var(--c-background)] !border-0 !rounded-lg !text-[0.84375rem] !shadow-lg !font-sans",
           actionButton: "!bg-transparent !text-[var(--c-background)] !underline !font-medium",
           description: "!text-[var(--c-subtle)]",
           closeButton: "!size-7",

@@ -59,7 +59,7 @@ export function PropertiesPage() {
             <span>
               <span className="font-medium">{p.name}</span>{" "}
               <span className="mono-id text-muted-foreground">{p.code}</span>
-              <span className="block text-[12.5px] text-muted-foreground">{placeLine(p)}</span>
+              <span className="block text-[0.78125rem] text-muted-foreground">{placeLine(p)}</span>
             </span>
           </span>
         ),
@@ -87,7 +87,7 @@ export function PropertiesPage() {
       {
         id: "note",
         header: "Note",
-        cell: ({ row }) => <span className="text-[12.5px] text-muted-foreground">{row.original.note}</span>,
+        cell: ({ row }) => <span className="text-[0.78125rem] text-muted-foreground">{row.original.note}</span>,
       },
     ],
     [],
@@ -211,7 +211,7 @@ export function PropertiesPage() {
           />
         </div>
       )}
-      <p className={cn("m-0 text-[12.5px] text-muted-foreground", none && "hidden")}>
+      <p className={cn("m-0 text-[0.78125rem] text-muted-foreground", none && "hidden")}>
         The ring is the compliance score. It turns red whenever any life-safety item is overdue, whatever the
         percentage.
       </p>

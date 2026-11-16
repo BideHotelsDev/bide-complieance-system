@@ -123,7 +123,7 @@ export function NewActionDialog({
           aria-describedby={missing ? "new-action-missing" : undefined}
         />
         {missing && (
-          <span id="new-action-missing" role="alert" className="text-[12.5px] text-st-red">
+          <span id="new-action-missing" role="alert" className="text-[0.78125rem] text-st-red">
             {f.property_id ? "Say what needs fixing in a few words." : "Choose a property first."}
           </span>
         )}
