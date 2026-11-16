@@ -81,7 +81,8 @@ class Settings(BaseSettings):
     max_image_bytes: int = 15 * 1024 * 1024
     max_pdf_bytes: int = 25 * 1024 * 1024
 
-    # Email: "console" logs messages; "smtp" sends through a mail server.
+    # Email: "console" logs who a message is for and its subject, never the body (development); "smtp" sends through a
+    # mail server. Production refuses to start on "console": sign-in codes and links would never reach anyone.
     email_provider: str = "console"
     email_from: str = "bide Comply <comply@bidehotels.com>"
     smtp_host: str = ""
@@ -116,6 +117,26 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.environment == "production"
+
+    def production_problems(self) -> list[str]:
+        """Settings that would leave production silently broken. Empty outside production."""
+        if not self.is_production:
+            return []
+        problems = []
+        if self.email_provider != "smtp":
+            problems.append(
+                f"EMAIL_PROVIDER is {self.email_provider!r}: production needs EMAIL_PROVIDER=smtp, or sign-in codes "
+                "and links are only written to the log and never reach anyone."
+            )
+        elif not self.smtp_host:
+            problems.append("EMAIL_PROVIDER=smtp needs SMTP_HOST (and SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD).")
+        return problems
+
+    def check_production(self) -> None:
+        """Stop start-up with a clear message instead of running half-configured (called by the API and worker)."""
+        problems = self.production_problems()
+        if problems:
+            raise RuntimeError("bide Comply can't start in production:\n- " + "\n- ".join(problems))
 
 
 settings = Settings()

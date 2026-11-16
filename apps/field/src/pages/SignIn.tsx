@@ -8,6 +8,7 @@ import { appPath } from "@/lib/base"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { api, ApiError } from "@bide-comply/api-client"
 import { Mark } from "@bide-comply/ui/components/page"
+import { TotpQr } from "@bide-comply/ui/components/totp-qr"
 import { contactPhrase, type Contact } from "@bide-comply/ui/lib/contact"
 import { cn } from "@bide-comply/ui/lib/utils"
 import { ShieldCheck } from "lucide-react"
@@ -47,7 +48,8 @@ export function SignInPage() {
       <Mark size={44} />
       <h1 className="m-0 mt-6 text-[1.625rem] font-semibold">Sign in</h1>
       <p className="m-0 mt-1.5 text-[1rem] text-muted-foreground">
-        {bide ? "Use your Bide account to see today's checks." : "Use your Bide Google account to see today's checks."}
+        {/* The Hub decides how (Google, password, passkey), so this doesn't say (UX audit F12). */}
+        Sign in with your Bide account.
       </p>
       {reason && (
         <p role="alert" className="mt-4 rounded-xl bg-st-red-bg px-3.5 py-2.5 text-[0.9375rem] text-st-red">
@@ -137,7 +139,7 @@ export function CodePage({ stage }: { stage: "code" | "totp" | "totp-setup" }) {
   })
   const setup = useQuery({
     queryKey: ["totp-setup"],
-    queryFn: () => api.post<{ secret: string; uri: string }>("/api/auth/totp/setup"),
+    queryFn: () => api.post<{ secret: string; uri: string; qr_svg: string }>("/api/auth/totp/setup"),
     enabled: stage === "totp-setup",
     retry: false,
   })
@@ -177,11 +179,10 @@ export function CodePage({ stage }: { stage: "code" | "totp" | "totp-setup" }) {
           <>
             <h1 className="m-0 mt-6 text-[1.5rem] font-semibold">Set up your authenticator app</h1>
             <p className="m-0 mt-1.5 text-[1rem] text-muted-foreground">
-              Admin accounts confirm sign-in with an authenticator app. Add this key to it, then enter the 6-digit code.
+              Admin accounts confirm sign-in with an authenticator app. Scan this code with it from another device, or
+              open it in the app on this phone, then enter the 6-digit code.
             </p>
-            {setup.data && (
-              <p className="mt-3 rounded-lg bg-hover px-3 py-2 font-mono text-[0.875rem] break-all">{setup.data.secret}</p>
-            )}
+            <TotpQr className="mt-4" secret={setup.data?.secret} svg={setup.data?.qr_svg} uri={setup.data?.uri} />
           </>
         ) : (
           <>

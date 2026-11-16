@@ -3,6 +3,7 @@
  * words people see in the menu.
  */
 import { createRootRoute, createRoute, createRouter, Outlet } from "@tanstack/react-router"
+import { PageTitle } from "@bide-comply/ui/components/page-title"
 
 import { AppShell } from "./components/AppShell"
 import { ActionsPage } from "./pages/Actions"
@@ -40,51 +41,79 @@ const loose = (s: Record<string, unknown>) => s
 const root = createRootRoute({ component: Outlet })
 const shell = createRoute({ getParentRoute: () => root, id: "shell", component: AppShell })
 
-const r = (path: string, component: () => React.ReactNode) =>
-  createRoute({ getParentRoute: () => shell, path, component, validateSearch: loose })
+// Each screen names the browser tab, e.g. "People and roles · bide Comply" (UX audit F9).
+const titled = (title: string, Component: () => React.ReactNode) =>
+  function Titled() {
+    return (
+      <>
+        <PageTitle title={title} />
+        <Component />
+      </>
+    )
+  }
+
+const r = (path: string, component: () => React.ReactNode, title: string) =>
+  createRoute({ getParentRoute: () => shell, path, component: titled(title, component), validateSearch: loose })
 
 const routeTree = root.addChildren([
-  createRoute({ getParentRoute: () => root, path: "/signin", component: SignInPage, validateSearch: loose }),
-  createRoute({ getParentRoute: () => root, path: "/admin-signin", component: AdminSignInPage }),
-  createRoute({ getParentRoute: () => root, path: "/signin/code", component: () => <CodePage stage="code" /> }),
-  createRoute({ getParentRoute: () => root, path: "/signin/totp", component: () => <CodePage stage="totp" /> }),
+  createRoute({
+    getParentRoute: () => root,
+    path: "/signin",
+    component: titled("Sign in", SignInPage),
+    validateSearch: loose,
+  }),
+  createRoute({
+    getParentRoute: () => root,
+    path: "/admin-signin",
+    component: titled("Admin sign-in", AdminSignInPage),
+  }),
+  createRoute({
+    getParentRoute: () => root,
+    path: "/signin/code",
+    component: titled("Enter your code", () => <CodePage stage="code" />),
+  }),
+  createRoute({
+    getParentRoute: () => root,
+    path: "/signin/totp",
+    component: titled("Confirm it's you", () => <CodePage stage="totp" />),
+  }),
   createRoute({
     getParentRoute: () => root,
     path: "/signin/totp-setup",
-    component: () => <CodePage stage="totp-setup" />,
+    component: titled("Set up your authenticator app", () => <CodePage stage="totp-setup" />),
   }),
   shell.addChildren([
-    r("/", HomePage),
-    r("/todo", MyTodoPage),
-    r("/properties", PropertiesPage),
-    r("/properties/$code", PropertyPage),
-    r("/certificates", CertificatesPage),
-    r("/actions", ActionsPage),
-    r("/reviews", ReviewsPage),
-    r("/gates", GatesPage),
-    r("/gates/$code", GatePage),
-    r("/signoffs", SignoffsPage),
-    r("/approvals", ApprovalsPage),
-    r("/scorecard", ScorecardPage),
-    r("/reports", ReportsPage),
-    r("/assessor/$code", AssessorPage),
-    r("/help", HelpPage),
-    r("/me", MePage),
-    r("/settings", LibraryPage),
-    r("/settings/library", LibraryPage),
-    r("/settings/library/$id", TemplateEditorPage),
-    r("/settings/setup", SetupPage),
-    r("/settings/setup/$code", SetupPage),
-    r("/settings/people", PeoplePage),
-    r("/settings/properties", PropertyListAdmin),
-    r("/settings/properties/$code", PropertyDetailsPage),
-    r("/settings/alerts", AlertsPage),
-    r("/settings/content", ContentPage),
-    r("/settings/import", ImportPage),
-    r("/settings/appearance", AppearancePage),
-    r("/settings/audit", AuditLogPage),
+    r("/", HomePage, "Home"),
+    r("/todo", MyTodoPage, "My to-do"),
+    r("/properties", PropertiesPage, "Properties"),
+    r("/properties/$code", PropertyPage, "Property"),
+    r("/certificates", CertificatesPage, "Certificates"),
+    r("/actions", ActionsPage, "Actions to fix"),
+    r("/reviews", ReviewsPage, "Evidence review"),
+    r("/gates", GatesPage, "Opening checklists"),
+    r("/gates/$code", GatePage, "Opening checklist"),
+    r("/signoffs", SignoffsPage, "Sign-offs"),
+    r("/approvals", ApprovalsPage, "Approvals"),
+    r("/scorecard", ScorecardPage, "Team scorecard"),
+    r("/reports", ReportsPage, "Reports and packs"),
+    r("/assessor/$code", AssessorPage, "Audit walk"),
+    r("/help", HelpPage, "Help"),
+    r("/me", MePage, "Your account"),
+    r("/settings", LibraryPage, "Compliance library"),
+    r("/settings/library", LibraryPage, "Compliance library"),
+    r("/settings/library/$id", TemplateEditorPage, "Edit template"),
+    r("/settings/setup", SetupPage, "Property setup"),
+    r("/settings/setup/$code", SetupPage, "Property setup"),
+    r("/settings/people", PeoplePage, "People and roles"),
+    r("/settings/properties", PropertyListAdmin, "Property details"),
+    r("/settings/properties/$code", PropertyDetailsPage, "Property details"),
+    r("/settings/alerts", AlertsPage, "Alert rules"),
+    r("/settings/content", ContentPage, "Messages and wording"),
+    r("/settings/import", ImportPage, "Import data"),
+    r("/settings/appearance", AppearancePage, "Appearance"),
+    r("/settings/audit", AuditLogPage, "Audit log"),
     // Anything else: a not-found page inside the shell, so the menu and a way back are still there.
-    r("$", () => <NotFoundPage />),
+    r("$", () => <NotFoundPage />, "Page not found"),
   ]),
 ])
 

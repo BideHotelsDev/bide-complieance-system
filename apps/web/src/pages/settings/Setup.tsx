@@ -92,7 +92,19 @@ export function SetupPage() {
   if (!me.data) return <LoadingRows rows={8} />
   if (!active)
     return (
-      <EmptyState title="No properties yet" icon={<ClipboardList className="size-6" />}>
+      <EmptyState
+        title="No properties yet"
+        icon={<ClipboardList className="size-6" />}
+        action={
+          me.data.can["register.toggle"] ? (
+            <Button asChild>
+              <Link to="/settings/properties/$code" params={{ code: "new" }}>
+                Add a property
+              </Link>
+            </Button>
+          ) : undefined
+        }
+      >
         Add a property first, then come back to choose its checks.
       </EmptyState>
     )

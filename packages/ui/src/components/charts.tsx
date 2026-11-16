@@ -10,7 +10,7 @@ import { cn } from "../lib/utils"
 function useTableToggle() {
   const [table, setTable] = React.useState(false)
   const toggle = (
-    <button type="button" onClick={() => setTable((t) => !t)} className="text-xs text-link hover:underline">
+    <button type="button" onClick={() => setTable((t) => !t)} className="inline-flex min-h-6 items-center text-xs text-link hover:underline">
       {table ? "View as chart" : "View as table"}
     </button>
   )

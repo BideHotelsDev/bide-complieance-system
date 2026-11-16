@@ -1,6 +1,8 @@
 import { basepath } from "@/lib/base"
 import { createRootRoute, createRoute, createRouter, Navigate, Outlet, useLocation } from "@tanstack/react-router"
 
+import { PageTitle } from "@bide-comply/ui/components/page-title"
+
 import { ErrorBox, Page } from "./components/kit"
 import { ContractorPortalPage } from "./pages/ContractorPortal"
 import { ContractorVisitPage } from "./pages/ContractorVisit"
@@ -31,27 +33,54 @@ function Authed() {
   return <Outlet />
 }
 
+// Each screen names the browser tab, e.g. "History · bide Comply" (UX audit F9).
+const titled = (title: string, Component: () => React.ReactNode) =>
+  function Titled() {
+    return (
+      <>
+        <PageTitle title={title} />
+        <Component />
+      </>
+    )
+  }
+
 const root = createRootRoute({ component: Outlet })
 const authed = createRoute({ getParentRoute: () => root, id: "authed", component: Authed })
 
 const routes = [
-  createRoute({ getParentRoute: () => root, path: "/signin", component: SignInPage }),
-  createRoute({ getParentRoute: () => root, path: "/signin/code", component: () => <CodePage stage="code" /> }),
-  createRoute({ getParentRoute: () => root, path: "/signin/totp", component: () => <CodePage stage="totp" /> }),
+  createRoute({ getParentRoute: () => root, path: "/signin", component: titled("Sign in", SignInPage) }),
+  createRoute({
+    getParentRoute: () => root,
+    path: "/signin/code",
+    component: titled("Check your email", () => <CodePage stage="code" />),
+  }),
+  createRoute({
+    getParentRoute: () => root,
+    path: "/signin/totp",
+    component: titled("Confirm it's you", () => <CodePage stage="totp" />),
+  }),
   createRoute({
     getParentRoute: () => root,
     path: "/signin/totp-setup",
-    component: () => <CodePage stage="totp-setup" />,
+    component: titled("Set up your authenticator app", () => <CodePage stage="totp-setup" />),
   }),
   authed.addChildren([
-    createRoute({ getParentRoute: () => authed, path: "/contractor", component: ContractorPortalPage }),
-    createRoute({ getParentRoute: () => authed, path: "/", component: TodayPage }),
-    createRoute({ getParentRoute: () => authed, path: "/task/$taskId", component: TaskPage }),
-    createRoute({ getParentRoute: () => authed, path: "/report", component: ReportPage }),
-    createRoute({ getParentRoute: () => authed, path: "/contractor-visit", component: ContractorVisitPage }),
-    createRoute({ getParentRoute: () => authed, path: "/history", component: HistoryPage }),
-    createRoute({ getParentRoute: () => authed, path: "/documents", component: DocumentsPage }),
-    createRoute({ getParentRoute: () => authed, path: "/me", component: MePage }),
+    createRoute({
+      getParentRoute: () => authed,
+      path: "/contractor",
+      component: titled("Contractor portal", ContractorPortalPage),
+    }),
+    createRoute({ getParentRoute: () => authed, path: "/", component: titled("Today", TodayPage) }),
+    createRoute({ getParentRoute: () => authed, path: "/task/$taskId", component: titled("Check", TaskPage) }),
+    createRoute({ getParentRoute: () => authed, path: "/report", component: titled("Report a problem", ReportPage) }),
+    createRoute({
+      getParentRoute: () => authed,
+      path: "/contractor-visit",
+      component: titled("Contractor visit", ContractorVisitPage),
+    }),
+    createRoute({ getParentRoute: () => authed, path: "/history", component: titled("History", HistoryPage) }),
+    createRoute({ getParentRoute: () => authed, path: "/documents", component: titled("My documents", DocumentsPage) }),
+    createRoute({ getParentRoute: () => authed, path: "/me", component: titled("Me", MePage) }),
     // An old or mistyped link lands on Today (or the contractor screen) instead of a bare "Not Found".
     createRoute({ getParentRoute: () => authed, path: "$", component: () => <Navigate to="/" /> }),
   ]),

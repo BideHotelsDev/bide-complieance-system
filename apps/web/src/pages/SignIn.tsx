@@ -11,6 +11,7 @@ import * as React from "react"
 import { api, ApiError } from "@bide-comply/api-client"
 import { Button } from "@bide-comply/ui/components/button"
 import { Mark } from "@bide-comply/ui/components/page"
+import { TotpQr } from "@bide-comply/ui/components/totp-qr"
 import { useBranding } from "@bide-comply/ui/lib/theme"
 
 import { useBideHub, useMe } from "@/lib/session"
@@ -89,7 +90,8 @@ export function SignInPage() {
         <>
           <h1 className="m-0 text-[1.125rem] font-semibold">Sign in</h1>
           <p className="mt-1 text-[0.84375rem] text-muted-foreground">
-            {signinMessage ?? (bide ? "Use your Bide account." : "Use your Bide Google account.")}
+            {/* The Hub decides how (Google, password, passkey), so this doesn't say (UX audit F12). */}
+            {signinMessage ?? "Sign in with your Bide account."}
           </p>
         </>
       )}
@@ -305,7 +307,7 @@ export function CodePage({ stage }: { stage: "code" | "totp" | "totp-setup" }) {
   const [trust, setTrust] = React.useState(true)
   const setup = useQuery({
     queryKey: ["totp-setup"],
-    queryFn: () => api.post<{ secret: string; uri: string }>("/api/auth/totp/setup"),
+    queryFn: () => api.post<{ secret: string; uri: string; qr_svg: string }>("/api/auth/totp/setup"),
     enabled: stage === "totp-setup",
     retry: false,
   })
@@ -331,12 +333,10 @@ export function CodePage({ stage }: { stage: "code" | "totp" | "totp-setup" }) {
         <>
           <h1 className="m-0 text-[1.125rem] font-semibold">Set up your authenticator app</h1>
           <p className="mt-1 text-[0.84375rem] text-muted-foreground">
-            Admin accounts confirm sign-in with an authenticator app. Add this key to it, then enter the 6-digit code it
-            shows.
+            Admin accounts confirm sign-in with an authenticator app, such as Google Authenticator or Microsoft
+            Authenticator. Scan this code with it, then enter the 6-digit code it shows.
           </p>
-          {setup.data && (
-            <p className="mt-3 rounded-md bg-hover px-3 py-2 font-mono text-[0.8125rem] break-all">{setup.data.secret}</p>
-          )}
+          <TotpQr className="mt-4" secret={setup.data?.secret} svg={setup.data?.qr_svg} />
         </>
       ) : (
         <>

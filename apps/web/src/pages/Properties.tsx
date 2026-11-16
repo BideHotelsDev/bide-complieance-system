@@ -99,7 +99,7 @@ export function PropertiesPage() {
   const none = !!res.data && total === 0
   const summary =
     rows.length === 0
-      ? "No properties match."
+      ? "Nothing matches these filters."
       : `Showing ${view === "all" && !q ? "all " : ""}${rows.length} ${viewLabel}${rows.length === 1 ? "property" : "properties"}${
           q ? ` matching “${q}”` : ""
         }. Worst first.`
@@ -110,9 +110,11 @@ export function PropertiesPage() {
         title="Properties"
         subtitle="Pick a property to see its checks, fixes and certificates."
         actions={
-          me.data?.can["settings.view"] ? (
+          me.data?.can["register.toggle"] ? (
             <Button asChild>
-              <Link to="/settings/setup">Add a property</Link>
+              <Link to="/settings/properties/$code" params={{ code: "new" }}>
+                Add a property
+              </Link>
             </Button>
           ) : null
         }
@@ -164,14 +166,16 @@ export function PropertiesPage() {
           <EmptyState
             title="No properties yet"
             action={
-              me.data?.can["settings.view"] ? (
+              me.data?.can["register.toggle"] ? (
                 <Button asChild>
-                  <Link to="/settings/setup">Add a property</Link>
+                  <Link to="/settings/properties/$code" params={{ code: "new" }}>
+                    Add a property
+                  </Link>
                 </Button>
               ) : undefined
             }
           >
-            {me.data?.can["settings.view"]
+            {me.data?.can["register.toggle"]
               ? "Add the first property to load its register and start its checks."
               : "Properties you work at appear here once you're added to them."}
           </EmptyState>
@@ -179,14 +183,14 @@ export function PropertiesPage() {
       ) : rows.length === 0 ? (
         <div className="rounded-xl border border-divider bg-surface">
           <EmptyState
-            title={q ? `No properties match “${q}”` : "No properties in this view"}
+            title={q ? `Nothing matches “${q}”` : "Nothing matches these filters"}
             action={
               <Button variant="secondary" onClick={() => set({ q: undefined, view: undefined })}>
-                Show all properties
+                Clear filters
               </Button>
             }
           >
-            {q ? "Check the spelling, or search by town or code." : "Try another quick view."}
+            {q ? "Check the spelling, or search by town or code." : "No property is in this quick view right now."}
           </EmptyState>
         </div>
       ) : layout === "cards" ? (

@@ -163,10 +163,13 @@ DEFAULT_THEME = {
     "displayFont": "Fraunces",
     "tone": "plain",
 }
+# The Hub decides how someone signs in (Google, a password, a passkey), so the sign-in page doesn't say (UX audit F12).
 DEFAULT_BRANDING = {
     "appName": "bide Comply",
-    "signinMessage": "Sign in with your Bide Google account.",
+    "signinMessage": "Sign in with your Bide account.",
 }
+# What DEFAULT_BRANDING used to say; installs seeded with it show the new default instead.
+OLD_SIGNIN_MESSAGES = {"Sign in with your Bide Google account."}
 
 MESSAGES = [
     (
