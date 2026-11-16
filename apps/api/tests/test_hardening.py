@@ -350,3 +350,28 @@ def test_unknown_page_addresses_get_the_web_app_and_unknown_api_paths_stay_json(
         r = c.get(path)
         assert r.status_code == 404 and r.headers["content-type"].startswith("application/json"), path
     assert c.get("/api/health").json() == {"ok": True}
+
+
+def test_app_pages_are_never_served_stale_after_a_deploy(tmp_path, monkeypatch):
+    """A browser that kept an old index.html asks for app files the last deploy removed, and the page stays blank. The
+    page and other unhashed files are revalidated every time; the hashed assets can be kept for a year."""
+    from fastapi import FastAPI
+
+    from bide_comply import main
+
+    d = tmp_path / "web"
+    (d / "assets").mkdir(parents=True)
+    (d / "index.html").write_text("<!doctype html><title>web</title>")
+    (d / "assets" / "index-abc123.js").write_text("console.log(1)")
+    (d / "sw.js").write_text("// service worker")
+
+    monkeypatch.setattr(main, "_spa_indexes", [])
+    test_app = FastAPI()
+    test_app.add_exception_handler(main.StarletteHTTPException, main.not_found)
+    main._spa(test_app, d, "")
+    c = TestClient(test_app)
+
+    for path in ("/", "/signin", "/settings/people", "/sw.js"):
+        assert c.get(path).headers.get("cache-control") == "no-cache", path
+    assert c.get("/assets/index-abc123.js").headers.get("cache-control") == "public, max-age=31536000, immutable"
+    assert c.get("/assets/missing.js").status_code == 404

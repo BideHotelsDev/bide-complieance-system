@@ -146,11 +146,25 @@ def _is_api(path: str) -> bool:
     return path == "/api" or path.startswith("/api/")
 
 
+# The page and other unhashed files are checked with the server on every load: a browser that kept an old index.html
+# asks for app files the last deploy removed, and the page stays blank. Built assets have a content hash in their name,
+# so a browser may keep them for a year.
+_REVALIDATE = {"Cache-Control": "no-cache"}
+
+
+class _HashedAssets(StaticFiles):
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        if response.status_code == 200:
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return response
+
+
 def _spa(app: FastAPI, dist: Path, prefix: str) -> None:
     """Serve a built SPA under `prefix`: real files as they are, every other address as index.html, so the app's own
     router (and its not-found page) decides. /api never falls through to it: unknown API paths stay JSON 404s."""
     index = dist / "index.html"
-    app.mount(f"{prefix}/assets", StaticFiles(directory=dist / "assets"), name=f"assets{prefix or '-web'}")
+    app.mount(f"{prefix}/assets", _HashedAssets(directory=dist / "assets"), name=f"assets{prefix or '-web'}")
     _spa_indexes.append((prefix, index))
     _spa_indexes.sort(key=lambda x: len(x[0]), reverse=True)
 
@@ -159,8 +173,8 @@ def _spa(app: FastAPI, dist: Path, prefix: str) -> None:
             raise HTTPException(404, detail={"code": "not_found", "message": "Not found."})
         f = (dist / path).resolve()
         if path and dist.resolve() in f.parents and f.is_file():
-            return FileResponse(f)
-        return FileResponse(index)
+            return FileResponse(f, headers=_REVALIDATE)
+        return FileResponse(index, headers=_REVALIDATE)
 
     paths = [prefix + "/{path:path}"] + ([prefix] if prefix else [])
     for route in paths:
@@ -175,7 +189,7 @@ async def not_found(request: Request, exc: StarletteHTTPException):
     if exc.status_code == 404 and request.method in ("GET", "HEAD") and not _is_api(path):
         for prefix, index in _spa_indexes:
             if (path == prefix or path.startswith(prefix + "/")) and "/assets/" not in path:
-                return FileResponse(index)
+                return FileResponse(index, headers=_REVALIDATE)
     return await http_exception_handler(request, exc)
 
 
