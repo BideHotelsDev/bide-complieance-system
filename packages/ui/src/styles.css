@@ -223,6 +223,69 @@
   border-color: var(--c-input);
 }
 
+/* A plain <table> that becomes a list of cards on phones (UX audit M2), from the same markup: add .table-stack to the
+   table, data-label to each cell that needs a label, and .stack-title to the cell that heads the card. Unlayered, so
+   it outranks a min-w-[…] utility on the table. Data tables (DataTable) build their own cards. */
+@media (width < 48rem) {
+  .table-stack,
+  .table-stack tbody,
+  .table-stack tr {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+  .table-stack thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .table-stack tr {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.75rem 0.875rem;
+    border-bottom: 1px solid var(--c-divider);
+  }
+  .table-stack td,
+  .table-stack th[scope="row"] {
+    display: grid;
+    grid-template-columns: minmax(5.5rem, auto) minmax(0, 1fr);
+    justify-items: start;
+    gap: 0.75rem;
+    height: auto;
+    padding: 0;
+    border: 0;
+    text-align: left;
+    white-space: normal;
+  }
+  .table-stack td[data-label]::before,
+  .table-stack th[data-label]::before {
+    content: attr(data-label);
+    font-size: 0.78125rem;
+    font-weight: 400;
+    color: var(--c-muted);
+  }
+  /* A labelled cell's content all sits in the value column, however many lines it has. */
+  .table-stack td[data-label] > *,
+  .table-stack th[data-label] > * {
+    grid-column: 2;
+  }
+  .table-stack td:not([data-label]),
+  .table-stack th:not([data-label]) {
+    display: block;
+  }
+  .table-stack .stack-title {
+    order: -1;
+    font-weight: 500;
+  }
+  .table-stack .stack-hide {
+    display: none;
+  }
+}
+
 @utility tabular {
   font-variant-numeric: tabular-nums;
 }

@@ -452,7 +452,7 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
             {d.any_filter ? ` · ${d.summary.replace(/\.$/, "").toLowerCase()}` : ""}
           </p>
           <div className="overflow-x-auto rounded-[10px] border border-divider bg-surface">
-            <table className="w-full min-w-[1080px] table-fixed border-collapse text-[0.84375rem]">
+            <table className="table-stack w-full min-w-[1080px] table-fixed border-collapse text-[0.84375rem]">
               <caption className="sr-only">Checks at {d.property} and who does each one</caption>
               {/* Fixed widths so the pickers can't push Verifier and Setup off the page; Template takes the rest. */}
               <colgroup>
@@ -504,7 +504,7 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
                       key={r.template_id}
                       className={cn("border-b border-divider last:border-0", off && "bg-background/60")}
                     >
-                      <td className="py-2 pl-3">
+                      <td data-label="Applies" className="py-2 pl-3">
                         <Switch
                           aria-label={`Applies: ${r.template}`}
                           checked={r.applies && r.setup !== "off_requested" ? true : r.applies}
@@ -516,8 +516,10 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
                           onCheckedChange={(v) => (v ? toggle.mutate({ row: r, applies: true }) : setSwitching(r))}
                         />
                       </td>
-                      <td className="mono-id px-2 text-xs whitespace-nowrap text-muted-foreground">{r.ref ?? "—"}</td>
-                      <td className="px-2">
+                      <td data-label="ID" className="mono-id px-2 text-xs whitespace-nowrap text-muted-foreground">
+                        {r.ref ?? "—"}
+                      </td>
+                      <td className="stack-title px-2">
                         <span className="flex items-center gap-2">
                           <ClassBadge klass={r.class} />
                           <span className={cn("truncate", off && "text-muted-foreground")} title={r.template}>
@@ -527,7 +529,7 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
                       </td>
                       {off ? (
                         <>
-                          <td colSpan={5} className="px-2 text-[0.8125rem] text-muted-foreground">
+                          <td colSpan={5} data-label="Status" className="px-2 text-[0.8125rem] text-muted-foreground">
                             {r.setup === "off_requested" && r.switch_off_request ? (
                               <span className="flex items-center gap-2">
                                 <Pill tone="amber">Switch-off requested</Pill>
@@ -547,7 +549,7 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
                               <>Switched off{r.off_reason ? ` · “${r.off_reason}”` : ""}</>
                             )}
                           </td>
-                          <td className="px-2 pr-3">
+                          <td data-label="Setup" className="px-2 pr-3">
                             {r.setup === "off_requested" && can["approval.decide"] ? (
                               <Button variant="outline" size="sm" asChild>
                                 <Link to="/approvals" search={{ kind: "switch_off" }}>
@@ -561,7 +563,7 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
                         </>
                       ) : (
                         <>
-                          <td className="px-2">
+                          <td data-label="Frequency" className="px-2">
                             <button
                               type="button"
                               disabled={!editable}
@@ -577,7 +579,7 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
                               )}
                             </button>
                           </td>
-                          <td className="px-1 py-1.5">
+                          <td data-label="Done by" className="px-1 py-1.5">
                             <AssigneePicker
                               label={`Done by for ${r.ref}`}
                               value={r.done_by}
@@ -604,7 +606,7 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
                               onFreeText={(t) => freeText(r, "done_by", t)}
                             />
                           </td>
-                          <td className="px-1 py-1.5">
+                          <td data-label="Accountable" className="px-1 py-1.5">
                             <AssigneePicker
                               label={`Accountable for ${r.ref}`}
                               value={r.accountable}
@@ -618,7 +620,7 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
                               onFreeText={(t) => freeText(r, "accountable", t)}
                             />
                           </td>
-                          <td className="px-1 py-1.5">
+                          <td data-label="Cover" className="px-1 py-1.5">
                             <AssigneePicker
                               label={`Cover for ${r.ref}`}
                               value={r.cover ?? "Add cover"}
@@ -641,7 +643,7 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
                               onFreeText={(t) => freeText(r, "cover", t)}
                             />
                           </td>
-                          <td className="px-1 py-1.5">
+                          <td data-label="Verifier" className="px-1 py-1.5">
                             <AssigneePicker
                               label={`Verifier for ${r.ref}`}
                               value={r.verifier ?? "Spot-check"}
@@ -663,7 +665,7 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
                               onFreeText={(t) => freeText(r, "verifier", t)}
                             />
                           </td>
-                          <td className="px-2 pr-3">
+                          <td data-label="Setup" className="px-2 pr-3">
                             <SetupPill row={r} />
                           </td>
                         </>

@@ -279,7 +279,7 @@ export function GatePage() {
             </div>
           )}
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[980px] border-collapse">
+            <table className="table-stack w-full min-w-[980px] border-collapse">
               <caption className="sr-only">Section {sec.key} items</caption>
               <thead>
                 <tr>
@@ -309,10 +309,12 @@ export function GatePage() {
                     )}
                     onClick={g.can_edit ? () => setEditing(i) : undefined}
                   >
-                    <td className="px-2.5 py-2 align-middle font-mono text-[0.71875rem] text-subtle">{i.ref}</td>
+                    <td data-label="Ref" className="px-2.5 py-2 align-middle font-mono text-[0.71875rem] text-subtle">
+                      {i.ref}
+                    </td>
                     <td
                       className={cn(
-                        "px-2.5 py-2 align-middle text-[0.84375rem]",
+                        "stack-title px-2.5 py-2 align-middle text-[0.84375rem]",
                         (i.wording_pending || !i.applies) && "text-muted-foreground",
                       )}
                     >
@@ -346,10 +348,13 @@ export function GatePage() {
                         </Link>
                       )}
                     </td>
-                    <td className="px-2.5 py-2 align-middle">
+                    <td data-label="Class" className="px-2.5 py-2 align-middle">
                       <ClassBadge klass={i.class} />
                     </td>
-                    <td className="px-2.5 py-2 align-middle text-[0.8125rem] text-muted-foreground">
+                    <td
+                      data-label="Evidence required"
+                      className="px-2.5 py-2 align-middle text-[0.8125rem] text-muted-foreground"
+                    >
                       {i.evidence_required ?? "—"}
                       {(i.evidence.length > 0 || i.evidence_link) && (
                         <span className="block text-[0.75rem] text-st-green">
@@ -369,7 +374,11 @@ export function GatePage() {
                         </span>
                       )}
                     </td>
-                    <td className="px-2.5 py-2 align-middle" onClick={edit ? (e) => e.stopPropagation() : undefined}>
+                    <td
+                      data-label="Status"
+                      className="px-2.5 py-2 align-middle"
+                      onClick={edit ? (e) => e.stopPropagation() : undefined}
+                    >
                       {edit && i.ref !== "H08" ? (
                         <select
                           aria-label={`Status of ${i.ref}`}
@@ -396,7 +405,7 @@ export function GatePage() {
                         </span>
                       )}
                     </td>
-                    <td className="px-2.5 py-2 align-middle text-[0.8125rem] text-muted-foreground">
+                    <td data-label="Notes" className="px-2.5 py-2 align-middle text-[0.8125rem] text-muted-foreground">
                       {!i.applies && i.na_reason ? `N/A: ${i.na_reason}` : i.notes || "—"}
                       {i.owner && <span className="block text-[0.75rem] text-subtle">Owner: {i.owner}</span>}
                     </td>

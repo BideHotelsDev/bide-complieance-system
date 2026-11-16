@@ -285,7 +285,7 @@ function People({
         <p className="m-0 p-4 text-[0.8125rem] text-muted-foreground">Nobody has checks or actions here yet.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-[0.84375rem]">
+          <table className="table-stack w-full border-collapse text-[0.84375rem]">
             <thead className="bg-background">
               <tr className="border-b border-divider">
                 <th scope="col" className={th}>
@@ -311,7 +311,7 @@ function People({
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id} className="h-12 border-b border-divider last:border-b-0">
-                  <td className="px-3">
+                  <td className="stack-title px-3">
                     <span className="flex items-center gap-2.5">
                       <Avatar initials={r.initials} className="size-[26px] text-[0.6875rem]" />
                       <Link
@@ -324,23 +324,25 @@ function People({
                       </Link>
                     </span>
                   </td>
-                  <td className="px-3 whitespace-nowrap">{r.property}</td>
-                  <td className="px-3">
+                  <td data-label="Property" className="px-3 whitespace-nowrap">
+                    {r.property}
+                  </td>
+                  <td data-label={`Checks on time · ${targets.on_time}%`} className="px-3">
                     <Cell show={r.checks > 0} empty="No checks">
                       <MeterBar value={r.on_time} target={targets.on_time} label="Checks on time" />
                     </Cell>
                   </td>
-                  <td className="px-3">
+                  <td data-label={`Evidence complete · ${targets.evidence}%`} className="px-3">
                     <Cell show={r.checks > 0} empty="—">
                       <MeterBar value={r.evidence} target={targets.evidence} label="Evidence complete" />
                     </Cell>
                   </td>
-                  <td className="px-3">
+                  <td data-label={`Actions on time · ${targets.actions}%`} className="px-3">
                     <Cell show={r.actions_due > 0} empty="No actions">
                       <MeterBar value={r.actions} target={targets.actions} label="Actions on time" />
                     </Cell>
                   </td>
-                  <td className="px-3 whitespace-nowrap">
+                  <td data-label="Streak" className="px-3 whitespace-nowrap">
                     {r.streak > 0 ? (
                       <Pill tone="green" title={`${plural(r.streak, "week")} in a row with every check on time`}>
                         {plural(r.streak, "week")}
