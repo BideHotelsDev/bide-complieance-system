@@ -543,6 +543,8 @@ def validate_tokens(tokens: dict) -> dict:
         "font": font,
         "displayFont": display,
         "density": density,
+        # Light or dark for everyone, whatever their device is set to; a person can still choose their own.
+        "mode": "dark" if tokens.get("mode") == "dark" else "light",
         "tone": tokens.get("tone", "plain") if tokens.get("tone", "plain") in wording.TONES else "plain",
         "preset": tokens.get("preset"),
     }

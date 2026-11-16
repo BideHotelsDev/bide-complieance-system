@@ -216,9 +216,9 @@ function Preferences({ me }: { me: Me }) {
               save.mutate({ theme: m })
             }}
             options={[
+              { value: "theme", label: "Theme default" },
               { value: "light", label: "Light" },
               { value: "dark", label: "Dark" },
-              { value: "system", label: "Match device" },
               { value: "contrast", label: "High contrast" },
             ]}
           />
@@ -239,8 +239,8 @@ function Preferences({ me }: { me: Me }) {
           />
         </div>
         <p className="m-0 text-[0.78125rem] text-muted-foreground">
-          Appearance applies on this device straight away. The colours and logo for everyone are set in Settings ›
-          Appearance.
+          Theme default shows the light or dark look set for everyone in Settings › Appearance. Your choice applies on
+          this device straight away.
         </p>
       </Card>
     </div>
