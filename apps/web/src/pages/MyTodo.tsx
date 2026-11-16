@@ -24,7 +24,7 @@ import { toast, toastError } from "@bide-comply/ui/components/toaster"
 import { cn } from "@bide-comply/ui/lib/utils"
 
 import { AppLink, hello, type Todo, type TodoItem } from "@/features/overview/home-shared"
-import { fmtDay } from "@/lib/format"
+import { dueLabel } from "@/lib/format"
 import { useParams } from "@/lib/params"
 import { useProperty } from "@/lib/property"
 import { navFor, useMe } from "@/lib/session"
@@ -109,7 +109,7 @@ export function MyTodoPage() {
     tone: "amber",
     icon: <PenLine className="size-[18px]" />,
     title: `Sign: ${s.title}`,
-    detail: `${s.property}${s.due_on ? ` · due ${fmtDay(s.due_on)}` : ""}`,
+    detail: `${s.property}${s.due_on ? ` · ${dueLabel(s.due_on, { day: true }).text.toLowerCase()}` : ""}`,
     href: `/signoffs?sel=${s.id}`,
     button: "Sign",
   }))
@@ -128,7 +128,7 @@ export function MyTodoPage() {
             tone: "grey" as const,
             icon: <Flag className="size-[18px]" />,
             title: a.title,
-            detail: `Your action · ${a.ref} · ${a.property} · ${PRIO[a.priority]} · due ${fmtDay(a.due_on)}`,
+            detail: `Your action · ${a.ref} · ${a.property} · ${PRIO[a.priority]} · ${dueLabel(a.due_on, { day: true }).text.toLowerCase()}`,
             href: a.link,
             button: "Open" as const,
           }))

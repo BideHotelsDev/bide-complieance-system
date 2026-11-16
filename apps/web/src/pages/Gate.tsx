@@ -22,6 +22,7 @@ import { EvidenceLink } from "@/lib/evidence"
 import { fmtDateTime } from "@/lib/format"
 import { useParams } from "@/lib/params"
 import { useMe } from "@/lib/session"
+import { NotFoundPage } from "@/pages/NotFound"
 
 export function GatePage() {
   const { code } = useRouteParams({ strict: false }) as { code?: string }
@@ -59,6 +60,14 @@ export function GatePage() {
     onError: (e: ApiError) => toastError(e.message),
   })
 
+  if (res.error?.status === 404)
+    return (
+      <NotFoundPage
+        title="No opening checklist here"
+        message={`There is no opening checklist for “${code}”.`}
+        back={{ to: "/gates", label: "Back to Opening checklists" }}
+      />
+    )
   if (res.error)
     return (
       <div className="rounded-[10px] border border-divider bg-surface">

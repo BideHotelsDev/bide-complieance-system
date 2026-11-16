@@ -70,9 +70,8 @@ export function TodayPage() {
                 <ChevronDown aria-hidden className="size-4" />
               </button>
             ) : (
-              <span className="flex h-11 items-center rounded-full border border-border bg-surface px-4 text-[15px] font-semibold">
-                {propName}
-              </span>
+              // One property: plain text, not a button-shaped chip. Nothing at all when there is no property yet.
+              <span className="min-w-0 truncate text-[15px] font-semibold text-muted-foreground">{propName}</span>
             )}
             <SyncPill />
           </div>
@@ -82,6 +81,25 @@ export function TodayPage() {
           <p className="m-0 mt-1 text-[15px] text-muted-foreground">
             {d ? `${d.date_label} · ${toDo} to do today` : " "}
           </p>
+          {/* Reporting a hazard is never more than one tap from the top, however long the list. */}
+          <div className={cn("mt-3.5 grid gap-2", me.data?.can["task.complete"] ? "grid-cols-2" : "grid-cols-1")}>
+            <Link
+              to="/report"
+              className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 text-[15px] font-semibold text-foreground no-underline"
+            >
+              <TriangleAlert aria-hidden className="size-5 shrink-0" />
+              Report an issue
+            </Link>
+            {me.data?.can["task.complete"] && (
+              <Link
+                to="/contractor-visit"
+                className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 text-[15px] font-semibold text-foreground no-underline"
+              >
+                <ClipboardList aria-hidden className="size-5 shrink-0" />
+                Contractor visit
+              </Link>
+            )}
+          </div>
         </>
       }
     >
@@ -133,22 +151,6 @@ export function TodayPage() {
             )}
           </div>
         </>
-      )}
-      <Link
-        to="/report"
-        className="mt-1 flex h-[52px] items-center justify-center gap-2 rounded-xl border border-border bg-surface text-[16px] font-semibold text-foreground no-underline"
-      >
-        <TriangleAlert aria-hidden className="size-5" />
-        Report an issue or incident
-      </Link>
-      {me.data?.can["task.complete"] && (
-        <Link
-          to="/contractor-visit"
-          className="flex min-h-12 items-center justify-center gap-2 text-[15px] font-medium text-link no-underline"
-        >
-          <ClipboardList aria-hidden className="size-4" />
-          Log a contractor visit
-        </Link>
       )}
       <InstallHint />
       {picking && <PropertyPicker onClose={() => setPicking(false)} />}

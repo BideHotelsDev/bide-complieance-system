@@ -14,6 +14,7 @@ import { cn } from "@bide-comply/ui/lib/utils"
 
 import { navFor, useMe } from "@/lib/session"
 import { useWording } from "@/lib/wording"
+import { searchShortcut } from "@/lib/platform"
 
 const TOUR_KEY = "bc-tour"
 
@@ -162,13 +163,11 @@ export function HelpPage() {
             <span className="flex items-center gap-2 font-semibold">
               <Search className="size-4 text-muted-foreground" aria-hidden />
               Search anything
-              <kbd className="rounded border border-border bg-surface px-1.5 text-[11px] font-normal text-muted-foreground">
-                ⌘K
+              <kbd className="rounded border border-border bg-surface px-1.5 text-[11px] font-normal text-muted-foreground coarse:hidden">
+                {searchShortcut}
               </kbd>
             </span>
-            <span className="text-muted-foreground">
-              Find a property, check, Action or person from anywhere. Ctrl+K on Windows.
-            </span>
+            <span className="text-muted-foreground">Find a property, check, Action or person from anywhere.</span>
           </li>
           <li className="grid grid-cols-1 gap-x-6 gap-y-0.5 px-4 py-3 sm:grid-cols-[200px_1fr]">
             <span className="font-semibold">Property switcher</span>

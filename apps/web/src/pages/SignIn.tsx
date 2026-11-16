@@ -46,6 +46,7 @@ export function SignInPage() {
   const { signinMessage } = useBranding()
   const bide = useBideHub().data?.enabled ?? false
   const [email, setEmail] = React.useState("")
+  const [emailError, setEmailError] = React.useState<string | null>(null)
   const [sent, setSent] = React.useState(false)
   const dev = useQuery({
     queryKey: ["dev-people"],
@@ -106,9 +107,20 @@ export function SignInPage() {
       ) : (
         <form
           className="flex flex-col gap-2"
+          noValidate
           onSubmit={(e) => {
             e.preventDefault()
-            if (email.includes("@")) magic.mutate()
+            const v = email.trim()
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
+              setEmailError(
+                v
+                  ? "That doesn't look like an email address. Check it and try again."
+                  : "Enter the email address Bide invited you with.",
+              )
+              return
+            }
+            setEmailError(null)
+            magic.mutate()
           }}
         >
           <label className="flex flex-col gap-1 text-xs font-medium text-ink2">
@@ -118,11 +130,22 @@ export function SignInPage() {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="h-9 rounded-md border border-border bg-surface px-2.5 text-[14px] font-normal text-foreground"
+              onChange={(e) => {
+                setEmail(e.target.value)
+                if (emailError) setEmailError(null)
+              }}
+              className="h-9 rounded-md border border-border bg-surface px-2.5 text-[14px] font-normal text-foreground aria-invalid:border-st-red"
               autoComplete="email"
+              required
+              aria-invalid={emailError ? true : undefined}
+              aria-describedby={emailError ? "magic-email-error" : undefined}
             />
           </label>
+          {emailError && (
+            <p id="magic-email-error" role="alert" className="m-0 text-[13px] text-st-red">
+              {emailError}
+            </p>
+          )}
           {magic.isError && (
             <p role="alert" className="m-0 text-[13px] text-st-red">
               {magic.error instanceof ApiError && magic.error.status === 429

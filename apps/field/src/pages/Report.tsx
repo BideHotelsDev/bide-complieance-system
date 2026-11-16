@@ -169,6 +169,9 @@ export function ReportPage() {
     kind === "alarm"
       ? Boolean(cause && falseAlarm)
       : Boolean(text.trim()) && (kind === "hazard" || Boolean(hurt && riddor))
+  // Said under the disabled button, so nobody is left guessing why it won't send.
+  const stillNeeded =
+    kind !== "alarm" && !text.trim() ? "Say what's wrong to send the report." : "Answer the questions above to send it."
 
   const send = async () => {
     if (!propertyId) return
@@ -251,6 +254,9 @@ export function ReportPage() {
             {sending && <Spinner />}
             {sending ? "Sending" : "Send report"}
           </PrimaryButton>
+          {!ready && !sending && (
+            <p className="m-0 mt-2 text-center text-[14px] text-muted-foreground">{stillNeeded}</p>
+          )}
           {life && (
             <p className="m-0 mt-2 text-center text-[14px] text-muted-foreground">
               This sounds like life safety. Your manager will be told straight away.
@@ -283,7 +289,9 @@ export function ReportPage() {
               onClick={() => setKind(k.value)}
               className={cn(
                 "flex min-h-[64px] items-center gap-3.5 rounded-xl border bg-surface px-4 py-3 text-left",
-                kind === k.value ? "border-2 border-foreground" : "border-border",
+                kind === k.value
+                  ? "border-foreground bg-hover shadow-[inset_0_0_0_1px_var(--c-foreground)]"
+                  : "border-border",
               )}
             >
               {k.icon}

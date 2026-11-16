@@ -15,6 +15,7 @@ import { HelpPage } from "./pages/Help"
 import { HomePage } from "./pages/Home"
 import { MePage } from "./pages/Me"
 import { MyTodoPage } from "./pages/MyTodo"
+import { NotFoundPage } from "./pages/NotFound"
 import { PropertiesPage } from "./pages/Properties"
 import { PropertyPage } from "./pages/Property"
 import { ReportsPage } from "./pages/Reports"
@@ -82,6 +83,8 @@ const routeTree = root.addChildren([
     r("/settings/import", ImportPage),
     r("/settings/appearance", AppearancePage),
     r("/settings/audit", AuditLogPage),
+    // Anything else: a not-found page inside the shell, so the menu and a way back are still there.
+    r("$", () => <NotFoundPage />),
   ]),
 ])
 

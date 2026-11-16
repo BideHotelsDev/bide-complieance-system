@@ -23,7 +23,7 @@ from bide_comply.schema import (
     staff_requirement_type,
 )
 from bide_comply.services import evidence as ev_service
-from bide_comply.services.common import fmt_date, problem
+from bide_comply.services.common import due_phrase, problem
 from bide_comply.services.register import refresh_item
 
 router = APIRouter(prefix="/api/certificates", tags=["certificates"])
@@ -32,7 +32,7 @@ router = APIRouter(prefix="/api/certificates", tags=["certificates"])
 def _status(c: dict, today: date) -> tuple[str, str]:
     if c["filing"] == "required":
         if c["expires_on"]:
-            return "due", f"Due {fmt_date(c['expires_on'])}"
+            return "due", due_phrase(c["expires_on"], today)
         return "missing", "Missing"
     if c["filing"] == "partial":
         return "partial", "Partly filed"

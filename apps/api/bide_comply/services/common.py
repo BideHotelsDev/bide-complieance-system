@@ -71,6 +71,17 @@ def fmt_day(d: date) -> str:
     return f"{d.strftime('%a')} {d.day} {d.strftime('%b')}"
 
 
+def due_phrase(d: date, today: date | None = None, day: bool = False) -> str:
+    """ "Due 20 Nov", "Due today" or "Overdue · 6 days": a date in the past never reads as upcoming."""
+    today = today or clock.today()
+    if d < today:
+        n = (today - d).days
+        return f"Overdue · {n} day{'s' if n != 1 else ''}"
+    if d == today:
+        return "Due today"
+    return f"Due {fmt_day(d) if day else fmt_date(d)}"
+
+
 def fmt_time(dt: datetime) -> str:
     return clock.london(dt).strftime("%H:%M")
 

@@ -108,7 +108,13 @@ function PropertyPicker({ current, compact = false }: { current?: string; compac
   const contact = useContact()
   const props = me?.properties ?? []
   if (props.length === 0)
-    return compact ? null : <EmptyState title="No properties yet">Ask {contact} to add you to a property.</EmptyState>
+    return compact ? null : (
+      <EmptyState title="No properties yet">
+        {me?.can["people.manage"]
+          ? "Audit walks start once a property is set up."
+          : `Ask ${contact} to add you to a property.`}
+      </EmptyState>
+    )
   if (compact && props.length < 2) return null
   return (
     <nav

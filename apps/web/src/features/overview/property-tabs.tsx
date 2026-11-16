@@ -213,7 +213,7 @@ type CertRow = {
 const CERT_TONE: Record<string, Tone> = {
   valid: "green",
   expiring: "amber",
-  due: "amber",
+  due: "red",
   partial: "amber",
   expired: "red",
   fails: "red",

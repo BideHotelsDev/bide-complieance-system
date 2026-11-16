@@ -32,6 +32,9 @@ from bide_comply.services.register import cancel_future, recompute_item, refresh
 
 router = APIRouter(prefix="/api/setup", tags=["setup"])
 
+# What an unnamed Done by or Accountable shows: the same words as the register and the item panel.
+NEEDS_NAME = "Needs a name"
+
 
 def applies(rule: dict, p: dict) -> bool:
     """Does a template's applies-to rule match this property? {"all": [...]} or {"any": [...]} of conditions."""
@@ -126,10 +129,10 @@ def setup(
                     "frequency_label": freq.label(it["frequency"] or t["default_frequency"]),
                     "frequency_default": freq.label(t["default_frequency"]) if it["frequency"] else None,
                     "frequency_reason": it["frequency_reason"],
-                    "done_by": doer or "TBC",
+                    "done_by": doer or NEEDS_NAME,
                     "done_by_kind": k,
                     "done_by_contractor": k == "contractor",
-                    "accountable": who.get(it["accountable_id"]) or "TBC",
+                    "accountable": who.get(it["accountable_id"]) or NEEDS_NAME,
                     "cover": who.get(it["cover_id"]),
                     "verifier": who.get(it["verifier_id"])
                     or {"always": "Always verify", "sample": "Spot-check", "none": "None"}.get(
@@ -467,7 +470,7 @@ def activate(key: str, request: Request, pr: Current, conn: ConnDep) -> dict:
         raise problem(
             409,
             "needs_owner",
-            f"{len(unnamed)} items still say “TBC”. A task with no owner does not get done.",
+            f"{len(unnamed)} items still need a name. A task with no owner does not get done.",
             refs=unnamed,
         )
     for d in drafts:

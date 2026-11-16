@@ -141,7 +141,7 @@ export function PeoplePage() {
         <div
           role="tablist"
           aria-label="People and roles"
-          className="flex gap-6 overflow-x-auto border-b border-divider"
+          className="flex gap-6 overflow-x-auto overflow-y-hidden shadow-[inset_0_-1px_0_var(--color-divider)] [scrollbar-width:none]"
         >
           {TABS.map((t) => (
             <button
@@ -151,7 +151,7 @@ export function PeoplePage() {
               aria-selected={tab === t.key}
               onClick={() => set({ tab: t.key === "people" ? undefined : t.key, sel: undefined, page: undefined })}
               className={cn(
-                "-mb-px inline-flex h-10 shrink-0 items-center gap-2 border-b-2 text-[14px]",
+                "inline-flex h-10 shrink-0 items-center gap-2 border-b-2 text-[14px]",
                 tab === t.key
                   ? "border-foreground font-semibold text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground",

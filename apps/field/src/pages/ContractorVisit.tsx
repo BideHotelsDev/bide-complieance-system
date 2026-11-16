@@ -91,6 +91,16 @@ export function ContractorVisitPage() {
     !uploading &&
     anyWrong !== null &&
     (anyWrong === "no" || realFixes.length > 0)
+  // Said under the disabled button: the first thing still missing.
+  const stillNeeded = !(adding ? newName.trim() : who)
+    ? "Choose who came."
+    : !purpose
+      ? "Pick what they came for."
+      : uploading
+        ? "Waiting for the upload to finish."
+        : anyWrong === null
+          ? "Say whether they found anything wrong."
+          : "Add what they found."
 
   const pick = async (f: File) => {
     setFile(f)
@@ -193,9 +203,13 @@ export function ContractorVisitPage() {
             {saving && <Spinner />}
             {saving ? "Saving" : "Save visit"}
           </PrimaryButton>
-          <p className="m-0 mt-2 text-center text-[14px] text-muted-foreground">
-            Each one becomes an Action with a due date (Urgent: 7 days, Soon: 30 days).
-          </p>
+          {!ready && !saving ? (
+            <p className="m-0 mt-2 text-center text-[14px] text-muted-foreground">{stillNeeded}</p>
+          ) : anyWrong === "yes" ? (
+            <p className="m-0 mt-2 text-center text-[14px] text-muted-foreground">
+              Each thing they found becomes an Action with a due date (Urgent: 7 days, Soon: 30 days).
+            </p>
+          ) : null}
         </>
       }
     >
@@ -260,7 +274,7 @@ export function ContractorVisitPage() {
                   className={cn(
                     "h-11 rounded-full border px-4 text-[15px] font-medium",
                     purpose === p.label
-                      ? "border-primary bg-primary text-primary-foreground"
+                      ? "border-foreground bg-hover shadow-[inset_0_0_0_1px_var(--c-foreground)]"
                       : "border-border bg-surface",
                   )}
                 >

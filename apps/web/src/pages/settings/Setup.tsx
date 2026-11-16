@@ -79,6 +79,7 @@ type SetupData = {
   register_loaded: boolean
 }
 
+const NEEDS_NAME = "Needs a name"
 const GENERIC = new Set(["tbc", "tba", "housekeeping", "staff", "team", "everyone", "anyone", "na", "n/a", "?", "-"])
 
 export function SetupPage() {
@@ -397,7 +398,9 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
             <Callout tone="red" icon={<AlertTriangle className="size-4" aria-hidden />} className="items-center">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                 <span className="min-w-0 flex-1">
-                  <strong>{d.needs_name === 1 ? "1 item still says" : `${d.needs_name} items still say`} "TBC".</strong>{" "}
+                  <strong>
+                    {d.needs_name === 1 ? "1 item still needs a name." : `${d.needs_name} items still need a name.`}
+                  </strong>{" "}
                   A task with no owner does not get done (golden rule 2).
                   {d.has_draft
                     ? " Activation unlocks when every row has a real name."
@@ -566,7 +569,7 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
                             <AssigneePicker
                               label={`Done by for ${r.ref}`}
                               value={r.done_by}
-                              invalid={r.done_by === "TBC"}
+                              invalid={r.done_by === NEEDS_NAME}
                               disabled={!editable}
                               selected={
                                 r.done_by_kind && r.done_by_id ? { kind: r.done_by_kind, id: r.done_by_id } : null
@@ -593,7 +596,7 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
                             <AssigneePicker
                               label={`Accountable for ${r.ref}`}
                               value={r.accountable}
-                              invalid={r.accountable === "TBC"}
+                              invalid={r.accountable === NEEDS_NAME}
                               disabled={!editable}
                               selected={r.accountable_id ? { kind: "person", id: r.accountable_id } : null}
                               options={[{ kind: "person", items: people }]}
@@ -726,7 +729,7 @@ function SetupPill({ row: r }: { row: Row }) {
   if (r.setup === "needs_owner")
     return (
       <Pill tone="red" dot>
-        Needs owner
+        Needs a name
       </Pill>
     )
   if (r.setup === "off_requested") return <Pill tone="amber">Requested</Pill>

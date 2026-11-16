@@ -8,6 +8,7 @@ import { QuickViews, SearchBox, Segmented, Summary } from "@bide-comply/ui/compo
 import { EmptyState, ErrorState, LoadingRows, PageHeader, Skeleton } from "@bide-comply/ui/components/page"
 import { ScoreRing } from "@bide-comply/ui/components/status"
 import { Button } from "@bide-comply/ui/components/button"
+import { cn } from "@bide-comply/ui/lib/utils"
 
 import { PropertyCard, placeLine, StatusFor, type PropertyRow } from "../features/overview/properties-card"
 import { useParams } from "../lib/params"
@@ -93,6 +94,9 @@ export function PropertiesPage() {
   )
 
   const viewLabel = VIEW_NOUN[view] ?? ""
+  // Nothing set up yet is a different situation from "nothing matches this view".
+  const total = res.data?.views.find((v) => v.key === "all")?.count ?? 0
+  const none = !!res.data && total === 0
   const summary =
     rows.length === 0
       ? "No properties match."
@@ -141,7 +145,7 @@ export function PropertiesPage() {
           />
         </div>
       </div>
-      {res.data && <Summary className="-mt-1 text-ink2">{summary}</Summary>}
+      {res.data && !none && <Summary className="-mt-1 text-ink2">{summary}</Summary>}
 
       {res.isError ? (
         <ErrorState message={res.error.message} onRetry={() => void res.refetch()} />
@@ -155,6 +159,23 @@ export function PropertiesPage() {
         ) : (
           <LoadingRows />
         )
+      ) : none ? (
+        <div className="rounded-xl border border-divider bg-surface">
+          <EmptyState
+            title="No properties yet"
+            action={
+              me.data?.can["settings.view"] ? (
+                <Button asChild>
+                  <Link to="/settings/setup">Add a property</Link>
+                </Button>
+              ) : undefined
+            }
+          >
+            {me.data?.can["settings.view"]
+              ? "Add the first property to load its register and start its checks."
+              : "Properties you work at appear here once you're added to them."}
+          </EmptyState>
+        </div>
       ) : rows.length === 0 ? (
         <div className="rounded-xl border border-divider bg-surface">
           <EmptyState
@@ -190,7 +211,7 @@ export function PropertiesPage() {
           />
         </div>
       )}
-      <p className="m-0 text-[12.5px] text-muted-foreground">
+      <p className={cn("m-0 text-[12.5px] text-muted-foreground", none && "hidden")}>
         The ring is the compliance score. It turns red whenever any life-safety item is overdue, whatever the
         percentage.
       </p>

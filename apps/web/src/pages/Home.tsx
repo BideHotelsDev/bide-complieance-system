@@ -218,7 +218,7 @@ function OverviewBody({ o }: { o: Overview }) {
             </span>
           )}
         </KpiCard>
-        <KpiCard label="Waiting for your decision" value={k.decisions.value}>
+        <KpiCard label="Waiting for a decision" value={k.decisions.value}>
           <span aria-hidden className="flex h-2 gap-0.5 overflow-hidden rounded">
             {k.decisions.advisories > 0 && <span className="bg-ink2" style={{ flex: k.decisions.advisories }} />}
             {k.decisions.signoffs > 0 && <span className="bg-subtle" style={{ flex: k.decisions.signoffs }} />}

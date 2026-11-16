@@ -172,7 +172,9 @@ export function SecondaryButton({ className, ...props }: React.ComponentProps<"b
   )
 }
 
-/* Two or more choices as big buttons (Yes / No, Pass / Fail). aria-pressed carries the state, not colour alone. */
+/* Two or more choices as big buttons (Yes / No, Pass / Fail). aria-pressed carries the state, not colour alone.
+   One selected style across the app: a strong outline on a tinted fill. An answer that fails the check
+   (tone "fail") turns red when picked, so choosing Fail never looks like the gold "go" button. */
 export function Choice<T extends string>({
   value,
   options,
@@ -180,7 +182,7 @@ export function Choice<T extends string>({
   labelledBy,
 }: {
   value: T | null | undefined
-  options: { value: T; label: string }[]
+  options: { value: T; label: string; tone?: "fail" }[]
   onChange: (v: T) => void
   labelledBy?: string
 }) {
@@ -196,9 +198,11 @@ export function Choice<T extends string>({
             onClick={() => onChange(o.value)}
             className={cn(
               "h-12 rounded-xl border text-[16px] font-semibold transition-colors",
-              on
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-surface text-foreground hover:bg-hover",
+              !on && "border-border bg-surface text-foreground hover:bg-hover",
+              on &&
+                (o.tone === "fail"
+                  ? "border-st-red bg-st-red-bg text-st-red shadow-[inset_0_0_0_1px_var(--c-red)]"
+                  : "border-foreground bg-hover text-foreground shadow-[inset_0_0_0_1px_var(--c-foreground)]"),
             )}
           >
             {o.label}

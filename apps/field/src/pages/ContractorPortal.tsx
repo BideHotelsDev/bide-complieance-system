@@ -165,10 +165,17 @@ function SendSheet({ it, onClose }: { it: Item; onClose: () => void }) {
       title={report ? "Upload the report" : "Mark as fixed"}
       description={`${it.title} · ${it.detail}`}
       footer={
-        <PrimaryButton disabled={!ready} onClick={() => void send()}>
-          {saving && <Spinner />}
-          {saving ? "Sending" : report ? "Send the report" : "Send the photo"}
-        </PrimaryButton>
+        <>
+          <PrimaryButton disabled={!ready} onClick={() => void send()}>
+            {saving && <Spinner />}
+            {saving ? "Sending" : report ? "Send the report" : "Send the photo"}
+          </PrimaryButton>
+          {!ready && !saving && files.length === 0 && (
+            <p className="m-0 mt-2 text-center text-[14px] text-muted-foreground">
+              {report ? "Add the PDF or a photo of it to send." : "Add a photo to send."}
+            </p>
+          )}
+        </>
       }
     >
       {it.description && <p className="m-0 text-[15px]">{it.description}</p>}

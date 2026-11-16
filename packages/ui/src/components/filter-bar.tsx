@@ -122,7 +122,9 @@ export function SearchBox({
         </button>
       ) : (
         autoFocusKey && (
-          <kbd className="rounded border border-border px-1 font-sans text-[11px] text-subtle">{autoFocusKey}</kbd>
+          <kbd className="rounded border border-border px-1 font-sans text-[11px] text-subtle coarse:hidden">
+            {autoFocusKey}
+          </kbd>
         )
       )}
     </label>

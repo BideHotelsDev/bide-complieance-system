@@ -15,6 +15,7 @@ import {
   ClipboardCheck,
   FileText,
   Flag,
+  Footprints,
   LayoutGrid,
   PanelLeftClose,
   PanelLeftOpen,
@@ -34,6 +35,7 @@ import { useProperty } from "@/lib/property"
 import { navFor, useMe } from "@/lib/session"
 import { AppSwitcher } from "./AppSwitcher"
 import { PropertySwitcher } from "./PropertySwitcher"
+import { searchShortcut } from "@/lib/platform"
 
 type Nav = { todo: number; actions: number; reviews: number; signoffs: number }
 
@@ -151,7 +153,15 @@ export function Sidebar({
       icon: ClipboardCheck,
       show: show.gates,
       tip: "Everything that must be done before guests stay",
-      match: ["/gates", "/assessor"],
+    },
+    {
+      // The assessor's main job gets its own entry, opening the walk for the property picked at the top.
+      to: `/assessor/${(me.properties.find((p) => p.id === propertyId) ?? me.properties[0])?.code ?? ""}`,
+      label: "Audit walk",
+      icon: Footprints,
+      show: show.assessor && me.properties.length > 0,
+      tip: "Walk the building and compare it with what the register says",
+      match: ["/assessor"],
     },
     {
       to: "/signoffs",
@@ -234,7 +244,7 @@ export function Sidebar({
       aria-label="Main"
       data-nav
       className={cn(
-        "flex shrink-0 flex-col gap-0.5 overflow-y-auto bg-sidebar py-3.5",
+        "flex shrink-0 flex-col gap-0.5 overflow-y-auto bg-sidebar py-3.5 *:shrink-0",
         inSheet ? "h-full w-full" : "sticky top-0 h-screen border-r border-divider",
         collapsed ? "w-16 items-center px-2.5" : inSheet ? "px-3" : "w-[264px] px-3",
       )}
@@ -278,7 +288,9 @@ export function Sidebar({
           >
             <Search className="size-4" />
             Search anything
-            <kbd className="ml-auto rounded border border-border px-1.5 font-sans text-[11.5px]">⌘K</kbd>
+            <kbd className="ml-auto rounded border border-border px-1.5 font-sans text-[11.5px] coarse:hidden">
+              {searchShortcut}
+            </kbd>
           </button>
         </>
       )}

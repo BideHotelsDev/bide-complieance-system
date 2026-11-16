@@ -55,3 +55,16 @@ export function greeting(): string {
 export function plural(n: number, one: string, many = `${one}s`): string {
   return `${n} ${n === 1 ? one : many}`
 }
+
+/* "Due 20 Nov", "Due today" or "Overdue · 6 days", so a missed date never reads as upcoming. */
+export function dueLabel(d: string | Date, opts: { day?: boolean } = {}): { text: string; overdue: boolean } {
+  const iso = (x: Date) => x.toLocaleDateString("en-CA", { timeZone: TZ })
+  const due = iso(toDate(d))
+  const today = iso(new Date())
+  if (due < today) {
+    const n = Math.round((Date.parse(today) - Date.parse(due)) / 86400000)
+    return { text: `Overdue · ${plural(n, "day")}`, overdue: true }
+  }
+  if (due === today) return { text: "Due today", overdue: false }
+  return { text: `Due ${opts.day ? fmtDay(d) : fmtDate(d)}`, overdue: false }
+}
