@@ -76,7 +76,8 @@ function Panel({
   )
 }
 
-const LK = "text-[13px] font-medium text-link no-underline hover:underline"
+// Card links and toggles are at least 24px tall (WCAG 2.5.8, UX audit F10) without looking any bigger.
+const LK = "inline-flex min-h-6 items-center text-[13px] font-medium text-link no-underline hover:underline"
 
 function DesktopHome() {
   const me = useMe()
@@ -240,7 +241,7 @@ function OverviewBody({ o }: { o: Overview }) {
               <button
                 type="button"
                 onClick={() => setAsTable((t) => !t)}
-                className="text-xs font-normal text-link hover:underline"
+                className="inline-flex min-h-6 items-center text-xs font-normal text-link hover:underline"
               >
                 {asTable ? "View as cards" : "View as table"}
               </button>

@@ -569,11 +569,14 @@ def theme(conn: ConnDep) -> dict:
         .mappings()
         .first()
     )
-    if not t:
-        from bide_comply.seed.reference import DEFAULT_BRANDING, DEFAULT_THEME
+    from bide_comply.seed.reference import DEFAULT_BRANDING, DEFAULT_THEME, OLD_SIGNIN_MESSAGES
 
+    if not t:
         return {"version": 0, "tokens": DEFAULT_THEME, "branding": DEFAULT_BRANDING}
-    return {"version": t["version"], "tokens": t["tokens"], "branding": t["branding"]}
+    branding = dict(t["branding"] or {})
+    if branding.get("signinMessage") in OLD_SIGNIN_MESSAGES:
+        branding["signinMessage"] = DEFAULT_BRANDING["signinMessage"]
+    return {"version": t["version"], "tokens": t["tokens"], "branding": branding}
 
 
 @router.get("/approvals/count")

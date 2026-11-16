@@ -5,10 +5,12 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.exception_handlers import http_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from bide_comply import auth, hub_accounts, ratelimit
 from bide_comply.api import (
@@ -37,6 +39,7 @@ from bide_comply.api import (
 from bide_comply.config import settings
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s %(message)s")
+settings.check_production()
 
 app = FastAPI(
     title="bide Comply API",
@@ -135,21 +138,48 @@ for r in (
     app.include_router(r)
 
 
-def _spa(dist: Path, prefix: str) -> None:
+# The built web apps, longest prefix first: the address a not-found GET falls back to (see not_found below).
+_spa_indexes: list[tuple[str, Path]] = []
+
+
+def _is_api(path: str) -> bool:
+    return path == "/api" or path.startswith("/api/")
+
+
+def _spa(app: FastAPI, dist: Path, prefix: str) -> None:
+    """Serve a built SPA under `prefix`: real files as they are, every other address as index.html, so the app's own
+    router (and its not-found page) decides. /api never falls through to it: unknown API paths stay JSON 404s."""
     index = dist / "index.html"
     app.mount(f"{prefix}/assets", StaticFiles(directory=dist / "assets"), name=f"assets{prefix or '-web'}")
+    _spa_indexes.append((prefix, index))
+    _spa_indexes.sort(key=lambda x: len(x[0]), reverse=True)
 
-    @app.get(prefix + "/{path:path}", include_in_schema=False)
-    def serve(path: str):
-        if path.startswith("api/") or path == "api":
+    def serve(path: str = ""):
+        if _is_api(f"/{path}"):
             raise HTTPException(404, detail={"code": "not_found", "message": "Not found."})
         f = (dist / path).resolve()
         if path and dist.resolve() in f.parents and f.is_file():
             return FileResponse(f)
         return FileResponse(index)
 
+    paths = [prefix + "/{path:path}"] + ([prefix] if prefix else [])
+    for route in paths:
+        app.add_api_route(route, serve, methods=["GET", "HEAD"], include_in_schema=False)
+
+
+@app.exception_handler(StarletteHTTPException)
+async def not_found(request: Request, exc: StarletteHTTPException):
+    """Any other 404 for a page address (not /api, not a missing built asset) gets the web app, which shows its own
+    not-found page inside the shell, instead of a bare "Not Found"."""
+    path = request.url.path
+    if exc.status_code == 404 and request.method in ("GET", "HEAD") and not _is_api(path):
+        for prefix, index in _spa_indexes:
+            if (path == prefix or path.startswith(prefix + "/")) and "/assets/" not in path:
+                return FileResponse(index)
+    return await http_exception_handler(request, exc)
+
 
 if settings.field_dist_dir and (settings.field_dist_dir / "index.html").exists():
-    _spa(settings.field_dist_dir, "/app")
+    _spa(app, settings.field_dist_dir, "/app")
 if settings.web_dist_dir and (settings.web_dist_dir / "index.html").exists():
-    _spa(settings.web_dist_dir, "")
+    _spa(app, settings.web_dist_dir, "")
