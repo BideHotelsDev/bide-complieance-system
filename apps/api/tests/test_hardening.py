@@ -262,3 +262,91 @@ def test_quotes_and_backslashes_cannot_break_the_header():
     assert ascii_part == 'attachment; filename="abc__d.pdf"'
     assert "\r" not in h and "\n" not in h and h.endswith("a%22b%5Cc%0D%0Ad.pdf")
     assert content_disposition("Café.pdf") == "inline; filename=\"Cafe.pdf\"; filename*=UTF-8''Caf%C3%A9.pdf"
+
+
+def test_authenticator_setup_has_a_qr_code_that_scales_and_has_a_quiet_zone(app, admin):
+    """The setup page showed only the 32-character key (UX audit F6). Same SVG as Bide Hub's two-step setup."""
+    import re
+
+    import segno
+
+    body = _pending(app).post("/api/auth/totp/setup").json()
+    svg = body["qr_svg"]
+    head = svg[: svg.index(">")]
+    assert svg.startswith("<svg") and "viewBox" in head and "width=" not in head and "height=" not in head
+    size = segno.make(body["uri"], error="m").symbol_size(scale=1, border=0)[0]
+    assert re.search(rf'viewBox="0 0 {size + 8} {size + 8}"', head), "a 4-module border on every side"
+    assert body["uri"].startswith("otpauth://totp/") and f"secret={body['secret']}" in body["uri"]
+
+
+# --- email in production (UX audit F1) -------------------------------------------------------------------------------
+
+
+def test_console_email_logs_a_masked_recipient_and_the_subject_never_the_body(caplog):
+    from bide_comply import emailer
+
+    with caplog.at_level("INFO", logger="bide_comply.email"):
+        emailer.send("kyle@bidehotels.com", "Your sign-in code", "Your code is 482913. It works for 10 minutes.")
+    logged = caplog.text
+    assert "ky…@bidehotels.com" in logged and "Your sign-in code" in logged
+    assert "482913" not in logged and "kyle@" not in logged
+    assert emailer.outbox[-1]["text"].startswith("Your code is 482913")  # tests and dev helpers still read it
+    assert emailer.mask("a@b.co") == "a…@b.co" and emailer.mask("not-an-address") == "no…"
+
+
+def test_production_will_not_start_with_console_email():
+    from bide_comply.config import Settings
+
+    with pytest.raises(RuntimeError, match="EMAIL_PROVIDER=smtp"):
+        Settings(environment="production", email_provider="console").check_production()
+    with pytest.raises(RuntimeError, match="SMTP_HOST"):
+        Settings(environment="production", email_provider="smtp", smtp_host="").check_production()
+    Settings(environment="production", email_provider="smtp", smtp_host="smtp.example.com").check_production()
+    # Development, staging and the tests keep logging instead of sending.
+    Settings(environment="development", email_provider="console").check_production()
+    Settings(environment="staging", email_provider="console").check_production()
+
+
+# --- unknown addresses get the web app (UX audit F16) ----------------------------------------------------------------
+
+
+def test_unknown_page_addresses_get_the_web_app_and_unknown_api_paths_stay_json(tmp_path, monkeypatch):
+    from fastapi import FastAPI
+
+    from bide_comply import main
+
+    def dist(name: str):
+        d = tmp_path / name
+        (d / "assets").mkdir(parents=True)
+        (d / "index.html").write_text(f"<!doctype html><title>{name}</title>")
+        (d / "assets" / "app.js").write_text("console.log(1)")
+        (d / "favicon.svg").write_text("<svg/>")
+        return d
+
+    monkeypatch.setattr(main, "_spa_indexes", [])
+    test_app = FastAPI()
+    test_app.add_exception_handler(main.HTTPException, main.http_error)
+    test_app.add_exception_handler(main.StarletteHTTPException, main.not_found)
+
+    @test_app.get("/api/health")
+    def health() -> dict:
+        return {"ok": True}
+
+    main._spa(test_app, dist("field"), "/app")
+    main._spa(test_app, dist("web"), "")
+    c = TestClient(test_app)
+
+    for path in ("/nope-404", "/settings/people", "/"):
+        r = c.get(path)
+        assert r.status_code == 200 and "<title>web</title>" in r.text, path
+    for path in ("/app", "/app/nope-404"):
+        r = c.get(path)
+        assert r.status_code == 200 and "<title>field</title>" in r.text, path
+    assert c.head("/nope-404").status_code == 200
+    assert c.get("/favicon.svg").text == "<svg/>"
+    assert c.get("/assets/app.js").status_code == 200
+    assert c.get("/assets/missing.js").status_code == 404  # a missing built file is a real 404, not the page
+    for path in ("/api/nope", "/api", "/app/api/nope"):
+        r = c.get(path)
+        assert r.status_code == 404 and r.headers["content-type"].startswith("application/json"), path
+    assert c.get("/api/health").json() == {"ok": True}

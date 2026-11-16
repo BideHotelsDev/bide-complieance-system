@@ -32,6 +32,7 @@ from bide_comply.services.checks import due_reminders, spot_check_sample
 from bide_comply.services.register import refresh_property
 
 log = logging.getLogger("bide_comply.worker")
+settings.check_production()  # the worker sends the reminder and escalation emails
 
 
 async def tick(ctx) -> None:

@@ -185,7 +185,8 @@ export function DataTable<T extends { id: string }>({
                       {canSort ? (
                         <button
                           type="button"
-                          className="inline-flex items-center gap-1 hover:text-foreground"
+                          // 24px tall at least (WCAG 2.5.8), inside the 34px header row.
+                          className="inline-flex min-h-6 items-center gap-1 hover:text-foreground"
                           onClick={() =>
                             onSort(
                               sort && sort.id === h.column.id

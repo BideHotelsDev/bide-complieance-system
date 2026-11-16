@@ -5,6 +5,7 @@
  */
 import * as React from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { Link } from "@tanstack/react-router"
 import { Plus, RefreshCw } from "lucide-react"
 import { api, ApiError } from "@bide-comply/api-client"
 import { Button } from "@bide-comply/ui/components/button"
@@ -811,14 +812,33 @@ function InviteDialog({ onClose, onDone }: { onClose: () => void; onDone: (id: s
           : errMsg(e),
       ),
   })
-  const ok = name.trim().length > 1 && /.+@.+\..+/.test(email.trim())
+  // Invite stays pressable: a field says what's wrong once it's been left, or when Invite is pressed (UX audit F5).
+  const [touched, setTouched] = React.useState({ name: false, email: false })
+  const [tried, setTried] = React.useState(false)
+  const nameRef = React.useRef<HTMLInputElement>(null)
+  const emailRef = React.useRef<HTMLInputElement>(null)
+  const noProperty = !group && props.length === 0
+  const nameProblem = name.trim().length > 1 ? null : "Enter their name."
+  const emailProblem = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+    ? null
+    : email.trim()
+      ? "That doesn't look like an email address. Check it and try again."
+      : "Enter their email address."
+  const nameError = touched.name || tried ? nameProblem : null
+  const emailError = touched.email || tried ? emailProblem : null
+  const submit = () => {
+    if (!nameProblem && !emailProblem && !noProperty) return m.mutate()
+    setTried(true)
+    if (nameProblem) nameRef.current?.focus()
+    else if (emailProblem) emailRef.current?.focus()
+  }
   return (
     <ActionDialog
       open
       onOpenChange={(o) => !o && onClose()}
       busy={m.isPending}
       title="Invite someone"
-      onSubmit={() => ok && m.mutate()}
+      onSubmit={submit}
       subtitle={
         kind === "external"
           ? "Outside people (assessors, SPV directors) sign in with an emailed link. Required training follows the role."
@@ -829,15 +849,22 @@ function InviteDialog({ onClose, onDone }: { onClose: () => void; onDone: (id: s
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" disabled={!ok || m.isPending}>
+          <Button type="submit" disabled={m.isPending}>
             {m.isPending ? "Inviting…" : "Invite"}
           </Button>
         </>
       }
     >
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Labeled label="Name" htmlFor="iv-name">
-          <TextInput id="iv-name" autoFocus value={name} onChange={(e) => setName(e.target.value)} />
+        <Labeled label="Name" htmlFor="iv-name" error={nameError}>
+          <TextInput
+            id="iv-name"
+            ref={nameRef}
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onBlur={() => name && setTouched((t) => ({ ...t, name: true }))}
+          />
         </Labeled>
         <Labeled label="Job title (optional)" htmlFor="iv-title">
           <TextInput
@@ -848,12 +875,18 @@ function InviteDialog({ onClose, onDone }: { onClose: () => void; onDone: (id: s
           />
         </Labeled>
       </div>
-      <Labeled label="Email" htmlFor="iv-email">
+      <Labeled label="Email" htmlFor="iv-email" error={emailError}>
         <TextInput
           id="iv-email"
+          ref={emailRef}
           type="email"
+          autoComplete="off"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value)
+            setError(null)
+          }}
+          onBlur={() => email && setTouched((t) => ({ ...t, email: true }))}
           placeholder="name@bidehotels.com"
         />
       </Labeled>
@@ -883,17 +916,34 @@ function InviteDialog({ onClose, onDone }: { onClose: () => void; onDone: (id: s
             options={ROLES.filter((r) => r.key !== "super_admin").map((r) => ({ value: r.key, label: r.label }))}
           />
         </Labeled>
-        <Labeled label="Where" htmlFor="iv-prop">
-          <NativeSelect
-            id="iv-prop"
-            value={group ? "" : prop}
-            disabled={group}
-            onChange={(e) => setProp(e.target.value)}
-            options={
-              group ? [{ value: "", label: "All properties" }] : props.map((x) => ({ value: x.id, label: x.name }))
-            }
-          />
-        </Labeled>
+        {noProperty ? (
+          // No properties yet: an empty "Where" would leave Invite with nothing to save against.
+          <Labeled label="Where">
+            <p
+              role={tried ? "alert" : undefined}
+              className={cn("m-0 flex min-h-[30px] items-center text-[13px]", tried && "text-st-red")}
+            >
+              <span>
+                <Link to="/settings/properties/$code" params={{ code: "new" }} className="text-link underline">
+                  Add a property first
+                </Link>
+                , or choose a group role.
+              </span>
+            </p>
+          </Labeled>
+        ) : (
+          <Labeled label="Where" htmlFor="iv-prop">
+            <NativeSelect
+              id="iv-prop"
+              value={group ? "" : prop}
+              disabled={group}
+              onChange={(e) => setProp(e.target.value)}
+              options={
+                group ? [{ value: "", label: "All properties" }] : props.map((x) => ({ value: x.id, label: x.name }))
+              }
+            />
+          </Labeled>
+        )}
       </div>
       {error && (
         <div role="alert" className="text-[13px] text-st-red">

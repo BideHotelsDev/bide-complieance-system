@@ -519,3 +519,32 @@ def test_empty_state_wording_reaches_the_register_and_today(login):
                 .where(content_message.c.key == "empty_overdue")
                 .values(body="Nothing is overdue at {property}. Next check: {next_check}, {next_date}.")
             )
+
+
+def test_sign_in_message_does_not_name_google(app):
+    """The Hub decides how people sign in, so the old seeded "Bide Google account" text reads as the new default
+    (UX audit F12). A message an admin wrote stays as written."""
+    from fastapi.testclient import TestClient
+
+    from bide_comply.schema import theme_version
+
+    c = TestClient(app)
+    with engine.begin() as conn:
+        live = conn.execute(
+            select(theme_version.c.id, theme_version.c.branding).where(theme_version.c.status == "live")
+        ).first()
+    try:
+        for stored, shown in (
+            ("Sign in with your Bide Google account.", "Sign in with your Bide account."),
+            ("Welcome to the register.", "Welcome to the register."),
+        ):
+            with engine.begin() as conn:
+                conn.execute(
+                    update(theme_version)
+                    .where(theme_version.c.id == live.id)
+                    .values(branding=(live.branding or {}) | {"signinMessage": stored})
+                )
+            assert c.get("/api/theme").json()["branding"]["signinMessage"] == shown
+    finally:
+        with engine.begin() as conn:
+            conn.execute(update(theme_version).where(theme_version.c.id == live.id).values(branding=live.branding))

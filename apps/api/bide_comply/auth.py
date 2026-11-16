@@ -18,6 +18,7 @@
 import base64
 import hashlib
 import hmac
+import io
 import secrets
 import time
 import uuid
@@ -28,6 +29,7 @@ from urllib.parse import urlencode, urlsplit
 
 import httpx
 import pyotp
+import segno
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
@@ -832,6 +834,17 @@ def resend_code(request: Request, response: Response, conn: ConnDep) -> dict:
     return {"ok": True}
 
 
+def qr_svg(uri: str) -> str:
+    """The authenticator QR code as an SVG that scales to whatever box shows it: a viewBox and no fixed width or height
+    (with a fixed size, a smaller box crops the code and it can't be scanned). The 4-module white border is the quiet
+    zone scanners need. Same as Bide Hub's two-step setup."""
+    buffer = io.BytesIO()
+    segno.make(uri, error="m").save(
+        buffer, kind="svg", border=4, omitsize=True, light="#fff", dark="#000", xmldecl=False, svgns=True
+    )
+    return buffer.getvalue().decode()
+
+
 @router.post("/totp/setup")
 def totp_setup(request: Request, conn: ConnDep) -> dict:
     pend = _get_pending(request)
@@ -844,7 +857,8 @@ def totp_setup(request: Request, conn: ConnDep) -> dict:
     elif row["secret"] != secret:
         conn.execute(update(totp_secret).where(totp_secret.c.person_id == pend.person_id).values(secret=secret))
     email = conn.execute(select(person.c.email).where(person.c.id == pend.person_id)).scalar()
-    return {"secret": secret, "uri": pyotp.TOTP(secret).provisioning_uri(email, issuer_name="bide Comply")}
+    uri = pyotp.TOTP(secret).provisioning_uri(email, issuer_name="bide Comply")
+    return {"secret": secret, "uri": uri, "qr_svg": qr_svg(uri)}
 
 
 @router.post("/totp")
