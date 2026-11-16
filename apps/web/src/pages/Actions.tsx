@@ -120,7 +120,7 @@ export function ActionsPage() {
             <div className="max-w-[230px] truncate min-[1400px]:max-w-[320px] 2xl:max-w-[440px]" title={r.description}>
               {r.description}
             </div>
-            <div className="max-w-[230px] truncate text-[12px] text-muted-foreground min-[1400px]:max-w-[320px] 2xl:max-w-[440px]">
+            <div className="max-w-[230px] truncate text-[0.75rem] text-muted-foreground min-[1400px]:max-w-[320px] 2xl:max-w-[440px]">
               {[r.property, r.source_label, r.gate_ref ? `Gate ${r.gate_ref}` : null].filter(Boolean).join(" · ")}
             </div>
           </div>
@@ -139,7 +139,7 @@ export function ActionsPage() {
         cell: ({ row: { original: r } }) => (
           <>
             <span className="tabular">{fmtDate(r.due_on)}</span>
-            <div className={cn("text-[12px]", r.late ? "font-medium text-st-red" : "text-muted-foreground")}>
+            <div className={cn("text-[0.75rem]", r.late ? "font-medium text-st-red" : "text-muted-foreground")}>
               {r.left}
             </div>
           </>
@@ -219,7 +219,7 @@ export function ActionsPage() {
               type="button"
               onClick={() => set({ owner: undefined, page: undefined })}
               aria-label={`Remove filter: owner ${d?.owner?.name ?? ""}`}
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-foreground/40 bg-surface px-2.5 text-[13px] hover:bg-hover"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-foreground/40 bg-surface px-2.5 text-[0.8125rem] hover:bg-hover"
             >
               <span className="text-muted-foreground">Owner</span>
               <span className="font-medium">{d?.owner?.name ?? "…"}</span>
@@ -235,7 +235,7 @@ export function ActionsPage() {
           />
         </FilterBar>
 
-        <Summary className="-mt-1 text-[13.5px] text-ink2">{d ? d.summary : " "}</Summary>
+        <Summary className="-mt-1 text-[0.84375rem] text-ink2">{d ? d.summary : " "}</Summary>
 
         {res.error && !d ? (
           <div className="rounded-[10px] border border-divider bg-surface">
@@ -265,12 +265,12 @@ export function ActionsPage() {
                     <div className="flex items-center gap-2">
                       <span className="mono-id">{r.ref}</span>
                       <PriorityBadge priority={r.priority} />
-                      <span className={cn("ml-auto text-[12px]", r.late ? "text-st-red" : "text-muted-foreground")}>
+                      <span className={cn("ml-auto text-[0.75rem]", r.late ? "text-st-red" : "text-muted-foreground")}>
                         {fmtDate(r.due_on)} · {r.left}
                       </span>
                     </div>
-                    <div className="line-clamp-2 text-[13.5px]">{r.description}</div>
-                    <div className="text-[12px] text-muted-foreground">
+                    <div className="line-clamp-2 text-[0.84375rem]">{r.description}</div>
+                    <div className="text-[0.75rem] text-muted-foreground">
                       {r.property} · {r.owner ?? "Nobody yet"} · {r.type_label}
                     </div>
                   </div>
@@ -286,7 +286,7 @@ export function ActionsPage() {
                   noun={d.total === 1 ? "item" : "items"}
                   onPage={(p) => set({ page: p === 1 ? undefined : String(p) })}
                 />
-                <span className="px-3 pb-2.5 text-[12px] text-muted-foreground sm:ml-auto sm:pb-0">
+                <span className="px-3 pb-2.5 text-[0.75rem] text-muted-foreground sm:ml-auto sm:pb-0">
                   Close only with evidence · Advisories close with a recorded decision
                 </span>
               </div>
@@ -376,7 +376,7 @@ function Stats({ d }: { d: ActionList | undefined }) {
       <StatCard col>
         <StatTitle>Open by property</StatTitle>
         {s.by_property.length === 0 ? (
-          <span className="text-[12.5px] text-muted-foreground">Nothing open.</span>
+          <span className="text-[0.78125rem] text-muted-foreground">Nothing open.</span>
         ) : (
           s.by_property.slice(0, 4).map((p) => <BarRow key={p.property} label={p.property} value={p.count} max={max} />)
         )}
@@ -408,7 +408,7 @@ function SortMenu({ value, label, onChange }: { value: string; label: string; on
       <Menu.Trigger asChild>
         <button
           type="button"
-          className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 text-[13px] whitespace-nowrap hover:bg-hover"
+          className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 text-[0.8125rem] whitespace-nowrap hover:bg-hover"
         >
           <span className="text-muted-foreground">Sort</span>
           <span className="font-medium">{label}</span>
@@ -426,7 +426,7 @@ function SortMenu({ value, label, onChange }: { value: string; label: string; on
               <Menu.RadioItem
                 key={s.key}
                 value={s.key}
-                className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] outline-none data-[highlighted]:bg-hover"
+                className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[0.8125rem] outline-none data-[highlighted]:bg-hover"
               >
                 <span className="w-4">
                   <Menu.ItemIndicator>
@@ -475,14 +475,14 @@ function Board({
             aria-label={c.label}
             className="flex flex-col rounded-[10px] border border-divider bg-sidebar"
           >
-            <h2 className="m-0 flex items-center gap-2 px-3 py-2.5 text-[13.5px] font-semibold">
+            <h2 className="m-0 flex items-center gap-2 px-3 py-2.5 text-[0.84375rem] font-semibold">
               <PriorityBadge priority={c.key} />
               <span className="font-normal text-muted-foreground">{c.window}</span>
               <span className="tabular ml-auto text-muted-foreground">{rows.length}</span>
             </h2>
             <ul className="m-0 flex list-none flex-col gap-2 p-2 pt-0">
               {rows.length === 0 && (
-                <li className="px-2 py-4 text-center text-[13px] text-muted-foreground">Nothing here</li>
+                <li className="px-2 py-4 text-center text-[0.8125rem] text-muted-foreground">Nothing here</li>
               )}
               {rows.map((r) => (
                 <li key={r.id}>
@@ -497,18 +497,18 @@ function Board({
                   >
                     <span className="flex items-center gap-2">
                       <span className="mono-id">{r.ref}</span>
-                      <span className="text-[12px] text-muted-foreground">{r.type_label}</span>
+                      <span className="text-[0.75rem] text-muted-foreground">{r.type_label}</span>
                       <span
                         className={cn(
-                          "ml-auto text-[12px]",
+                          "ml-auto text-[0.75rem]",
                           r.late ? "font-medium text-st-red" : "text-muted-foreground",
                         )}
                       >
                         {fmtDate(r.due_on)}
                       </span>
                     </span>
-                    <span className="line-clamp-2 text-[13.5px]">{r.description}</span>
-                    <span className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
+                    <span className="line-clamp-2 text-[0.84375rem]">{r.description}</span>
+                    <span className="flex items-center gap-1.5 text-[0.75rem] text-muted-foreground">
                       {r.property} · {r.owner ?? "Nobody yet"}
                       <span className="ml-auto">
                         <StatusPill r={r} />

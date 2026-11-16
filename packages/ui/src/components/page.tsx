@@ -27,9 +27,9 @@ export function PageHeader({
     <header className={cn("flex flex-wrap items-start gap-x-6 gap-y-3", className)}>
       {/* The title keeps a readable width: on a phone the actions drop below it rather than squeezing it. */}
       <div className="min-w-[min(100%,15rem)] flex-1">
-        {eyebrow && <div className="mb-1 text-[13px] text-muted-foreground">{eyebrow}</div>}
+        {eyebrow && <div className="mb-1 text-[0.8125rem] text-muted-foreground">{eyebrow}</div>}
         <div className="flex flex-wrap items-center gap-2.5">
-          <h1 className="m-0 text-[22px] leading-tight font-semibold tracking-[-0.015em]">{title}</h1>
+          <h1 className="m-0 text-[1.375rem] leading-tight font-semibold tracking-[-0.015em]">{title}</h1>
           {badge}
         </div>
         {subtitle && <p className="m-0 mt-1 max-w-3xl text-muted-foreground">{subtitle}</p>}
@@ -41,7 +41,7 @@ export function PageHeader({
 
 export function Breadcrumb({ items }: { items: { label: string; href?: string; onClick?: () => void }[] }) {
   return (
-    <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-[13px] text-muted-foreground">
+    <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-[0.8125rem] text-muted-foreground">
       {items.map((it, i) => (
         <React.Fragment key={i}>
           {i > 0 && <span aria-hidden>/</span>}
@@ -89,9 +89,9 @@ export function Card({
       {...(props as React.ComponentProps<"div">)}
     >
       {(title || action) && (
-        <div className="flex items-center gap-3 border-b border-divider px-4 py-3">
-          {title && <h2 className="m-0 text-[14px] font-semibold">{title}</h2>}
-          {action && <div className="ml-auto flex items-center gap-2 text-[13px]">{action}</div>}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-divider px-4 py-3">
+          {title && <h2 className="m-0 text-[0.875rem] font-semibold">{title}</h2>}
+          {action && <div className="ml-auto flex flex-wrap items-center gap-2 text-[0.8125rem]">{action}</div>}
         </div>
       )}
       <div className={bodyClassName}>{children}</div>
@@ -122,10 +122,10 @@ export function Kpi({
 }) {
   const inner = (
     <>
-      <div className="text-[12.5px] text-muted-foreground">{label}</div>
+      <div className="text-[0.78125rem] text-muted-foreground">{label}</div>
       <div
         className={cn(
-          "tabular mt-1 text-[26px] leading-none font-semibold tracking-[-0.02em]",
+          "tabular mt-1 text-[1.625rem] leading-none font-semibold tracking-[-0.02em]",
           tone === "red" && "text-st-red",
           tone === "amber" && "text-st-amber",
           tone === "green" && "text-st-green",
@@ -133,7 +133,7 @@ export function Kpi({
       >
         {value}
       </div>
-      {sub && <div className="mt-1.5 text-[12.5px] text-muted-foreground">{sub}</div>}
+      {sub && <div className="mt-1.5 text-[0.78125rem] text-muted-foreground">{sub}</div>}
       {children}
       {goal && <div className="mt-1 text-xs text-subtle">{goal}</div>}
     </>
@@ -170,7 +170,7 @@ export function Dl({
   className?: string
 }) {
   return (
-    <dl className={cn("m-0 grid grid-cols-[minmax(110px,auto)_1fr] gap-x-4 gap-y-2 text-[13.5px]", className)}>
+    <dl className={cn("m-0 grid grid-cols-[minmax(6.875rem,auto)_1fr] gap-x-4 gap-y-2 text-[0.84375rem]", className)}>
       {items.map((it, i) => (
         <React.Fragment key={i}>
           <dt className="text-muted-foreground">{it.label}</dt>
@@ -330,7 +330,7 @@ export function EmptyState({
     <div className={cn("flex flex-col items-center gap-2 px-6 py-10 text-center", className)}>
       {icon && <div className="mb-1 text-subtle">{icon}</div>}
       <div className="font-semibold">{title}</div>
-      {children && <div className="max-w-md text-[13px] text-muted-foreground">{children}</div>}
+      {children && <div className="max-w-md text-[0.8125rem] text-muted-foreground">{children}</div>}
       {action && <div className="mt-2">{action}</div>}
     </div>
   )
@@ -349,12 +349,12 @@ export function ErrorState({
     <div role="alert" className="flex flex-col items-center gap-2 px-6 py-10 text-center">
       <AlertTriangle aria-hidden className="size-6 text-st-red" />
       <div className="font-semibold">{title}</div>
-      <div className="max-w-md text-[13px] text-muted-foreground">{message ?? "Nothing was lost. Try again."}</div>
+      <div className="max-w-md text-[0.8125rem] text-muted-foreground">{message ?? "Nothing was lost. Try again."}</div>
       {onRetry && (
         <button
           type="button"
           onClick={onRetry}
-          className="mt-2 h-[30px] rounded-md border border-border bg-surface px-3 text-[13px] font-medium hover:bg-hover"
+          className="mt-2 h-[30px] rounded-md border border-border bg-surface px-3 text-[0.8125rem] font-medium hover:bg-hover"
         >
           Try again
         </button>
@@ -369,7 +369,7 @@ export function NoPermission({ message }: { message?: React.ReactNode }) {
     <div className="flex flex-col items-center gap-2 px-6 py-16 text-center">
       <Lock aria-hidden className="size-6 text-subtle" />
       <div className="font-semibold">You don't have access to this page</div>
-      <div className="max-w-md text-[13px] text-muted-foreground">
+      <div className="max-w-md text-[0.8125rem] text-muted-foreground">
         {message ?? `Ask ${contact} if you think you should.`}
       </div>
     </div>
@@ -390,7 +390,7 @@ export function Callout({
   return (
     <div
       className={cn(
-        "flex items-start gap-2.5 rounded-lg px-3 py-2.5 text-[13.5px]",
+        "flex items-start gap-2.5 rounded-lg px-3 py-2.5 text-[0.84375rem]",
         tone === "red" && "bg-st-red-bg text-st-red",
         tone === "amber" && "bg-st-amber-bg text-st-amber",
         tone === "blue" && "bg-st-blue-bg text-st-blue",
@@ -410,7 +410,7 @@ export function Avatar({ initials, className }: { initials: string; className?: 
     <span
       aria-hidden
       className={cn(
-        "inline-flex size-[30px] shrink-0 items-center justify-center rounded-full bg-border text-[11.5px] font-semibold text-ink2",
+        "inline-flex size-[30px] shrink-0 items-center justify-center rounded-full bg-border text-[0.71875rem] font-semibold text-ink2",
         className,
       )}
     >

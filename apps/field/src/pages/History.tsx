@@ -45,16 +45,16 @@ export function HistoryPage() {
           {q.data.send_again.map((s) => (
             <div key={s.task_id} className="rounded-xl border border-st-red/30 bg-st-red-bg/40 px-4 py-3.5">
               <div className="flex items-start justify-between gap-2">
-                <div className="text-[16.5px] font-semibold">{s.title}</div>
+                <div className="text-[1.03125rem] font-semibold">{s.title}</div>
                 <Pill tone="red">Send again</Pill>
               </div>
-              <p className="m-0 mt-1 text-[15px]">
+              <p className="m-0 mt-1 text-[0.9375rem]">
                 {s.by}: "{s.comment}"
               </p>
               <Link
                 to="/task/$taskId"
                 params={{ taskId: s.task_id }}
-                className="mt-3 flex h-12 items-center justify-center rounded-xl border border-border bg-surface text-[16px] font-semibold text-foreground no-underline"
+                className="mt-3 flex h-12 items-center justify-center rounded-xl border border-border bg-surface text-[1rem] font-semibold text-foreground no-underline"
               >
                 Retake photo
               </Link>
@@ -71,8 +71,8 @@ export function HistoryPage() {
                       className="flex items-center gap-3 border-b border-divider px-3.5 py-3 last:border-0"
                     >
                       <div className="min-w-0 flex-1">
-                        <div className="text-[16px] font-semibold">{r.title}</div>
-                        <div className="text-[14px] text-muted-foreground">{r.detail}</div>
+                        <div className="text-[1rem] font-semibold">{r.title}</div>
+                        <div className="text-[0.875rem] text-muted-foreground">{r.detail}</div>
                       </div>
                       <StatusPill status={r.status} />
                     </li>
@@ -82,7 +82,7 @@ export function HistoryPage() {
             </section>
           ))}
           {!q.data.groups.length && !q.data.send_again.length && (
-            <p className="m-0 rounded-xl border border-divider bg-surface px-4 py-6 text-center text-[15px] text-muted-foreground">
+            <p className="m-0 rounded-xl border border-divider bg-surface px-4 py-6 text-center text-[0.9375rem] text-muted-foreground">
               Nothing sent in yet. Checks you send appear here.
             </p>
           )}

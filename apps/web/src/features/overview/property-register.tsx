@@ -24,7 +24,7 @@ type Col = {
 const FACET_PARAMS = ["status", "area", "doneby", "class"] as const
 
 const btn =
-  "inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 text-[13px] whitespace-nowrap text-foreground hover:bg-hover"
+  "inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 text-[0.8125rem] whitespace-nowrap text-foreground hover:bg-hover"
 
 export function RegisterTab({ property }: { property: PropertyDetail }) {
   const [p, set] = useParams()

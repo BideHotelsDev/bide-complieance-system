@@ -152,7 +152,7 @@ export function PeoplePage() {
               aria-selected={tab === t.key}
               onClick={() => set({ tab: t.key === "people" ? undefined : t.key, sel: undefined, page: undefined })}
               className={cn(
-                "inline-flex h-10 shrink-0 items-center gap-2 border-b-2 text-[14px]",
+                "inline-flex h-10 shrink-0 items-center gap-2 border-b-2 text-[0.875rem]",
                 tab === t.key
                   ? "border-foreground font-semibold text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground",
@@ -160,7 +160,7 @@ export function PeoplePage() {
             >
               {t.label}
               {tabs && (
-                <span className="tabular rounded-full bg-hover px-1.5 text-[11.5px] font-semibold text-ink2">
+                <span className="tabular rounded-full bg-hover px-1.5 text-[0.71875rem] font-semibold text-ink2">
                   {tabs[t.key]}
                 </span>
               )}
@@ -372,10 +372,10 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
       header={
         d && (
           <span className="flex min-w-0 items-center gap-2.5">
-            <Avatar initials={d.initials} className="size-10 text-[13px]" />
+            <Avatar initials={d.initials} className="size-10 text-[0.8125rem]" />
             <span className="min-w-0">
-              <span className="block truncate text-[16px] font-semibold">{d.name}</span>
-              <span className="block truncate text-[13px] text-muted-foreground">
+              <span className="block truncate text-[1rem] font-semibold">{d.name}</span>
+              <span className="block truncate text-[0.8125rem] text-muted-foreground">
                 {d.email ?? "No email"}
                 {d.title ? ` · ${d.title}` : ""}
               </span>
@@ -416,13 +416,13 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
       ) : (
         <div className="flex flex-col gap-5">
           <section className="flex flex-col gap-2">
-            <h3 className="m-0 text-[12.5px] font-medium text-ink2">Roles</h3>
-            {d.roles.length === 0 && <p className="m-0 text-[13px] text-muted-foreground">No roles yet.</p>}
+            <h3 className="m-0 text-[0.78125rem] font-medium text-ink2">Roles</h3>
+            {d.roles.length === 0 && <p className="m-0 text-[0.8125rem] text-muted-foreground">No roles yet.</p>}
             {d.roles.map((r) => {
               const fromHub = hubManaged && d.kind === "staff" && HUB_ROLES.includes(r.role)
               return (
                 <div key={r.id} className="flex items-center gap-2 rounded-lg border border-divider px-3 py-2.5">
-                  <span className="min-w-0 flex-1 text-[13.5px]">
+                  <span className="min-w-0 flex-1 text-[0.84375rem]">
                     <span className="font-medium">{r.label}</span>{" "}
                     <span className="text-muted-foreground">at {r.property}</span>
                   </span>
@@ -453,11 +453,11 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
           </section>
 
           <section className="flex flex-col gap-1">
-            <h3 className="m-0 mb-1 text-[12.5px] font-medium text-ink2">Required for these roles</h3>
-            {d.requirements.length === 0 && <p className="m-0 text-[13px] text-muted-foreground">Nothing required.</p>}
+            <h3 className="m-0 mb-1 text-[0.78125rem] font-medium text-ink2">Required for these roles</h3>
+            {d.requirements.length === 0 && <p className="m-0 text-[0.8125rem] text-muted-foreground">Nothing required.</p>}
             {d.requirements.map((r) => (
               <div key={r.id} className="flex items-start gap-3 border-b border-divider py-2 last:border-0">
-                <span className="min-w-0 flex-1 text-[13.5px]">{r.name}</span>
+                <span className="min-w-0 flex-1 text-[0.84375rem]">{r.name}</span>
                 <Pill
                   tone={REQ_TONE[r.status] ?? "grey"}
                   className={cn(
@@ -473,9 +473,9 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
 
           <section className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <h3 className="m-0 text-[12.5px] font-medium text-ink2">Leave cover</h3>
+              <h3 className="m-0 text-[0.78125rem] font-medium text-ink2">Leave cover</h3>
             </div>
-            <p className="m-0 text-[13px] text-muted-foreground">{coverText(d)}</p>
+            <p className="m-0 text-[0.8125rem] text-muted-foreground">{coverText(d)}</p>
             {manage && (
               <Button variant="outline" size="sm" className="self-start" onClick={() => setCovering(true)}>
                 Set up cover
@@ -484,8 +484,8 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
           </section>
 
           <section className="flex flex-col gap-2">
-            <h3 className="m-0 text-[12.5px] font-medium text-ink2">Trusted devices</h3>
-            {d.devices.length === 0 && <p className="m-0 text-[13px] text-muted-foreground">No trusted devices.</p>}
+            <h3 className="m-0 text-[0.78125rem] font-medium text-ink2">Trusted devices</h3>
+            {d.devices.length === 0 && <p className="m-0 text-[0.8125rem] text-muted-foreground">No trusted devices.</p>}
             {d.devices.map((dev) => {
               const busy = revoke.isPending && revoke.variables === dev.id
               return (
@@ -494,7 +494,7 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
                   className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-divider px-3 py-2.5"
                 >
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[13.5px] font-medium">{dev.label}</span>
+                    <span className="block text-[0.84375rem] font-medium">{dev.label}</span>
                     <span className="block text-xs text-muted-foreground">{dev.detail}</span>
                   </span>
                   {manage &&
@@ -758,7 +758,7 @@ function CoverDialog({ person: d, onClose }: { person: Detail; onClose: () => vo
               />
             </Labeled>
           </div>
-          <p className="m-0 text-[13px] text-muted-foreground">
+          <p className="m-0 text-[0.8125rem] text-muted-foreground">
             Checks go back to {d.first_name} automatically. The cover is shown on the scorecard so nobody loses points.
           </p>
         </>
@@ -891,7 +891,7 @@ function InviteDialog({ onClose, onDone }: { onClose: () => void; onDone: (id: s
         />
       </Labeled>
       {hubManaged ? (
-        <p className="m-0 text-[13px] text-muted-foreground">
+        <p className="m-0 text-[0.8125rem] text-muted-foreground">
           Staff are added in Bide Hub. Anyone invited here is an outside person who signs in with an emailed link.
         </p>
       ) : (
@@ -921,7 +921,7 @@ function InviteDialog({ onClose, onDone }: { onClose: () => void; onDone: (id: s
           <Labeled label="Where">
             <p
               role={tried ? "alert" : undefined}
-              className={cn("m-0 flex min-h-[30px] items-center text-[13px]", tried && "text-st-red")}
+              className={cn("m-0 flex min-h-[30px] items-center text-[0.8125rem]", tried && "text-st-red")}
             >
               <span>
                 <Link to="/settings/properties/$code" params={{ code: "new" }} className="text-link underline">
@@ -946,7 +946,7 @@ function InviteDialog({ onClose, onDone }: { onClose: () => void; onDone: (id: s
         )}
       </div>
       {error && (
-        <div role="alert" className="text-[13px] text-st-red">
+        <div role="alert" className="text-[0.8125rem] text-st-red">
           {error}
         </div>
       )}
@@ -973,7 +973,7 @@ function GroupsTab({ canManage }: { canManage: boolean }) {
         {q.data.rows.length === 0 ? (
           <EmptyState title="No groups yet">Groups are made per property, e.g. Keyholders – The Villa.</EmptyState>
         ) : (
-          <table className="w-full min-w-[640px] border-collapse text-[13.5px]">
+          <table className="w-full min-w-[640px] border-collapse text-[0.84375rem]">
             <thead>
               <tr className="text-left text-xs text-muted-foreground">
                 <th className="h-[34px] bg-background px-4 font-medium">Group</th>
@@ -1077,7 +1077,7 @@ function MembersDialog({ pool, onClose }: { pool: Pool; onClose: () => void }) {
               onChange={(e) => setIds((x) => (e.target.checked ? [...x, p.id] : x.filter((y) => y !== p.id)))}
             />
             <span className="min-w-0 flex-1">
-              <span className="block text-[13.5px]">{p.name}</span>
+              <span className="block text-[0.84375rem]">{p.name}</span>
               <span className="block text-xs text-muted-foreground">{p.property}</span>
             </span>
           </label>
@@ -1126,7 +1126,7 @@ function ContractorsTab({ canManage }: { canManage: boolean }) {
             Add the companies that service alarms, gas, water and the rest.
           </EmptyState>
         ) : (
-          <table className="w-full min-w-[880px] border-collapse text-[13.5px]">
+          <table className="w-full min-w-[880px] border-collapse text-[0.84375rem]">
             <thead>
               <tr className="text-left text-xs text-muted-foreground">
                 {["Contractor", "Trade", "Accreditation", "Email", "Portal access"].map((h) => (
@@ -1174,7 +1174,7 @@ function ContractorsTab({ canManage }: { canManage: boolean }) {
                     {c.portal && c.portal.length > 0 ? (
                       <ul className="m-0 flex list-none flex-col gap-0.5 p-0">
                         {c.portal.map((x) => (
-                          <li key={x.id} className="text-[13px]">
+                          <li key={x.id} className="text-[0.8125rem]">
                             {x.name}
                             <span className="text-muted-foreground"> · {x.email}</span>
                             {!x.active && <span className="text-muted-foreground"> (access ended)</span>}
@@ -1347,7 +1347,7 @@ function DutyholdersTab() {
         checklist.
       </Summary>
       <div className="overflow-x-auto rounded-[10px] border border-divider bg-surface">
-        <table className="w-full min-w-[640px] border-collapse text-[13.5px]">
+        <table className="w-full min-w-[640px] border-collapse text-[0.84375rem]">
           <thead>
             <tr className="text-left text-xs text-muted-foreground">
               {["Dutyholder", "Company number", "Directors who sign", "Properties"].map((h) => (

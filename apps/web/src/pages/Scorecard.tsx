@@ -145,7 +145,7 @@ function League({ rows, month }: { rows: LeagueRow[]; month: string }) {
           <li key={r.property} className="flex items-center gap-2 rounded-full border border-divider py-1 pr-2 pl-1">
             <span
               className={cn(
-                "inline-flex size-6 items-center justify-center rounded-full text-[12px] font-semibold",
+                "inline-flex size-6 items-center justify-center rounded-full text-[0.75rem] font-semibold",
                 r.position === 1 ? "bg-primary text-primary-foreground" : "bg-hover text-ink2",
               )}
               aria-label={`Position ${r.position}`}
@@ -169,7 +169,7 @@ function League({ rows, month }: { rows: LeagueRow[]; month: string }) {
           <li key={r.property} className="flex items-center gap-2 rounded-full border border-divider py-1 pr-3 pl-1">
             <span
               aria-hidden
-              className="inline-flex size-6 items-center justify-center rounded-full bg-hover text-[12px] text-muted-foreground"
+              className="inline-flex size-6 items-center justify-center rounded-full bg-hover text-[0.75rem] text-muted-foreground"
             >
               –
             </span>
@@ -180,7 +180,7 @@ function League({ rows, month }: { rows: LeagueRow[]; month: string }) {
       </ol>
 
       {scored.length === 0 ? (
-        <p className="m-0 text-[13px] text-muted-foreground">
+        <p className="m-0 text-[0.8125rem] text-muted-foreground">
           No property has a score yet. Sites join the league once their register is loaded and checks are live.
         </p>
       ) : (
@@ -195,7 +195,7 @@ function League({ rows, month }: { rows: LeagueRow[]; month: string }) {
               const tone =
                 r.red_line || score < 80 ? "var(--c-red)" : score < goal ? "var(--c-amber)" : "var(--c-green)"
               return (
-                <li key={r.property} className="grid grid-cols-[120px_1fr_44px] items-center gap-3 text-[13px]">
+                <li key={r.property} className="grid grid-cols-[120px_1fr_44px] items-center gap-3 text-[0.8125rem]">
                   <span className="truncate">{r.property}</span>
                   <span className="relative h-2.5 rounded-full bg-hover" title={`${r.property}: ${score}%`}>
                     <span
@@ -239,7 +239,7 @@ function Goals({ goals }: { goals: Goal[] }) {
           <div key={g.label}>
             <div className="flex items-center gap-2">
               <span className="flex-1 font-medium">{g.label}</span>
-              <span className="tabular text-[20px] leading-none font-semibold">
+              <span className="tabular text-[1.25rem] leading-none font-semibold">
                 {g.value == null ? "—" : `${g.value}${g.unit ?? ""}`}
               </span>
               {g.value == null ? (
@@ -282,10 +282,10 @@ function People({
       action={<span className="text-muted-foreground">Three numbers each, only what the person controls</span>}
     >
       {rows.length === 0 ? (
-        <p className="m-0 p-4 text-[13px] text-muted-foreground">Nobody has checks or actions here yet.</p>
+        <p className="m-0 p-4 text-[0.8125rem] text-muted-foreground">Nobody has checks or actions here yet.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-[13.5px]">
+          <table className="w-full border-collapse text-[0.84375rem]">
             <thead className="bg-background">
               <tr className="border-b border-divider">
                 <th scope="col" className={th}>
@@ -313,7 +313,7 @@ function People({
                 <tr key={r.id} className="h-12 border-b border-divider last:border-b-0">
                   <td className="px-3">
                     <span className="flex items-center gap-2.5">
-                      <Avatar initials={r.initials} className="size-[26px] text-[11px]" />
+                      <Avatar initials={r.initials} className="size-[26px] text-[0.6875rem]" />
                       <Link
                         to="/actions"
                         search={{ owner: r.id }}

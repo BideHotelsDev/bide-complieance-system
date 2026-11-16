@@ -69,11 +69,11 @@ function Tile({ p }: { p: PropertySummary }) {
       aria-label={`${p.name}: ${p.register_loaded ? `${big} life-safety ${p.class_a_late === 1 ? "check" : "checks"} late, ${sub}` : sub}, ${opening ? "not ready" : p.status_label}`}
       className="flex min-w-0 flex-col gap-0.5 rounded-[14px] border border-divider bg-surface p-3 text-foreground no-underline hover:bg-hover/40"
     >
-      <span className="truncate text-[14px] font-semibold">{p.name}</span>
-      <span className={cn("tabular text-[28px] leading-[1.15] font-semibold", !p.register_loaded && "text-subtle")}>
+      <span className="truncate text-[0.875rem] font-semibold">{p.name}</span>
+      <span className={cn("tabular text-[1.75rem] leading-[1.15] font-semibold", !p.register_loaded && "text-subtle")}>
         {big}
       </span>
-      <span className="text-[12.5px] text-muted-foreground">{sub}</span>
+      <span className="text-[0.78125rem] text-muted-foreground">{sub}</span>
       <span className="mt-1.5">
         {opening ? <Pill tone="grey">Not ready</Pill> : <Pill tone={p.score_status}>{p.status_label}</Pill>}
       </span>
@@ -105,8 +105,8 @@ export function MobileHomeView({ today }: { today: string }) {
     <div className="-mx-4 -mt-5 flex flex-col">
       <header className="flex items-start gap-2 border-b border-divider bg-surface pt-[18px] pr-2 pb-3 pl-[18px]">
         <div className="min-w-0 flex-1">
-          <div className="text-[14px] text-muted-foreground">{hello(me.data?.name, me.data?.first_name)}</div>
-          <h1 className="m-0 text-[22px] font-semibold">
+          <div className="text-[0.875rem] text-muted-foreground">{hello(me.data?.name, me.data?.first_name)}</div>
+          <h1 className="m-0 text-[1.375rem] font-semibold">
             {q.data
               ? total
                 ? `${total} ${total === 1 ? "thing needs" : "things need"} you`
@@ -140,7 +140,7 @@ export function MobileHomeView({ today }: { today: string }) {
                         <Pill tone={r.tone} className="shrink-0">
                           {r.word}
                         </Pill>
-                        <span className="line-clamp-2 flex-1 text-[14px]">{r.text}</span>
+                        <span className="line-clamp-2 flex-1 text-[0.875rem]">{r.text}</span>
                       </AppLink>
                     </li>
                   ))}
@@ -148,7 +148,7 @@ export function MobileHomeView({ today }: { today: string }) {
                     <li>
                       <AppLink
                         href="/todo"
-                        className="flex min-h-12 items-center justify-center p-3.5 text-[14px] font-medium text-link no-underline"
+                        className="flex min-h-12 items-center justify-center p-3.5 text-[0.875rem] font-medium text-link no-underline"
                       >
                         See all {total} in To-do
                       </AppLink>
@@ -159,7 +159,7 @@ export function MobileHomeView({ today }: { today: string }) {
             </section>
             {q.data.properties.length > 0 && (
               <>
-                <h2 className="m-0 text-[13px] font-semibold text-muted-foreground">Life-safety checks late</h2>
+                <h2 className="m-0 text-[0.8125rem] font-semibold text-muted-foreground">Life-safety checks late</h2>
                 <div className="grid grid-cols-2 gap-2.5">
                   {q.data.properties.map((p) => (
                     <Tile key={p.id} p={p} />
@@ -167,7 +167,7 @@ export function MobileHomeView({ today }: { today: string }) {
                 </div>
               </>
             )}
-            <p className="m-0 text-center text-[13px] text-muted-foreground">
+            <p className="m-0 text-center text-[0.8125rem] text-muted-foreground">
               Full dashboards and reports are on the desktop.
             </p>
           </>

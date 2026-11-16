@@ -30,15 +30,15 @@ export function TotpQr({
         <div aria-hidden className="size-48 animate-pulse rounded-lg bg-hover" />
       )}
       {uri && (
-        <a href={uri} className="text-[14px] text-link">
+        <a href={uri} className="text-[0.875rem] text-link">
           Open in your authenticator app
         </a>
       )}
       {secret && (
-        <details className="w-full text-[13px] text-muted-foreground">
+        <details className="w-full text-[0.8125rem] text-muted-foreground">
           <summary className="inline-flex min-h-6 cursor-pointer items-center text-link">Can't scan?</summary>
           <p className="m-0 mt-1">Choose “Enter a setup key” in the app and type this key:</p>
-          <p className="m-0 mt-1 rounded-md bg-hover px-3 py-2 font-mono text-[13px] break-all text-foreground">
+          <p className="m-0 mt-1 rounded-md bg-hover px-3 py-2 font-mono text-[0.8125rem] break-all text-foreground">
             {secret}
           </p>
         </details>

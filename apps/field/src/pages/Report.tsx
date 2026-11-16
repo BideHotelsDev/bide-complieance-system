@@ -255,15 +255,15 @@ export function ReportPage() {
             {sending ? "Sending" : "Send report"}
           </PrimaryButton>
           {!ready && !sending && (
-            <p className="m-0 mt-2 text-center text-[14px] text-muted-foreground">{stillNeeded}</p>
+            <p className="m-0 mt-2 text-center text-[0.875rem] text-muted-foreground">{stillNeeded}</p>
           )}
           {life && (
-            <p className="m-0 mt-2 text-center text-[14px] text-muted-foreground">
+            <p className="m-0 mt-2 text-center text-[0.875rem] text-muted-foreground">
               This sounds like life safety. Your manager will be told straight away.
             </p>
           )}
           {kind === "hurt" && riddor === "yes" && (
-            <p className="m-0 mt-2 text-center text-[14px] text-muted-foreground">
+            <p className="m-0 mt-2 text-center text-[0.875rem] text-muted-foreground">
               This may need reporting to the HSE (RIDDOR). Your manager will be told straight away.
             </p>
           )}
@@ -271,7 +271,7 @@ export function ReportPage() {
       }
     >
       {keptFrom && (
-        <div role="status" className="flex items-center gap-3 rounded-xl bg-st-blue-bg px-4 py-3 text-[15px]">
+        <div role="status" className="flex items-center gap-3 rounded-xl bg-st-blue-bg px-4 py-3 text-[0.9375rem]">
           <span className="min-w-0 flex-1">What you'd started at {fmtTime(keptFrom)} was kept on this phone.</span>
           <button type="button" className="h-11 shrink-0 px-2 font-semibold text-link" onClick={startAgain}>
             Start again
@@ -279,7 +279,7 @@ export function ReportPage() {
         </div>
       )}
       <fieldset className="m-0 border-0 p-0">
-        <legend className="mb-2 p-0 text-[16px] font-semibold">What happened?</legend>
+        <legend className="mb-2 p-0 text-[1rem] font-semibold">What happened?</legend>
         <div className="flex flex-col gap-2">
           {KINDS.map((k) => (
             <button
@@ -296,8 +296,8 @@ export function ReportPage() {
             >
               {k.icon}
               <span>
-                <span className="block text-[16px] font-semibold">{k.title}</span>
-                <span className="block text-[14px] text-muted-foreground">{k.hint}</span>
+                <span className="block text-[1rem] font-semibold">{k.title}</span>
+                <span className="block text-[0.875rem] text-muted-foreground">{k.hint}</span>
               </span>
             </button>
           ))}
@@ -392,7 +392,7 @@ export function ReportPage() {
                 onChange={(e) => setMinutes(e.target.value.replace(/\D/g, ""))}
                 className="tabular pr-24"
               />
-              <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[16px] text-muted-foreground">
+              <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[1rem] text-muted-foreground">
                 minutes
               </span>
             </div>
@@ -422,7 +422,7 @@ export function ReportPage() {
       </div>
 
       <div>
-        <div className="mb-2 text-[16px] font-semibold">Photo</div>
+        <div className="mb-2 text-[1rem] font-semibold">Photo</div>
         <div className="flex flex-wrap gap-2.5">
           {shots.map((s) => (
             <div key={s.id} className="relative size-[88px] overflow-hidden rounded-xl bg-hover">
@@ -445,7 +445,7 @@ export function ReportPage() {
           <button
             type="button"
             onClick={() => setCamera(true)}
-            className="flex size-[88px] items-center justify-center rounded-xl border border-dashed border-subtle bg-surface text-[15px] font-semibold"
+            className="flex size-[88px] items-center justify-center rounded-xl border border-dashed border-subtle bg-surface text-[0.9375rem] font-semibold"
           >
             + Photo
           </button>

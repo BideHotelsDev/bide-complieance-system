@@ -300,7 +300,7 @@ function CheckForm({ task }: { task: TaskDetail }) {
             {sending && <Spinner />}
             {sending ? "Sending" : "Submit check"}
           </PrimaryButton>
-          <p aria-live="polite" className="m-0 mt-2 line-clamp-2 text-center text-[14px] text-muted-foreground">
+          <p aria-live="polite" className="m-0 mt-2 line-clamp-2 text-center text-[0.875rem] text-muted-foreground">
             {!task.can_submit
               ? "This check can't be sent now."
               : missing.length
@@ -312,15 +312,15 @@ function CheckForm({ task }: { task: TaskDetail }) {
     >
       {task.guidance && (
         <details className="group rounded-xl border border-divider bg-surface">
-          <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 px-4 text-[15.5px] font-semibold [&::-webkit-details-marker]:hidden">
+          <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 px-4 text-[0.96875rem] font-semibold [&::-webkit-details-marker]:hidden">
             <ChevronRight aria-hidden className="size-4 transition-transform group-open:rotate-90" />
             How to do this check
           </summary>
-          <p className="m-0 px-4 pb-4 text-[15px] leading-relaxed text-ink2">{task.guidance}</p>
+          <p className="m-0 px-4 pb-4 text-[0.9375rem] leading-relaxed text-ink2">{task.guidance}</p>
         </details>
       )}
       {keptFrom && (
-        <div role="status" className="flex items-center gap-3 rounded-xl bg-st-blue-bg px-4 py-3 text-[15px]">
+        <div role="status" className="flex items-center gap-3 rounded-xl bg-st-blue-bg px-4 py-3 text-[0.9375rem]">
           <span className="min-w-0 flex-1">What you'd done at {fmtTime(keptFrom)} was kept on this phone.</span>
           <button type="button" className="h-11 shrink-0 px-2 font-semibold text-link" onClick={startAgain}>
             Start again
@@ -330,24 +330,24 @@ function CheckForm({ task }: { task: TaskDetail }) {
       {(task.status_note || task.rejected || !task.can_submit || task.na_pending) && (
         <div className="-mt-1 flex flex-col gap-2">
           {task.status_note && (
-            <Pill tone="red" className="h-auto self-start py-1 text-[13.5px]">
+            <Pill tone="red" className="h-auto self-start py-1 text-[0.84375rem]">
               {task.status_note}
             </Pill>
           )}
           {task.rejected && (
-            <div role="note" className="rounded-xl border border-st-red/30 bg-st-red-bg px-4 py-3 text-[15px]">
+            <div role="note" className="rounded-xl border border-st-red/30 bg-st-red-bg px-4 py-3 text-[0.9375rem]">
               <div className="font-semibold text-st-red">Send again</div>
               <div>"{task.rejected.comment}"</div>
             </div>
           )}
           {task.na_pending && task.can_submit && (
-            <div role="note" className="rounded-xl bg-st-grey-bg px-4 py-3 text-[15px] text-ink2">
+            <div role="note" className="rounded-xl bg-st-grey-bg px-4 py-3 text-[0.9375rem] text-ink2">
               You've asked to mark this not applicable. Until a manager agrees, it stays on your list and you can still
               do it.
             </div>
           )}
           {!task.can_submit && (
-            <div role="note" className="rounded-xl bg-st-grey-bg px-4 py-3 text-[15px] text-ink2">
+            <div role="note" className="rounded-xl bg-st-grey-bg px-4 py-3 text-[0.9375rem] text-ink2">
               {task.status === "scheduled"
                 ? "This check isn't open yet."
                 : "This check has already been sent in, or its window has closed."}
@@ -374,7 +374,7 @@ function CheckForm({ task }: { task: TaskDetail }) {
 
       {photoFields.length > 0 && (
         <section aria-labelledby="photos-h">
-          <h2 id="photos-h" className="m-0 mb-2 text-[16px] font-semibold">
+          <h2 id="photos-h" className="m-0 mb-2 text-[1rem] font-semibold">
             Photos · {photosTaken} of {photosNeeded}
           </h2>
           <div className="grid grid-cols-2 gap-2.5">
@@ -390,7 +390,7 @@ function CheckForm({ task }: { task: TaskDetail }) {
                     key={`${f.key}-add`}
                     type="button"
                     onClick={() => setCamera(f)}
-                    className="flex aspect-[4/3] flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-subtle bg-surface px-2 text-center text-[14.5px] font-semibold"
+                    className="flex aspect-[4/3] flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-subtle bg-surface px-2 text-center text-[0.90625rem] font-semibold"
                   >
                     {mine.length ? (
                       <Plus aria-hidden className="size-5" />
@@ -404,7 +404,7 @@ function CheckForm({ task }: { task: TaskDetail }) {
             })}
           </div>
           {photoFields.some((f) => f.help) && (
-            <ul className="m-0 mt-2 list-none p-0 text-[13.5px] text-muted-foreground">
+            <ul className="m-0 mt-2 list-none p-0 text-[0.84375rem] text-muted-foreground">
               {photoFields
                 .filter((f) => f.help)
                 .map((f) => (
@@ -421,7 +421,7 @@ function CheckForm({ task }: { task: TaskDetail }) {
         <button
           type="button"
           onClick={() => setNa(true)}
-          className="min-h-12 self-center text-[15px] font-medium text-link"
+          className="min-h-12 self-center text-[0.9375rem] font-medium text-link"
         >
           This check doesn't apply? Mark as not applicable
         </button>
@@ -470,7 +470,7 @@ function ShotTile({ shot, label, onRemove }: { shot: Shot; label: string; onRemo
       <img src={shot.url} alt={`${label}, taken`} className="size-full object-cover" />
       <span
         className={cn(
-          "absolute top-2 left-2 inline-flex h-6 items-center gap-1 rounded-full px-2 text-[12px] font-semibold",
+          "absolute top-2 left-2 inline-flex h-6 items-center gap-1 rounded-full px-2 text-[0.75rem] font-semibold",
           status.cls,
         )}
       >
@@ -481,7 +481,7 @@ function ShotTile({ shot, label, onRemove }: { shot: Shot; label: string; onRemo
         type="button"
         aria-label={`Retake ${label}`}
         onClick={onRemove}
-        className="absolute right-1.5 bottom-1.5 flex h-10 items-center gap-1 rounded-full bg-black/60 px-3 text-[13px] font-semibold text-white"
+        className="absolute right-1.5 bottom-1.5 flex h-10 items-center gap-1 rounded-full bg-black/60 px-3 text-[0.8125rem] font-semibold text-white"
       >
         <RotateCcw aria-hidden className="size-3.5" />
         Retake
@@ -544,7 +544,7 @@ function FieldInput({
           <div className="flex flex-col gap-3">
             {items.map((it) => (
               <div key={it}>
-                <div id={`${labelId}-${it}`} className="mb-1.5 text-[15px]">
+                <div id={`${labelId}-${it}`} className="mb-1.5 text-[0.9375rem]">
                   {it}
                 </div>
                 <Choice
@@ -588,7 +588,7 @@ function FieldInput({
               aria-label={raw.startsWith("-") ? "Make positive" : "Make negative"}
               aria-pressed={raw.startsWith("-")}
               onClick={() => onChange(raw.startsWith("-") ? raw.slice(1) : `-${raw}`)}
-              className="absolute inset-y-0 left-0 flex w-12 items-center justify-center rounded-l-xl border-r border-border text-[18px] font-semibold text-ink2"
+              className="absolute inset-y-0 left-0 flex w-12 items-center justify-center rounded-l-xl border-r border-border text-[1.125rem] font-semibold text-ink2"
             >
               ±
             </button>
@@ -609,18 +609,18 @@ function FieldInput({
               className={cn("tabular pr-14 pl-15", (out || notNumber) && "border-st-amber")}
             />
             {unit && (
-              <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[16px] text-muted-foreground">
+              <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[1rem] text-muted-foreground">
                 {unit}
               </span>
             )}
           </div>
           {notNumber && (
-            <p id={`${id}-warn`} className="m-0 mt-1.5 text-[14px] text-st-amber">
+            <p id={`${id}-warn`} className="m-0 mt-1.5 text-[0.875rem] text-st-amber">
               That isn't a number. Type it like 3.5 or -18.
             </p>
           )}
           {out && (
-            <p id={`${id}-warn`} className="m-0 mt-1.5 text-[14px] text-st-amber">
+            <p id={`${id}-warn`} className="m-0 mt-1.5 text-[0.875rem] text-st-amber">
               Outside the safe range. You can still send it; it will be logged as Failed so it gets fixed.
             </p>
           )}
@@ -647,7 +647,7 @@ function FieldInput({
     }
     case "checkbox":
       return (
-        <label className="flex min-h-12 items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 text-[16px]">
+        <label className="flex min-h-12 items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 text-[1rem]">
           <input
             type="checkbox"
             checked={Boolean(value)}
@@ -656,7 +656,7 @@ function FieldInput({
           />
           <span>
             {f.label}
-            {f.help && <span className="block text-[14px] text-muted-foreground">{f.help}</span>}
+            {f.help && <span className="block text-[0.875rem] text-muted-foreground">{f.help}</span>}
           </span>
         </label>
       )
@@ -692,10 +692,10 @@ function FieldInput({
           {files.map((s) => (
             <div
               key={s.id}
-              className="mb-2 flex min-h-12 items-center gap-2 rounded-xl border border-divider bg-surface px-3.5 py-2 text-[15px]"
+              className="mb-2 flex min-h-12 items-center gap-2 rounded-xl border border-divider bg-surface px-3.5 py-2 text-[0.9375rem]"
             >
               <span className="min-w-0 flex-1 truncate">{s.blob instanceof File ? s.blob.name : f.label}</span>
-              <span className="text-[13px] text-muted-foreground">
+              <span className="text-[0.8125rem] text-muted-foreground">
                 {s.status === "done"
                   ? "Uploaded"
                   : s.status === "uploading"
@@ -706,14 +706,14 @@ function FieldInput({
               </span>
               <button
                 type="button"
-                className="min-h-10 px-2 text-[14px] font-semibold text-st-red"
+                className="min-h-10 px-2 text-[0.875rem] font-semibold text-st-red"
                 onClick={() => onRemoveFile(s.id)}
               >
                 Remove
               </button>
             </div>
           ))}
-          <label className="flex h-12 cursor-pointer items-center justify-center rounded-xl border border-dashed border-subtle bg-surface text-[15.5px] font-semibold">
+          <label className="flex h-12 cursor-pointer items-center justify-center rounded-xl border border-dashed border-subtle bg-surface text-[0.96875rem] font-semibold">
             Choose a file
             <input
               id={id}

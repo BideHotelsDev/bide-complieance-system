@@ -159,7 +159,7 @@ export function AuditLogPage() {
               type="button"
               disabled={!d || d.rows.length === 0 || exporting}
               onClick={() => void doExport()}
-              className="inline-flex h-9 items-center rounded-md border border-border bg-surface px-3.5 text-[13.5px] font-medium hover:bg-hover disabled:opacity-40"
+              className="inline-flex h-9 items-center rounded-md border border-border bg-surface px-3.5 text-[0.84375rem] font-medium hover:bg-hover disabled:opacity-40"
             >
               {exporting ? "Exporting…" : "Export"}
             </button>
@@ -176,7 +176,7 @@ export function AuditLogPage() {
             aria-selected={category === c.key}
             onClick={() => set({ category: c.key === "all" ? undefined : c.key, page: undefined })}
             className={cn(
-              "inline-flex h-9 shrink-0 items-center rounded-full border px-3.5 text-[13.5px] font-medium transition-colors",
+              "inline-flex h-9 shrink-0 items-center rounded-full border px-3.5 text-[0.84375rem] font-medium transition-colors",
               category === c.key
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-border bg-surface text-ink2 hover:bg-hover",
@@ -207,14 +207,14 @@ export function AuditLogPage() {
           <button
             type="button"
             onClick={() => set({ q: undefined, person_id: undefined, prop: undefined, page: undefined })}
-            className="h-8 rounded-md px-2 text-[13px] text-link hover:bg-hover"
+            className="h-8 rounded-md px-2 text-[0.8125rem] text-link hover:bg-hover"
           >
             Clear all filters
           </button>
         )}
       </div>
 
-      {d && <Summary className="text-[13.5px] text-foreground">{d.summary}</Summary>}
+      {d && <Summary className="text-[0.84375rem] text-foreground">{d.summary}</Summary>}
 
       <div className="overflow-hidden rounded-[10px] border border-divider bg-surface">
         {q.isError ? (
@@ -229,9 +229,9 @@ export function AuditLogPage() {
           </EmptyState>
         ) : (
           <div className="overflow-x-auto">
-            <table className={cn("w-full min-w-[640px] border-collapse text-[13.5px]", q.isFetching && "opacity-70")}>
+            <table className={cn("w-full min-w-[640px] border-collapse text-[0.84375rem]", q.isFetching && "opacity-70")}>
               <thead>
-                <tr className="text-left text-[12.5px] text-muted-foreground">
+                <tr className="text-left text-[0.78125rem] text-muted-foreground">
                   <th className="h-[38px] w-12 border-b border-divider px-3.5 font-medium">
                     <span className="sr-only">Details</span>
                   </th>
@@ -268,14 +268,14 @@ export function AuditLogPage() {
                             {r.flag && (
                               <span
                                 title="Failed submission"
-                                className="inline-flex size-5 items-center justify-center rounded bg-st-red-bg text-[12px] font-bold text-st-red"
+                                className="inline-flex size-5 items-center justify-center rounded bg-st-red-bg text-[0.75rem] font-bold text-st-red"
                               >
                                 !<span className="sr-only">Failed submission</span>
                               </span>
                             )}
                           </span>
                         </td>
-                        <td className="border-b border-divider px-3.5 py-2.5 font-mono text-[12px] whitespace-nowrap text-muted-foreground">
+                        <td className="border-b border-divider px-3.5 py-2.5 font-mono text-[0.75rem] whitespace-nowrap text-muted-foreground">
                           {when !== "today" && <span className="mr-1.5 font-sans">{fmtDate(r.date)}</span>}
                           {r.time}
                         </td>
@@ -316,7 +316,7 @@ export function AuditLogPage() {
 
 function Details({ row }: { row: Row }) {
   return (
-    <div className="grid grid-cols-[130px_minmax(0,1fr)_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-[13px]">
+    <div className="grid grid-cols-[130px_minmax(0,1fr)_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-[0.8125rem]">
       {row.changes.length > 0 && (
         <>
           <span className="text-muted-foreground">Field</span>
@@ -347,7 +347,7 @@ function Details({ row }: { row: Row }) {
       )}
       <span className="text-muted-foreground">Fingerprint</span>
       <span
-        className="col-span-2 font-mono text-[12px] text-ink2"
+        className="col-span-2 font-mono text-[0.75rem] text-ink2"
         title={`prev ${row.prev_hash ?? "none"}\nthis ${row.hash}`}
       >
         prev {short(row.prev_hash)} → this {short(row.hash)}
@@ -370,13 +370,13 @@ function ChainChip({
   if (loading) return null
   if (checking)
     return (
-      <span className="inline-flex h-[26px] items-center rounded-full bg-st-grey-bg px-2.5 text-[12.5px] font-medium text-st-grey">
+      <span className="inline-flex h-[26px] items-center rounded-full bg-st-grey-bg px-2.5 text-[0.78125rem] font-medium text-st-grey">
         Checking the chain…
       </span>
     )
   if (!chain)
     return (
-      <span className="inline-flex h-[26px] items-center gap-1.5 rounded-full bg-st-grey-bg px-2.5 text-[12.5px] font-medium text-st-grey">
+      <span className="inline-flex h-[26px] items-center gap-1.5 rounded-full bg-st-grey-bg px-2.5 text-[0.78125rem] font-medium text-st-grey">
         Not checked yet ·
         <button type="button" onClick={onCheck} className="font-medium text-link hover:underline">
           Check now
@@ -391,7 +391,7 @@ function ChainChip({
       onClick={onCheck}
       title="Check the chain again now"
       className={cn(
-        "inline-flex h-[26px] items-center gap-1.5 rounded-full px-2.5 text-[12.5px] font-medium hover:opacity-85",
+        "inline-flex h-[26px] items-center gap-1.5 rounded-full px-2.5 text-[0.78125rem] font-medium hover:opacity-85",
         chain.intact ? "bg-st-green-bg text-st-green" : "bg-st-red-bg text-st-red",
       )}
     >
@@ -411,7 +411,7 @@ function WhenButton({ value, onChange }: { value: string; onChange: (v: string) 
           type="button"
           aria-haspopup="listbox"
           aria-expanded={open}
-          className="inline-flex h-8 items-center gap-1.5 rounded-md border border-st-blue bg-st-blue-bg px-2.5 text-[13px] whitespace-nowrap text-st-blue"
+          className="inline-flex h-8 items-center gap-1.5 rounded-md border border-st-blue bg-st-blue-bg px-2.5 text-[0.8125rem] whitespace-nowrap text-st-blue"
         >
           <span>When</span>
           <span className="font-medium">{label}</span>
@@ -435,7 +435,7 @@ function WhenButton({ value, onChange }: { value: string; onChange: (v: string) 
                   onChange(w.value)
                   setOpen(false)
                 }}
-                className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-[13px] hover:bg-hover"
+                className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-[0.8125rem] hover:bg-hover"
               >
                 {w.label}
                 {w.value === value && <Check aria-hidden className="size-4" />}

@@ -150,7 +150,7 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
       <div className="flex items-center gap-2 border-b border-divider px-[18px] py-3.5">
         {a ? (
           <>
-            <span className="mono-id text-[12px]">{a.ref}</span>
+            <span className="mono-id text-[0.75rem]">{a.ref}</span>
             <PriorityBadge priority={a.priority} />
             <Pill tone="grey">{a.type_label}</Pill>
             {a.status === "closed" && <Pill tone="green">Closed</Pill>}
@@ -183,7 +183,7 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
         </div>
       ) : (
         <div className="flex flex-col gap-4 p-[18px]">
-          <h2 className="m-0 text-[16px] leading-[1.35] font-semibold">{a.description}</h2>
+          <h2 className="m-0 text-[1rem] leading-[1.35] font-semibold">{a.description}</h2>
           {a.call_due && !a.call_made_at && (
             <div
               role="alert"
@@ -213,22 +213,22 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
                 {a.contractor_fix.contractor} marked this fixed on {a.contractor_fix.sent_on}. It stays open until
                 someone checks their photo.
               </span>
-              {a.contractor_fix.note && <span className="text-[13px]">"{a.contractor_fix.note}"</span>}
+              {a.contractor_fix.note && <span className="text-[0.8125rem]">"{a.contractor_fix.note}"</span>}
               <Link
                 to="/reviews"
                 search={{ queue: "contractor", sel: a.contractor_fix.upload_id }}
-                className="self-start text-[13px] font-medium text-link"
+                className="self-start text-[0.8125rem] font-medium text-link"
               >
                 Check it in Evidence review
               </Link>
             </div>
           )}
           {a.status !== "closed" && a.contractor_fix?.status === "rejected" && (
-            <p role="note" className="m-0 rounded-[10px] bg-st-amber-bg px-3.5 py-3 text-[13px] text-st-amber">
+            <p role="note" className="m-0 rounded-[10px] bg-st-amber-bg px-3.5 py-3 text-[0.8125rem] text-st-amber">
               Fix sent back to {a.contractor_fix.contractor}: {a.contractor_fix.review_comment}
             </p>
           )}
-          <dl className="m-0 grid grid-cols-[110px_1fr] gap-y-2 text-[14px]">
+          <dl className="m-0 grid grid-cols-[6.875rem_1fr] gap-y-2 text-[0.875rem]">
             <dt className="text-muted-foreground">Property</dt>
             <dd className="m-0">
               <Link to="/properties/$code" params={{ code: a.property_code }} className="text-link">
@@ -250,7 +250,7 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
               )}
             </dd>
             <dt className="text-muted-foreground">Gate ref</dt>
-            <dd className="m-0 font-mono text-[12px]">
+            <dd className="m-0 font-mono text-[0.75rem]">
               {a.gate_ref ? (
                 <Link
                   to="/gates/$code"
@@ -267,7 +267,7 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
             {a.item_ref && (
               <>
                 <dt className="text-muted-foreground">Register item</dt>
-                <dd className="m-0 font-mono text-[12px]">
+                <dd className="m-0 font-mono text-[0.75rem]">
                   <Link
                     to="/properties/$code"
                     params={{ code: a.property_code }}
@@ -320,7 +320,7 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
                   onChange={(e) => setDecision(e.target.value)}
                   placeholder="What was decided, by whom"
                   disabled={a.status === "closed"}
-                  className={cn(textareaCls, "rounded-md text-[13px]")}
+                  className={cn(textareaCls, "rounded-md text-[0.8125rem]")}
                 />
               </Field>
               <Field label="Reason, and where it is recorded (e.g. FRA section)">
@@ -329,7 +329,7 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   disabled={a.status === "closed"}
-                  className={cn(textareaCls, "rounded-md text-[13px]")}
+                  className={cn(textareaCls, "rounded-md text-[0.8125rem]")}
                 />
               </Field>
             </div>
@@ -341,7 +341,7 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
                   {closing.map((e) => (
                     <li
                       key={e.id}
-                      className="flex items-center gap-2 rounded-md border border-divider px-2.5 py-1.5 text-[13px]"
+                      className="flex items-center gap-2 rounded-md border border-divider px-2.5 py-1.5 text-[0.8125rem]"
                     >
                       {e.thumb_url ? (
                         <img src={e.thumb_url} alt="" className="size-8 shrink-0 rounded object-cover" />
@@ -401,7 +401,7 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
                   Comment
                 </Button>
               </div>
-              <p className="m-0 text-[12px] text-muted-foreground">{a.close_hint}</p>
+              <p className="m-0 text-[0.75rem] text-muted-foreground">{a.close_hint}</p>
             </>
           )}
 
@@ -410,7 +410,7 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
               <Button variant="outline" disabled={reopen.isPending} onClick={() => reopen.mutate()}>
                 Undo close
               </Button>
-              <span className="text-[12px] text-muted-foreground">You closed this today, so you can undo it.</span>
+              <span className="text-[0.75rem] text-muted-foreground">You closed this today, so you can undo it.</span>
             </div>
           )}
 
@@ -429,7 +429,7 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   placeholder="Visible to everyone who can see this Action"
-                  className={cn(textareaCls, "rounded-md text-[13px]")}
+                  className={cn(textareaCls, "rounded-md text-[0.8125rem]")}
                 />
               </Field>
               <div className="flex gap-2">
@@ -453,10 +453,10 @@ export function ActionPanel({ ref_, onClose, onClosed }: { ref_: string; onClose
 
           {a.comments.length > 0 && (
             <section aria-label="Comments" className="flex flex-col gap-2 border-t border-divider pt-3">
-              <span className="text-[13px] font-semibold">Comments</span>
+              <span className="text-[0.8125rem] font-semibold">Comments</span>
               {a.comments.map((c) => (
-                <div key={c.id} className="text-[13px]">
-                  <div className="text-[12px] text-muted-foreground">
+                <div key={c.id} className="text-[0.8125rem]">
+                  <div className="text-[0.75rem] text-muted-foreground">
                     {c.author} · {fmtDateTime(c.at)}
                   </div>
                   <div className="whitespace-pre-wrap">{c.body}</div>
@@ -539,7 +539,7 @@ function CantCloseDialog({
           <li key={n}>{n}</li>
         ))}
       </ul>
-      {message && <p className="m-0 text-[12.5px] text-muted-foreground">{message}</p>}
+      {message && <p className="m-0 text-[0.78125rem] text-muted-foreground">{message}</p>}
     </QDialog>
   )
 }
@@ -602,7 +602,7 @@ function ReassignDialog({
         />
       </Field>
       {owner.startsWith("c:") && owner !== current && (
-        <span className="text-[13px] text-muted-foreground">
+        <span className="text-[0.8125rem] text-muted-foreground">
           {ownerLabel(opts.data, owner)} sees it in the contractor portal and marks it fixed with a photo. It closes
           once someone here checks that photo in Evidence review.
         </span>
@@ -619,7 +619,7 @@ function ReassignDialog({
           </select>
         </Field>
       </div>
-      <span className="text-[13px] text-muted-foreground">The change is recorded in the audit log with your name.</span>
+      <span className="text-[0.8125rem] text-muted-foreground">The change is recorded in the audit log with your name.</span>
     </QDialog>
   )
 }

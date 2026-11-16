@@ -79,7 +79,7 @@ export const FIELD_TYPES: { type: FieldType; label: string; hint: string }[] = [
 
 export function TypeIcon({ type, className }: { type: FieldType; className?: string }) {
   const box = cn(
-    "inline-flex size-7 shrink-0 items-center justify-center rounded-md bg-hover text-[11.5px] font-semibold text-ink2 [&_svg]:size-3.5",
+    "inline-flex size-7 shrink-0 items-center justify-center rounded-md bg-hover text-[0.71875rem] font-semibold text-ink2 [&_svg]:size-3.5",
     className,
   )
   const text: Partial<Record<FieldType, string>> = { yes_no: "Y/N", pass_fail: "P/F", text: "Aa", number: "#" }
@@ -206,7 +206,7 @@ export function AddFieldMenu({ onAdd, disabled }: { onAdd: (t: FieldType) => voi
       <DropdownMenuTrigger asChild disabled={disabled}>
         <button
           type="button"
-          className="flex h-10 w-full items-center justify-center gap-1.5 rounded-[10px] border border-dashed border-border bg-surface text-[13px] font-medium text-ink2 hover:bg-hover disabled:opacity-50"
+          className="flex h-10 w-full items-center justify-center gap-1.5 rounded-[10px] border border-dashed border-border bg-surface text-[0.8125rem] font-medium text-ink2 hover:bg-hover disabled:opacity-50"
         >
           <Plus className="size-4" aria-hidden />
           Add field · checkbox, yes/no, pass/fail, number with range, select, photo, signature, file, date
@@ -217,7 +217,7 @@ export function AddFieldMenu({ onAdd, disabled }: { onAdd: (t: FieldType) => voi
           <DropdownMenuItem key={t.type} onSelect={() => onAdd(t.type)} className="items-start gap-2.5 py-2">
             <TypeIcon type={t.type} className="size-6" />
             <span className="flex flex-col">
-              <span className="text-[13px] font-medium text-foreground">{t.label}</span>
+              <span className="text-[0.8125rem] font-medium text-foreground">{t.label}</span>
               <span className="text-xs text-muted-foreground">{t.hint}</span>
             </span>
           </DropdownMenuItem>
@@ -342,8 +342,8 @@ export function FieldCard({
           className="flex min-w-0 flex-1 items-start gap-3 text-left"
         >
           <span className="min-w-0 flex-1">
-            <span className="block text-[14px] font-medium text-foreground">{f.label || "Untitled field"}</span>
-            <span className="block text-[12.5px] text-muted-foreground">{describe(f)}</span>
+            <span className="block text-[0.875rem] font-medium text-foreground">{f.label || "Untitled field"}</span>
+            <span className="block text-[0.78125rem] text-muted-foreground">{describe(f)}</span>
           </span>
           {requiredPill}
         </button>
@@ -361,7 +361,7 @@ export function FieldCard({
               />
             </Labeled>
             <div className="flex shrink-0 flex-col items-end gap-1.5 pt-0.5">
-              <label className="flex items-center gap-1.5 text-[12.5px] text-ink2">
+              <label className="flex items-center gap-1.5 text-[0.78125rem] text-ink2">
                 <input
                   type="checkbox"
                   className="size-4 accent-[var(--c-primary)]"
@@ -396,7 +396,7 @@ export function FieldCard({
           {fails(f) && (
             <>
               {f.type === "yes_no" && (f.fail_on === "no" || f.fail_on === "yes") && (
-                <div className="rounded-lg bg-st-red-bg px-3 py-2.5 text-[13.5px] text-st-red">
+                <div className="rounded-lg bg-st-red-bg px-3 py-2.5 text-[0.84375rem] text-st-red">
                   <div className="font-semibold">If the answer is {f.fail_on === "no" ? "No" : "Yes"}</div>
                   <div className="mt-1">{CONSEQUENCE[klass] ?? CONSEQUENCE.B}</div>
                 </div>
@@ -469,7 +469,7 @@ function TypeSettings({
       )
     case "checkbox":
       return (
-        <label className="flex items-center gap-2 text-[13px]">
+        <label className="flex items-center gap-2 text-[0.8125rem]">
           <input
             type="checkbox"
             className="size-4 accent-[var(--c-primary)]"
@@ -530,9 +530,9 @@ function TypeSettings({
             />
           </Labeled>
           <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
-            <legend className="mb-1.5 text-[12.5px] font-medium text-ink2">Answers that fail the check</legend>
+            <legend className="mb-1.5 text-[0.78125rem] font-medium text-ink2">Answers that fail the check</legend>
             {(f.options ?? []).map((o) => (
-              <label key={o} className="flex items-center gap-2 text-[13px]">
+              <label key={o} className="flex items-center gap-2 text-[0.8125rem]">
                 <input
                   type="checkbox"
                   className="size-4 accent-[var(--c-primary)]"
@@ -626,14 +626,14 @@ export function PhonePreview({ form, title, meta }: { form: FormField[]; title: 
       <div className="flex max-h-[640px] flex-col gap-3 overflow-y-auto rounded-[27px] bg-surface px-4 pt-5 pb-4">
         <div>
           <div className="text-xs text-muted-foreground">{meta}</div>
-          <div className="text-[17px] leading-tight font-semibold">{title || "Untitled check"}</div>
+          <div className="text-[1.0625rem] leading-tight font-semibold">{title || "Untitled check"}</div>
         </div>
         {form.map((f, i) => {
           if (f.type === "photo") {
             if (i !== firstPhoto) return null
             return (
               <div key="photos" className="flex flex-col gap-1.5">
-                <div className="text-[12.5px] font-medium">Photos · 0 of {need}</div>
+                <div className="text-[0.78125rem] font-medium">Photos · 0 of {need}</div>
                 <div className="grid grid-cols-2 gap-1.5">
                   {photos.map((p) => (
                     <div
@@ -650,7 +650,7 @@ export function PhonePreview({ form, title, meta }: { form: FormField[]; title: 
           return (
             <div key={f.key} className="flex flex-col gap-1.5">
               {f.type !== "checkbox" && (
-                <div className="text-[12.5px] font-medium">
+                <div className="text-[0.78125rem] font-medium">
                   {f.label}
                   {f.required === false && <span className="font-normal text-muted-foreground"> (optional)</span>}
                 </div>
@@ -665,7 +665,7 @@ export function PhonePreview({ form, title, meta }: { form: FormField[]; title: 
         {form.length === 0 && (
           <div className="py-6 text-center text-xs text-muted-foreground">Add a field to see it here.</div>
         )}
-        <div className="mt-1 flex h-11 items-center justify-center rounded-lg bg-subtle/60 text-[13.5px] font-medium text-white">
+        <div className="mt-1 flex h-11 items-center justify-center rounded-lg bg-subtle/60 text-[0.84375rem] font-medium text-white">
           Submit check
         </div>
       </div>
@@ -682,7 +682,7 @@ function Choice({ options, value, onPick }: { options: string[]; value: string; 
           type="button"
           onClick={() => onPick(o)}
           className={cn(
-            "h-10 rounded-lg border text-[13.5px]",
+            "h-10 rounded-lg border text-[0.84375rem]",
             value === o ? "border-primary bg-primary text-primary-foreground" : "border-border bg-surface",
           )}
         >
@@ -694,7 +694,7 @@ function Choice({ options, value, onPick }: { options: string[]; value: string; 
 }
 
 function PreviewInput({ f, value, onPick }: { f: FormField; value: string; onPick: (v: string) => void }) {
-  const box = "flex h-10 items-center justify-between rounded-lg border border-border px-2.5 text-[13px]"
+  const box = "flex h-10 items-center justify-between rounded-lg border border-border px-2.5 text-[0.8125rem]"
   switch (f.type) {
     case "yes_no":
       return <Choice options={["Yes", "No"]} value={value} onPick={onPick} />
@@ -706,7 +706,7 @@ function PreviewInput({ f, value, onPick }: { f: FormField; value: string; onPic
           {(f.items ?? []).map((it) => (
             <div key={it} className="flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs">
               <span className="min-w-0 truncate">{it}</span>
-              <span className="flex shrink-0 gap-1 text-[11px]">
+              <span className="flex shrink-0 gap-1 text-[0.6875rem]">
                 <span className="rounded border border-border px-1.5 py-0.5">Pass</span>
                 <span className="rounded border border-border px-1.5 py-0.5">Fail</span>
               </span>
@@ -716,7 +716,7 @@ function PreviewInput({ f, value, onPick }: { f: FormField; value: string; onPic
       )
     case "checkbox":
       return (
-        <label className="flex items-center gap-2 text-[13px]">
+        <label className="flex items-center gap-2 text-[0.8125rem]">
           <input type="checkbox" className="size-5 accent-[var(--c-primary)]" />
           {f.label}
         </label>

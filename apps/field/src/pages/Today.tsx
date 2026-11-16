@@ -64,28 +64,28 @@ export function TodayPage() {
                 type="button"
                 aria-label={`Switch property. Now: ${propName}`}
                 onClick={() => setPicking(true)}
-                className="flex h-11 items-center gap-1.5 rounded-full border border-border bg-surface px-4 text-[15px] font-semibold"
+                className="flex h-11 items-center gap-1.5 rounded-full border border-border bg-surface px-4 text-[0.9375rem] font-semibold"
               >
                 {propName}
                 <ChevronDown aria-hidden className="size-4" />
               </button>
             ) : (
               // One property: plain text, not a button-shaped chip. Nothing at all when there is no property yet.
-              <span className="min-w-0 truncate text-[15px] font-semibold text-muted-foreground">{propName}</span>
+              <span className="min-w-0 truncate text-[0.9375rem] font-semibold text-muted-foreground">{propName}</span>
             )}
             <SyncPill />
           </div>
-          <h1 className="m-0 mt-3.5 text-[24px] leading-tight font-semibold">
+          <h1 className="m-0 mt-3.5 text-[1.5rem] leading-tight font-semibold">
             {greeting()}, {d?.first_name ?? me.data?.first_name}
           </h1>
-          <p className="m-0 mt-1 text-[15px] text-muted-foreground">
+          <p className="m-0 mt-1 text-[0.9375rem] text-muted-foreground">
             {d ? `${d.date_label} · ${toDo} to do today` : " "}
           </p>
           {/* Reporting a hazard is never more than one tap from the top, however long the list. */}
-          <div className={cn("mt-3.5 grid gap-2", me.data?.can["task.complete"] ? "grid-cols-2" : "grid-cols-1")}>
+          <div className={cn("mt-3.5 grid gap-2", me.data?.can["task.complete"] ? "grid-cols-[repeat(auto-fit,minmax(10rem,1fr))]" : "grid-cols-1")}>
             <Link
               to="/report"
-              className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 text-[15px] font-semibold text-foreground no-underline"
+              className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 text-[0.9375rem] font-semibold text-foreground no-underline"
             >
               <TriangleAlert aria-hidden className="size-5 shrink-0" />
               Report an issue
@@ -93,7 +93,7 @@ export function TodayPage() {
             {me.data?.can["task.complete"] && (
               <Link
                 to="/contractor-visit"
-                className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 text-[15px] font-semibold text-foreground no-underline"
+                className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 text-[0.9375rem] font-semibold text-foreground no-underline"
               >
                 <ClipboardList aria-hidden className="size-5 shrink-0" />
                 Contractor visit
@@ -122,7 +122,7 @@ export function TodayPage() {
           {todays.length ? (
             todays.map((c) => <TaskLink key={c.task_id} card={c} />)
           ) : (
-            <p className="m-0 rounded-xl border border-divider bg-surface px-4 py-4 text-[15px] text-muted-foreground">
+            <p className="m-0 rounded-xl border border-divider bg-surface px-4 py-4 text-[0.9375rem] text-muted-foreground">
               {overdue.length ? "Nothing else due today." : (d!.nothing_overdue ?? "Nothing due today. Thank you.")}
             </p>
           )}
@@ -131,13 +131,13 @@ export function TodayPage() {
               <SectionLabel>Coming up</SectionLabel>
               {d!.upcoming.map((c) => (
                 <div key={c.task_id} className="rounded-xl border border-divider bg-surface px-3.5 py-3">
-                  <div className="text-[16px] font-semibold">{c.title}</div>
-                  <div className="text-[14px] text-muted-foreground">{c.badge}</div>
+                  <div className="text-[1rem] font-semibold">{c.title}</div>
+                  <div className="text-[0.875rem] text-muted-foreground">{c.badge}</div>
                 </div>
               ))}
             </>
           )}
-          <div className="mt-1 flex items-center gap-3 rounded-xl bg-hover px-4 py-3.5 text-[15px]">
+          <div className="mt-1 flex items-center gap-3 rounded-xl bg-hover px-4 py-3.5 text-[0.9375rem]">
             <ChartNoAxesColumn aria-hidden className="size-5 shrink-0" />
             {d!.streak_weeks > 0 ? (
               <span>
@@ -172,9 +172,9 @@ function TaskLink({ card, overdue }: { card: TaskCard; overdue?: boolean }) {
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           {card.life_safety && <Pill tone="red">Life safety</Pill>}
-          <span className="text-[16.5px] leading-snug font-semibold">{card.title}</span>
+          <span className="text-[1.03125rem] leading-snug font-semibold">{card.title}</span>
         </div>
-        <div className="mt-1 text-[14px] text-muted-foreground">{card.subtitle}</div>
+        <div className="mt-1 text-[0.875rem] text-muted-foreground">{card.subtitle}</div>
         {(overdue || !dueToday || card.na_pending) && (
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {overdue ? <Pill tone="red">{card.badge}</Pill> : !dueToday && <Pill tone="grey">{card.badge}</Pill>}

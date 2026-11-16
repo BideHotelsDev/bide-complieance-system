@@ -159,7 +159,7 @@ export function AssigneePicker({
             aria-haspopup="listbox"
             aria-invalid={invalid || !!error || undefined}
             className={cn(
-              "flex h-8 w-full min-w-0 items-center gap-1.5 rounded-md border px-2 text-left text-[13px] outline-none focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-default",
+              "flex h-8 w-full min-w-0 items-center gap-1.5 rounded-md border px-2 text-left text-[0.8125rem] outline-none focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-default",
               invalid || error
                 ? "border-st-red/60 bg-st-red-bg text-st-red"
                 : "border-transparent hover:border-border disabled:hover:border-transparent",
@@ -210,11 +210,11 @@ export function AssigneePicker({
                         className="gap-2"
                       >
                         {o.kind !== "mode" && o.kind !== "clear" && (
-                          <Avatar initials={o.initials ?? initialsOf(o.label)} className="size-6 text-[10px]" />
+                          <Avatar initials={o.initials ?? initialsOf(o.label)} className="size-6 text-[0.625rem]" />
                         )}
                         <span className="min-w-0 flex-1 truncate">{hi(o.label)}</span>
                         {o.kind === "contractor" ? (
-                          <Pill tone="grey" className="h-[18px] px-1.5 text-[11px]">
+                          <Pill tone="grey" className="h-[18px] px-1.5 text-[0.6875rem]">
                             Contractor
                           </Pill>
                         ) : (
@@ -234,7 +234,7 @@ export function AssigneePicker({
         </PopoverContent>
       </Popover>
       {error && (
-        <div role="alert" className="mt-0.5 px-2 text-[11.5px] leading-snug text-st-red">
+        <div role="alert" className="mt-0.5 px-2 text-[0.71875rem] leading-snug text-st-red">
           {error}
         </div>
       )}

@@ -128,14 +128,14 @@ export function ImportPage() {
             <X />
           </Link>
         </Button>
-        <h1 className="m-0 text-[15px] font-semibold">Import</h1>
+        <h1 className="m-0 text-[0.9375rem] font-semibold">Import</h1>
         <ol aria-label="Steps" className="m-0 mx-auto flex list-none flex-wrap items-center gap-5 p-0">
           {STEPS.map((s, i) => (
             <li
               key={s.key}
               aria-current={i === idx ? "step" : undefined}
               className={cn(
-                "flex items-center gap-2 text-[14px]",
+                "flex items-center gap-2 text-[0.875rem]",
                 i === idx ? "font-semibold" : i > idx && "text-muted-foreground",
               )}
             >
@@ -240,7 +240,7 @@ function UploadStep({ onStarted }: { onStarted: (id: string) => void }) {
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4 pt-6">
       <div>
-        <h2 className="m-0 text-[20px] font-semibold">Bring in the register Sheet or the gate workbook</h2>
+        <h2 className="m-0 text-[1.25rem] font-semibold">Bring in the register Sheet or the gate workbook</h2>
         <p className="m-0 mt-1 text-muted-foreground">
           Upload BH-CMP-002 (the opening checklist workbook), BH-CMP-001, or any XLSX or CSV. We find the sheets, match
           the columns, and show exactly what will happen before anything is copied.
@@ -265,7 +265,7 @@ function UploadStep({ onStarted }: { onStarted: (id: string) => void }) {
       >
         <FileSpreadsheet className="size-8 text-subtle" aria-hidden />
         <div className="font-medium">{busy ?? "Drop the file here"}</div>
-        <div className="text-[13px] text-muted-foreground">Excel (.xlsx) or CSV, up to the upload limit</div>
+        <div className="text-[0.8125rem] text-muted-foreground">Excel (.xlsx) or CSV, up to the upload limit</div>
         <input
           ref={input}
           type="file"
@@ -287,7 +287,7 @@ function UploadStep({ onStarted }: { onStarted: (id: string) => void }) {
           {error}
         </Callout>
       )}
-      <ul className="m-0 flex list-disc flex-col gap-1 pl-5 text-[13px] text-muted-foreground">
+      <ul className="m-0 flex list-disc flex-col gap-1 pl-5 text-[0.8125rem] text-muted-foreground">
         <li>Nothing in the workbook is changed. You can re-run the import until go-live.</li>
         <li>"Done" with no evidence filed imports as "To confirm". No evidence, not done.</li>
         <li>Actions & Advisories keep their original IDs.</li>
@@ -299,7 +299,7 @@ function UploadStep({ onStarted }: { onStarted: (id: string) => void }) {
 function FileCard({ job: j }: { job: Job }) {
   return (
     <section className="flex flex-wrap items-center gap-4 rounded-[10px] border border-divider bg-surface px-4 py-3.5">
-      <span className="inline-flex h-10 w-11 shrink-0 items-center justify-center rounded-md bg-st-green-bg text-[11px] font-bold text-st-green">
+      <span className="inline-flex h-10 w-11 shrink-0 items-center justify-center rounded-md bg-st-green-bg text-[0.6875rem] font-bold text-st-green">
         {j.file_name.toLowerCase().endsWith(".csv") ? "CSV" : "XLSX"}
       </span>
       <div className="min-w-[200px] flex-1">
@@ -360,7 +360,7 @@ function MapTable({
   return (
     <section aria-labelledby="map-h" className="overflow-hidden rounded-[10px] border border-divider bg-surface">
       <div className="flex flex-wrap items-center gap-3 border-b border-divider px-4 py-3">
-        <h2 id="map-h" className="m-0 text-[14px] font-semibold">
+        <h2 id="map-h" className="m-0 text-[0.875rem] font-semibold">
           Property sheets → Opening checklist items
         </h2>
         <span className="ml-auto text-xs text-muted-foreground">
@@ -368,7 +368,7 @@ function MapTable({
         </span>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[640px] border-collapse text-[13.5px]">
+        <table className="w-full min-w-[640px] border-collapse text-[0.84375rem]">
           <thead>
             <tr className="text-left text-xs text-muted-foreground">
               <th className="h-[34px] bg-background px-4 font-medium whitespace-nowrap">Column in the workbook</th>
@@ -435,13 +435,13 @@ function ReviewStep({ job: j, onOwner }: { job: Job; onOwner: (role: string, per
     <>
       <section className="overflow-hidden rounded-[10px] border border-divider bg-surface">
         <div className="border-b border-divider px-4 py-3">
-          <h2 className="m-0 text-[14px] font-semibold">Where each sheet goes</h2>
+          <h2 className="m-0 text-[0.875rem] font-semibold">Where each sheet goes</h2>
         </div>
         <ul className="m-0 list-none p-0">
           {j.sheets.map((s) => (
             <li
               key={s.name}
-              className="flex flex-wrap items-center gap-3 border-b border-divider px-4 py-2.5 text-[13.5px] last:border-0"
+              className="flex flex-wrap items-center gap-3 border-b border-divider px-4 py-2.5 text-[0.84375rem] last:border-0"
             >
               <span className="min-w-[180px] font-medium">{s.name}</span>
               <span className="text-muted-foreground">→</span>
@@ -462,20 +462,20 @@ function ReviewStep({ job: j, onOwner }: { job: Job; onOwner: (role: string, per
           ))}
         </ul>
         {gateSheets.length === 0 && (
-          <p className="m-0 px-4 py-3 text-[13px] text-muted-foreground">No opening checklist sheets in this file.</p>
+          <p className="m-0 px-4 py-3 text-[0.8125rem] text-muted-foreground">No opening checklist sheets in this file.</p>
         )}
       </section>
       <section className="overflow-hidden rounded-[10px] border border-divider bg-surface">
         <div className="flex flex-wrap items-center gap-3 border-b border-divider px-4 py-3">
-          <h2 className="m-0 text-[14px] font-semibold">Action owners that are roles, not people</h2>
+          <h2 className="m-0 text-[0.875rem] font-semibold">Action owners that are roles, not people</h2>
           <span className="ml-auto text-xs text-muted-foreground">One name per item (golden rule 2)</span>
         </div>
         {j.plan.role_owners.length === 0 ? (
-          <p className="m-0 px-4 py-3 text-[13px] text-muted-foreground">
+          <p className="m-0 px-4 py-3 text-[0.8125rem] text-muted-foreground">
             Every owner in the file matches a person. Nothing to map.
           </p>
         ) : (
-          <table className="w-full border-collapse text-[13.5px]">
+          <table className="w-full border-collapse text-[0.84375rem]">
             <thead>
               <tr className="text-left text-xs text-muted-foreground">
                 <th className="h-[34px] bg-background px-4 font-medium">Owner in the workbook</th>
@@ -522,7 +522,7 @@ function Row({
   children: React.ReactNode
 }) {
   return (
-    <li className="flex gap-3 border-b border-divider px-4 py-3 text-[13.5px] last:border-0">
+    <li className="flex gap-3 border-b border-divider px-4 py-3 text-[0.84375rem] last:border-0">
       <Pill tone={tone} className="tabular">
         {n}
       </Pill>
@@ -539,7 +539,7 @@ function WhatWillHappen({ job: j }: { job: Job }) {
       aria-label="Checks before import"
       className="self-start overflow-hidden rounded-[10px] border border-divider bg-surface xl:sticky xl:top-16"
     >
-      <h2 className="m-0 border-b border-divider px-4 py-3 text-[14px] font-semibold">What will happen</h2>
+      <h2 className="m-0 border-b border-divider px-4 py-3 text-[0.875rem] font-semibold">What will happen</h2>
       <ul className="m-0 list-none p-0">
         <Row n={p.gate_items} tone="green">
           Gate items across {plural(p.properties.length, "property", "properties")}
@@ -591,7 +591,7 @@ function WhatWillHappen({ job: j }: { job: Job }) {
       </ul>
       <div className="border-t border-divider bg-background px-4 py-3">
         <div className="mb-2 text-xs font-semibold">Status value mapping</div>
-        <dl className="m-0 grid grid-cols-[1fr_auto_1.3fr] items-center gap-x-3 gap-y-1.5 text-[12.5px]">
+        <dl className="m-0 grid grid-cols-[1fr_auto_1.3fr] items-center gap-x-3 gap-y-1.5 text-[0.78125rem]">
           {j.status_mapping.map((s) => {
             const key = {
               Done: "done",
@@ -630,8 +630,8 @@ function ResultStep({ job: j, result, onAgain }: { job: Job; result?: Result; on
           <Check className="size-5" aria-hidden />
         </span>
         <div>
-          <h2 className="m-0 text-[20px] font-semibold">Imported {j.file_name}</h2>
-          <div className="text-[13px] text-muted-foreground">
+          <h2 className="m-0 text-[1.25rem] font-semibold">Imported {j.file_name}</h2>
+          <div className="text-[0.8125rem] text-muted-foreground">
             {fmtDateTime(r.at)} · a one-way copy; re-run it until go-live
           </div>
         </div>
@@ -643,8 +643,8 @@ function ResultStep({ job: j, result, onAgain }: { job: Job; result?: Result; on
           { label: "Actions & Advisories added", n: r.actions },
         ].map((k) => (
           <div key={k.label} className="rounded-[10px] border border-divider bg-surface p-4">
-            <div className="text-[12.5px] text-muted-foreground">{k.label}</div>
-            <div className="tabular mt-1 text-[26px] leading-none font-semibold">{k.n}</div>
+            <div className="text-[0.78125rem] text-muted-foreground">{k.label}</div>
+            <div className="tabular mt-1 text-[1.625rem] leading-none font-semibold">{k.n}</div>
           </div>
         ))}
       </div>
@@ -654,7 +654,7 @@ function ResultStep({ job: j, result, onAgain }: { job: Job; result?: Result; on
           {r.roles_left_to_map.map((o) => `“${o}”`).join(", ")}. Give each Action a real owner on the Actions list.
         </Callout>
       )}
-      <p className="m-0 text-[13px] text-muted-foreground">
+      <p className="m-0 text-[0.8125rem] text-muted-foreground">
         Actions whose IDs were already in Bide Comply were left alone, so running the import again doesn't duplicate
         them.
       </p>

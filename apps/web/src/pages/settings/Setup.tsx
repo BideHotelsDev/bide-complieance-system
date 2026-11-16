@@ -119,7 +119,7 @@ function PropertyPicker({ code, name }: { code: string; name: string }) {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="inline-flex items-center gap-1 rounded-md px-1 text-[22px] leading-tight font-semibold tracking-[-0.015em] hover:bg-hover"
+          className="inline-flex items-center gap-1 rounded-md px-1 text-[1.375rem] leading-tight font-semibold tracking-[-0.015em] hover:bg-hover"
           aria-label={`Property: ${name}. Choose another property`}
         >
           {name}
@@ -441,18 +441,18 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
               <button
                 type="button"
                 onClick={() => set({ q: undefined, view: undefined, area: undefined })}
-                className="h-8 rounded-md px-2 text-[13px] text-link hover:bg-hover"
+                className="h-8 rounded-md px-2 text-[0.8125rem] text-link hover:bg-hover"
               >
                 Clear all filters
               </button>
             )}
           </div>
-          <p aria-live="polite" className="m-0 -mt-1 text-right text-[12.5px] text-muted-foreground">
+          <p aria-live="polite" className="m-0 -mt-1 text-right text-[0.78125rem] text-muted-foreground">
             {d.applies_count} of {d.total} templates apply · {d.off_count} switched off with a reason
             {d.any_filter ? ` · ${d.summary.replace(/\.$/, "").toLowerCase()}` : ""}
           </p>
           <div className="overflow-x-auto rounded-[10px] border border-divider bg-surface">
-            <table className="w-full min-w-[1080px] table-fixed border-collapse text-[13.5px]">
+            <table className="w-full min-w-[1080px] table-fixed border-collapse text-[0.84375rem]">
               <caption className="sr-only">Checks at {d.property} and who does each one</caption>
               {/* Fixed widths so the pickers can't push Verifier and Setup off the page; Template takes the rest. */}
               <colgroup>
@@ -527,7 +527,7 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
                       </td>
                       {off ? (
                         <>
-                          <td colSpan={5} className="px-2 text-[13px] text-muted-foreground">
+                          <td colSpan={5} className="px-2 text-[0.8125rem] text-muted-foreground">
                             {r.setup === "off_requested" && r.switch_off_request ? (
                               <span className="flex items-center gap-2">
                                 <Pill tone="amber">Switch-off requested</Pill>
@@ -571,7 +571,7 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
                             >
                               <span className="block truncate">{r.frequency_label}</span>
                               {r.frequency_default && (
-                                <span className="block text-[11.5px] text-muted-foreground">
+                                <span className="block text-[0.71875rem] text-muted-foreground">
                                   Default {r.frequency_default}
                                 </span>
                               )}
@@ -588,7 +588,7 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
                               }
                               badge={
                                 r.done_by_kind === "contractor" ? (
-                                  <Pill tone="grey" className="h-[18px] px-1.5 text-[11px]">
+                                  <Pill tone="grey" className="h-[18px] px-1.5 text-[0.6875rem]">
                                     Contractor
                                   </Pill>
                                 ) : undefined
@@ -674,7 +674,7 @@ function SetupView({ code, picked }: { code: string; picked: boolean }) {
               </tbody>
             </table>
           </div>
-          <p className="m-0 text-[12.5px] text-muted-foreground">
+          <p className="m-0 text-[0.78125rem] text-muted-foreground">
             A frequency override needs the FRA section or assessor decision that set it (CMS-12). Switching a template
             off needs a reason{canToggle ? "" : " and system owner approval"}.
           </p>

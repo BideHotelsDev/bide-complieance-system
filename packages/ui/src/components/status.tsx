@@ -31,7 +31,7 @@ export function Pill({
   return (
     <span
       className={cn(
-        "inline-flex h-[22px] shrink-0 items-center gap-[5px] rounded-full px-2 text-[12.5px] leading-none font-medium whitespace-nowrap",
+        "inline-flex h-[22px] shrink-0 items-center gap-[5px] rounded-full px-2 text-[0.78125rem] leading-none font-medium whitespace-nowrap",
         TONE[tone],
         className,
       )}
@@ -145,7 +145,7 @@ export function ClassBadge({ klass, className }: { klass: "A" | "B" | "C" | stri
       title={CLASS_NAME[k]}
       aria-label={CLASS_NAME[k]}
       className={cn(
-        "inline-flex size-[18px] shrink-0 items-center justify-center rounded-[4px] text-[11px] font-semibold",
+        "inline-flex size-[18px] shrink-0 items-center justify-center rounded-[4px] text-[0.6875rem] font-semibold",
         k === "A" && "bg-primary text-primary-foreground",
         k === "B" && "border border-subtle text-ink2",
         k === "C" && "border border-dashed border-subtle text-st-grey",
@@ -178,7 +178,7 @@ export function PriorityBadge({
   return (
     <span
       className={cn(
-        "inline-flex h-[22px] shrink-0 items-center rounded-full px-2 text-[12.5px] leading-none font-medium whitespace-nowrap",
+        "inline-flex h-[22px] shrink-0 items-center rounded-full px-2 text-[0.78125rem] leading-none font-medium whitespace-nowrap",
         p.cls,
         className,
       )}
@@ -235,7 +235,7 @@ export function ScoreRing({
           />
         )}
       </svg>
-      <span className="tabular absolute inset-0 flex items-center justify-center text-[13px] font-semibold">
+      <span className="tabular absolute inset-0 flex items-center justify-center text-[0.8125rem] font-semibold">
         {score == null ? "—" : `${score}%`}
       </span>
     </span>

@@ -92,7 +92,7 @@ export function AssessorPage() {
             <ErrorState message={q.error.message} onRetry={() => void q.refetch()} />
           </Card>
         ) : (
-          <p className="m-0 text-[13px] text-muted-foreground">
+          <p className="m-0 text-[0.8125rem] text-muted-foreground">
             {code ? `There's no audit walk you can open for “${code}”. ` : ""}Choose a property above to start or carry
             on its walk.
           </p>
@@ -124,7 +124,7 @@ function PropertyPicker({ current, compact = false }: { current?: string; compac
         !compact && "rounded-[10px] border border-divider bg-surface p-4",
       )}
     >
-      <span className="mr-1 text-[13px] text-muted-foreground">{compact ? "Walks:" : "Your properties"}</span>
+      <span className="mr-1 text-[0.8125rem] text-muted-foreground">{compact ? "Walks:" : "Your properties"}</span>
       {props.map((p) => {
         const on = p.code.toLowerCase() === current?.toLowerCase()
         return (
@@ -135,7 +135,7 @@ function PropertyPicker({ current, compact = false }: { current?: string; compac
             search={{}}
             aria-current={on ? "page" : undefined}
             className={cn(
-              "inline-flex h-8 items-center gap-2 rounded-full border px-3 text-[13px] font-medium no-underline",
+              "inline-flex h-8 items-center gap-2 rounded-full border px-3 text-[0.8125rem] font-medium no-underline",
               on
                 ? "border-foreground bg-primary text-primary-foreground"
                 : "border-border bg-surface text-foreground hover:bg-hover",
@@ -194,7 +194,7 @@ function WalkView({ walk, group, onGroup }: { walk: Walk; group: string; onGroup
                 aria-selected={g.key === group}
                 onClick={() => onGroup(g.key)}
                 className={cn(
-                  "inline-flex h-10 items-center gap-2 rounded-full border px-4 text-[14px] font-medium",
+                  "inline-flex h-10 items-center gap-2 rounded-full border px-4 text-[0.875rem] font-medium",
                   g.key === group
                     ? "border-foreground bg-primary text-primary-foreground"
                     : "border-border bg-surface hover:bg-hover",
@@ -217,7 +217,7 @@ function WalkView({ walk, group, onGroup }: { walk: Walk; group: string; onGroup
             aria-label="Register items to check"
             className="overflow-hidden rounded-[10px] border border-divider bg-surface"
           >
-            <div className="hidden grid-cols-[44px_minmax(0,1fr)_244px_190px] gap-x-4 items-center border-b border-divider bg-background px-4 py-2.5 text-[13px] font-medium text-muted-foreground lg:grid">
+            <div className="hidden grid-cols-[44px_minmax(0,1fr)_19rem_10.5rem] gap-x-4 items-center border-b border-divider bg-background px-4 py-2.5 text-[0.8125rem] font-medium text-muted-foreground lg:grid">
               <span />
               <span>The register says</span>
               <span>On site, does it match?</span>
@@ -233,12 +233,45 @@ function WalkView({ walk, group, onGroup }: { walk: Walk; group: string; onGroup
               ))
             )}
           </section>
+
+          {/* Below laptop width the side panel drops under every item, so keep the count and Finish in reach
+              (UX audit F40). Sits above the phone tab bar. */}
+          {!sent && (
+            <div className="sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-20 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[10px] border border-divider bg-surface px-4 py-3 shadow-lg md:bottom-3 xl:hidden">
+              <span className="text-[0.875rem]">
+                <span className="tabular font-semibold">
+                  {done} of {total}
+                </span>{" "}
+                done
+                {walk.tally.doesnt > 0 && (
+                  <>
+                    {" · "}
+                    <span className="tabular font-semibold text-st-red">{walk.tally.doesnt}</span> don't match
+                  </>
+                )}
+              </span>
+              <Button
+                className="ml-auto"
+                disabled={!walk.can_finish || send.isPending}
+                onClick={() => send.mutate()}
+                aria-describedby="finish-note"
+              >
+                {send.isPending && <Loader2 className="animate-spin" aria-hidden />}
+                Finish and send report
+              </Button>
+              {!walk.can_finish && (
+                <span className="basis-full text-[0.78125rem] text-muted-foreground">
+                  You can send it once every item has an answer.
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <aside className="flex flex-col gap-4 xl:sticky xl:top-4">
           <Card bodyClassName="p-4">
-            <h2 className="m-0 mb-3 text-[15px] font-semibold">This walk so far</h2>
-            <dl className="m-0 grid grid-cols-[1fr_auto] gap-y-2.5 text-[14px]">
+            <h2 className="m-0 mb-3 text-[0.9375rem] font-semibold">This walk so far</h2>
+            <dl className="m-0 grid grid-cols-[1fr_auto] gap-y-2.5 text-[0.875rem]">
               <dt>Matches the register</dt>
               <dd className="tabular m-0 text-right font-semibold">{walk.tally.matches}</dd>
               <dt>Doesn't match</dt>
@@ -260,7 +293,7 @@ function WalkView({ walk, group, onGroup }: { walk: Walk; group: string; onGroup
               {send.isPending && <Loader2 className="animate-spin" aria-hidden />}
               {sent ? "Report sent" : "Finish and send report"}
             </Button>
-            <p id="finish-note" className="m-0 mt-3 text-[12.5px] text-muted-foreground">
+            <p id="finish-note" className="m-0 mt-3 text-[0.78125rem] text-muted-foreground">
               {sent
                 ? `Sent ${walk.sent_at ? fmtDateTime(walk.sent_at) : ""}. The findings are now Actions to fix.`
                 : `Each "Doesn't match" becomes an Action owned by ${walk.action_owner?.split(" ")[0] ?? "the system owner"}, with your priority and photos. The directors and the dutyholder get your report.${
@@ -269,13 +302,13 @@ function WalkView({ walk, group, onGroup }: { walk: Walk; group: string; onGroup
             </p>
           </Card>
           <Card bodyClassName="p-4">
-            <h2 className="m-0 mb-3 text-[15px] font-semibold">Also waiting for you</h2>
+            <h2 className="m-0 mb-3 text-[0.9375rem] font-semibold">Also waiting for you</h2>
             {walk.also_waiting.length === 0 ? (
-              <p className="m-0 text-[13px] text-muted-foreground">Nothing else at {walk.property}.</p>
+              <p className="m-0 text-[0.8125rem] text-muted-foreground">Nothing else at {walk.property}.</p>
             ) : (
               <ul className="m-0 flex list-none flex-col gap-3 p-0">
                 {walk.also_waiting.map((a, i) => (
-                  <li key={i} className="flex items-start gap-3 text-[14px]">
+                  <li key={i} className="flex items-start gap-3 text-[0.875rem]">
                     {a.link ? (
                       <AppLink
                         href={a.link}
@@ -302,7 +335,7 @@ function DueBadge({ priority, due }: { priority?: Priority; due: string }) {
   const label = priority ? PRIORITY.find((p) => p.value === priority)?.label : "Due"
   if (priority === "high")
     return (
-      <span className="inline-flex h-[22px] shrink-0 items-center rounded-full px-2 text-[12.5px] font-semibold whitespace-nowrap shadow-[inset_0_0_0_1.5px_var(--c-foreground)]">
+      <span className="inline-flex h-[22px] shrink-0 items-center rounded-full px-2 text-[0.78125rem] font-semibold whitespace-nowrap shadow-[inset_0_0_0_1.5px_var(--c-foreground)]">
         {label} · {fmtDate(due)}
       </span>
     )
@@ -376,13 +409,13 @@ function Row({ item, walk, disabled, onSaved }: { item: Item; walk: Walk; disabl
   const findingId = `finding-${item.register_item_id}`
   return (
     <div className={cn("border-b border-divider last:border-b-0", doesnt && "bg-st-red-bg/40")}>
-      <div className="grid grid-cols-[44px_minmax(0,1fr)] items-center gap-y-3 px-4 py-3.5 lg:grid-cols-[44px_minmax(0,1fr)_244px_190px] lg:gap-x-4">
+      <div className="grid grid-cols-[44px_minmax(0,1fr)] items-center gap-y-3 px-4 py-3.5 lg:grid-cols-[44px_minmax(0,1fr)_19rem_10.5rem] lg:gap-x-4">
         <span>
           <ClassBadge klass={item.class} />
         </span>
         <span className="min-w-0">
           <span className="block font-medium">{item.check}</span>
-          <span className="block text-[13px] text-muted-foreground">
+          <span className="block text-[0.8125rem] text-muted-foreground">
             <span className="mono-id">{item.ref}</span> · {item.register_says}
           </span>
         </span>
@@ -413,7 +446,7 @@ function Row({ item, walk, disabled, onSaved }: { item: Item; walk: Walk; disabl
                     })
                   }
                   className={cn(
-                    "h-11 min-w-[72px] border-r border-border px-3 text-[13.5px] leading-tight font-medium last:border-r-0 disabled:cursor-not-allowed",
+                    "h-11 min-w-[72px] border-r border-border px-3 text-[0.84375rem] leading-tight font-medium whitespace-nowrap last:border-r-0 disabled:cursor-not-allowed",
                     on && v === "matches" && "bg-st-green-bg text-st-green",
                     on && v === "doesnt" && "bg-st-red-bg text-st-red",
                     on && v === "cant_check" && "bg-st-grey-bg text-ink2",
@@ -426,11 +459,11 @@ function Row({ item, walk, disabled, onSaved }: { item: Item; walk: Walk; disabl
             })}
           </span>
         </span>
-        <span className="col-start-2 flex items-center gap-2 text-[13.5px] lg:col-start-auto">
+        <span className="col-start-2 flex items-center gap-2 text-[0.84375rem] lg:col-start-auto">
           {item.action_ref ? (
             <Pill tone="outline">Action {item.action_ref}</Pill>
           ) : doesnt ? (
-            <span className="inline-flex h-[22px] items-center rounded-full px-2 text-[12.5px] font-semibold shadow-[inset_0_0_0_1.5px_var(--c-foreground)]">
+            <span className="inline-flex h-[22px] items-center rounded-full px-2 text-[0.78125rem] font-semibold shadow-[inset_0_0_0_1.5px_var(--c-foreground)]">
               New finding · {prio?.label}
             </span>
           ) : line.verdict === "cant_check" ? (
@@ -453,7 +486,7 @@ function Row({ item, walk, disabled, onSaved }: { item: Item; walk: Walk; disabl
       {doesnt && (
         <div className="flex flex-col gap-4 px-4 pb-5 lg:pl-[60px]">
           <div className="flex flex-col gap-1.5">
-            <label htmlFor={findingId} className="text-[13px] font-medium">
+            <label htmlFor={findingId} className="text-[0.8125rem] font-medium">
               What did you find?
             </label>
             <textarea
@@ -469,12 +502,12 @@ function Row({ item, walk, disabled, onSaved }: { item: Item; walk: Walk; disabl
                   void save(latest.current)
                 }
               }}
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-[14px] outline-none focus-visible:border-focus focus-visible:ring-2 focus-visible:ring-focus/30"
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-[0.875rem] outline-none focus-visible:border-focus focus-visible:ring-2 focus-visible:ring-focus/30"
             />
           </div>
           <div className="flex flex-wrap gap-6">
             <div className="flex flex-col gap-1.5">
-              <span id={`prio-${item.register_item_id}`} className="text-[13px] font-medium">
+              <span id={`prio-${item.register_item_id}`} className="text-[0.8125rem] font-medium">
                 Priority
               </span>
               <span
@@ -493,7 +526,7 @@ function Row({ item, walk, disabled, onSaved }: { item: Item; walk: Walk; disabl
                       disabled={disabled}
                       onClick={() => change({ priority: p.value })}
                       className={cn(
-                        "h-11 border-r border-border px-4 text-[13.5px] font-medium last:border-r-0",
+                        "h-11 border-r border-border px-4 text-[0.84375rem] font-medium last:border-r-0",
                         on
                           ? p.value === "high"
                             ? "bg-st-red-bg text-st-red"
@@ -509,7 +542,7 @@ function Row({ item, walk, disabled, onSaved }: { item: Item; walk: Walk; disabl
               </span>
             </div>
             <div className="flex flex-col gap-1.5">
-              <span className="text-[13px] font-medium">Photos</span>
+              <span className="text-[0.8125rem] font-medium">Photos</span>
               <span className="flex flex-wrap items-center gap-2">
                 {photos.map((ph) => (
                   <a

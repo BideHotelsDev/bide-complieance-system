@@ -20,7 +20,7 @@ export function PropertyPicker({ onClose }: { onClose: () => void }) {
               setPropertyId(p.id)
               onClose()
             }}
-            className="flex min-h-[52px] items-center justify-between border-b border-divider text-left text-[16px] last:border-0"
+            className="flex min-h-[52px] items-center justify-between border-b border-divider text-left text-[1rem] last:border-0"
           >
             <span>
               {p.name}

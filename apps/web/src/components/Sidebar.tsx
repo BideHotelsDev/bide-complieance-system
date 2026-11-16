@@ -227,7 +227,7 @@ export function Sidebar({
         aria-current={active(it) ? "page" : undefined}
         title={collapsed ? `${it.label}${it.count ? ` · ${it.count}` : ""}\n${it.tip}` : it.tip}
         className={cn(
-          "relative flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[14px] font-medium text-ink2 no-underline hover:bg-hover",
+          "relative flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[0.875rem] font-medium text-ink2 no-underline hover:bg-hover",
           collapsed && "w-11 justify-center px-0",
           active(it) &&
             "bg-surface text-foreground shadow-[0_0_0_1px_var(--c-border),0_1px_2px_rgba(17,17,19,.05)] hover:bg-surface",
@@ -246,13 +246,13 @@ export function Sidebar({
       className={cn(
         "flex shrink-0 flex-col gap-0.5 overflow-y-auto bg-sidebar py-3.5 *:shrink-0",
         inSheet ? "h-full w-full" : "sticky top-0 h-screen border-r border-divider",
-        collapsed ? "w-16 items-center px-2.5" : inSheet ? "px-3" : "w-[264px] px-3",
+        collapsed ? "w-16 items-center px-2.5" : inSheet ? "px-3" : "w-[16.5rem] max-w-[36vw] px-3",
       )}
     >
       <div className={cn("flex items-center gap-2 pb-3", collapsed ? "justify-center" : "px-1")}>
         <Mark size={collapsed ? 28 : 24} />
         {!collapsed && (
-          <span className="text-[15px] font-semibold">
+          <span className="text-[0.9375rem] font-semibold">
             <AppName />
           </span>
         )}
@@ -284,11 +284,11 @@ export function Sidebar({
           <button
             type="button"
             onClick={onSearch}
-            className="my-2 mb-1 flex h-9 w-full items-center gap-2 rounded-lg border border-border bg-surface px-2.5 text-[14px] text-muted-foreground"
+            className="my-2 mb-1 flex h-9 w-full items-center gap-2 rounded-lg border border-border bg-surface px-2.5 text-[0.875rem] text-muted-foreground"
           >
             <Search className="size-4" />
             Search anything
-            <kbd className="ml-auto rounded border border-border px-1.5 font-sans text-[11.5px] coarse:hidden">
+            <kbd className="ml-auto rounded border border-border px-1.5 font-sans text-[0.71875rem] coarse:hidden">
               {searchShortcut}
             </kbd>
           </button>
@@ -308,7 +308,7 @@ export function Sidebar({
             onClick={() => setSettingsOpen((o) => !o)}
             title="Settings: library, property setup, people, alert rules, import and appearance"
             className={cn(
-              "flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[14px] font-medium text-ink2 hover:bg-hover",
+              "flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[0.875rem] font-medium text-ink2 hover:bg-hover",
               collapsed && "w-11 justify-center px-0",
               path.startsWith("/settings") && !settingsOpen && "bg-surface shadow-[0_0_0_1px_var(--c-border)]",
             )}
@@ -330,7 +330,7 @@ export function Sidebar({
                   title={s.tip}
                   aria-current={path.startsWith(s.to) ? "page" : undefined}
                   className={cn(
-                    "flex h-8 items-center rounded-md px-2 text-[13.5px] text-ink2 no-underline hover:bg-hover",
+                    "flex h-8 items-center rounded-md px-2 text-[0.84375rem] text-ink2 no-underline hover:bg-hover",
                     path.startsWith(s.to) &&
                       "bg-surface font-medium text-foreground shadow-[0_0_0_1px_var(--c-border)]",
                   )}
@@ -345,20 +345,20 @@ export function Sidebar({
       <div className="mt-auto" />
       {tour && !collapsed && (
         <div className="mx-0 my-3 flex flex-col gap-1.5 rounded-[10px] border border-border bg-surface p-3">
-          <span className="text-[13px] font-semibold">New to Bide Comply?</span>
-          <span className="text-[12.5px] text-muted-foreground">
+          <span className="text-[0.8125rem] font-semibold">New to Bide Comply?</span>
+          <span className="text-[0.78125rem] text-muted-foreground">
             A 2-minute tour of where things are and what the colours mean.
           </span>
           <span className="flex gap-1.5">
             <Link
               to="/help"
-              className="inline-flex h-7 items-center rounded-md bg-primary px-2.5 text-[12.5px] font-medium text-primary-foreground no-underline"
+              className="inline-flex h-7 items-center rounded-md bg-primary px-2.5 text-[0.78125rem] font-medium text-primary-foreground no-underline"
             >
               Start tour
             </Link>
             <button
               type="button"
-              className="h-7 rounded-md px-2.5 text-[12.5px] font-medium text-muted-foreground hover:bg-hover"
+              className="h-7 rounded-md px-2.5 text-[0.78125rem] font-medium text-muted-foreground hover:bg-hover"
               onClick={() => {
                 setTour(false)
                 try {
@@ -377,7 +377,7 @@ export function Sidebar({
         to="/help"
         title="Help and guides"
         className={cn(
-          "flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[14px] font-medium text-ink2 no-underline hover:bg-hover",
+          "flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[0.875rem] font-medium text-ink2 no-underline hover:bg-hover",
           collapsed && "w-11 justify-center px-0",
         )}
       >
@@ -394,7 +394,7 @@ export function Sidebar({
         <Avatar initials={me.initials} />
         {!collapsed && (
           <span className="flex min-w-0 flex-col leading-tight">
-            <span className="truncate text-[13.5px] font-semibold">{me.name}</span>
+            <span className="truncate text-[0.84375rem] font-semibold">{me.name}</span>
             <span className="truncate text-xs text-muted-foreground">{me.title}</span>
           </span>
         )}

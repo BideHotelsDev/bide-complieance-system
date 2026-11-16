@@ -7,7 +7,7 @@ import { cn } from "@bide-comply/ui/lib/utils"
 
 /* Native select / date input styled like the design's 36px fields */
 export const fieldCls =
-  "h-9 w-full rounded-md border border-border bg-surface px-3 text-[13.5px] text-foreground coarse:h-10 coarse:text-base outline-none focus-visible:border-focus focus-visible:ring-2 focus-visible:ring-focus/30"
+  "h-9 w-full rounded-md border border-border bg-surface px-3 text-[0.84375rem] text-foreground coarse:h-10 coarse:text-base outline-none focus-visible:border-focus focus-visible:ring-2 focus-visible:ring-focus/30"
 
 export function Field({
   label,
@@ -22,7 +22,7 @@ export function Field({
 }) {
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
-      <label htmlFor={htmlFor} className="text-[13px] font-medium">
+      <label htmlFor={htmlFor} className="text-[0.8125rem] font-medium">
         {label}
       </label>
       {children}
@@ -56,7 +56,7 @@ export function TabBar<T extends string>({
           aria-selected={value === o.value}
           onClick={() => onChange(o.value)}
           className={cn(
-            "h-9 shrink-0 border-b-2 text-[14px] font-medium",
+            "h-9 shrink-0 border-b-2 text-[0.875rem] font-medium",
             value === o.value
               ? "border-foreground text-foreground"
               : "border-transparent text-muted-foreground hover:text-foreground",

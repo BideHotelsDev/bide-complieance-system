@@ -55,8 +55,8 @@ export function ContractorPortalPage() {
     <Page>
       <header className="flex items-center gap-2.5 border-b border-divider bg-surface px-[18px] py-4">
         <Mark size={28} />
-        <span className="text-[15px] font-semibold">bide Comply</span>
-        <span className="ml-auto text-[13px] text-muted-foreground">Contractor</span>
+        <span className="text-[0.9375rem] font-semibold">bide Comply</span>
+        <span className="ml-auto text-[0.8125rem] text-muted-foreground">Contractor</span>
       </header>
       <main className="flex flex-1 flex-col gap-3 px-4 pt-4 pb-8">
         {q.isPending ? (
@@ -66,30 +66,30 @@ export function ContractorPortalPage() {
         ) : (
           <>
             <div>
-              <h1 className="m-0 text-[22px] leading-tight font-semibold">Hello, {q.data.contractor}</h1>
-              <p className="m-0 text-[14px] text-muted-foreground">
+              <h1 className="m-0 text-[1.375rem] leading-tight font-semibold">Hello, {q.data.contractor}</h1>
+              <p className="m-0 text-[0.875rem] text-muted-foreground">
                 This link was sent to {q.data.email_hint ?? "your email"} and works for {q.data.link_days} days. No
                 password needed.
               </p>
             </div>
-            <h2 className="m-0 text-[13px] font-semibold text-muted-foreground">Your visits</h2>
+            <h2 className="m-0 text-[0.8125rem] font-semibold text-muted-foreground">Your visits</h2>
             {q.data.items.length === 0 ? (
-              <Card className="px-3.5 py-4 text-[14px] text-muted-foreground">
+              <Card className="px-3.5 py-4 text-[0.875rem] text-muted-foreground">
                 Nothing booked with Bide right now. When Bide books a visit or gives you something to fix, it appears
                 here and we email you.
               </Card>
             ) : (
               q.data.items.map((it) => <ItemCard key={`${it.kind}-${it.id}`} it={it} onSend={() => setSending(it)} />)
             )}
-            <Card className="px-3.5 py-3 text-[13px] text-muted-foreground">
+            <Card className="px-3.5 py-3 text-[0.8125rem] text-muted-foreground">
               You can only see visits Bide has given you. Your uploads are checked by the site manager before they
               count.
             </Card>
           </>
         )}
-        <footer className="mt-auto flex flex-col items-center gap-2 pt-4 text-center text-[13px] text-muted-foreground">
+        <footer className="mt-auto flex flex-col items-center gap-2 pt-4 text-center text-[0.8125rem] text-muted-foreground">
           <p className="m-0">Questions about a visit? Reply to the email Bide sent you.</p>
-          <SecondaryButton className="h-11 px-5 text-[14px]" disabled={leaving} onClick={() => void signOut()}>
+          <SecondaryButton className="h-11 px-5 text-[0.875rem]" disabled={leaving} onClick={() => void signOut()}>
             {leaving ? "Signing out…" : "Sign out on this phone"}
           </SecondaryButton>
         </footer>
@@ -106,19 +106,19 @@ function ItemCard({ it, onSend }: { it: Item; onSend: () => void }) {
         <span className="font-semibold">{it.title}</span>
         <Pill tone={it.badge_tone}>{it.badge}</Pill>
       </span>
-      <span className="text-[14px] text-muted-foreground">{it.detail}</span>
+      <span className="text-[0.875rem] text-muted-foreground">{it.detail}</span>
       {it.sent_back && (
-        <p role="note" className="m-0 rounded-lg bg-st-amber-bg px-3 py-2 text-[14px] text-st-amber">
+        <p role="note" className="m-0 rounded-lg bg-st-amber-bg px-3 py-2 text-[0.875rem] text-st-amber">
           Sent back by the site manager: {it.sent_back}
         </p>
       )}
       {it.can_upload && (
-        <PrimaryButton className="h-[46px] text-[16px]" onClick={onSend}>
+        <PrimaryButton className="h-[46px] text-[1rem]" onClick={onSend}>
           {it.sent_back ? "Upload the report again" : "Upload the report after your visit"}
         </PrimaryButton>
       )}
       {it.can_mark_fixed && (
-        <SecondaryButton className="h-11 text-[15px]" onClick={onSend}>
+        <SecondaryButton className="h-11 text-[0.9375rem]" onClick={onSend}>
           {it.sent_back ? "Add a new photo" : "Mark as fixed, add photo"}
         </SecondaryButton>
       )}
@@ -185,16 +185,16 @@ function SendSheet({ it, onClose }: { it: Item; onClose: () => void }) {
             {saving ? "Sending" : report ? "Send the report" : "Send the photo"}
           </PrimaryButton>
           {!ready && !saving && files.length === 0 && (
-            <p className="m-0 mt-2 text-center text-[14px] text-muted-foreground">
+            <p className="m-0 mt-2 text-center text-[0.875rem] text-muted-foreground">
               {report ? "Add the PDF or a photo of it to send." : "Add a photo to send."}
             </p>
           )}
         </>
       }
     >
-      {it.description && <p className="m-0 text-[15px]">{it.description}</p>}
+      {it.description && <p className="m-0 text-[0.9375rem]">{it.description}</p>}
       <div className="flex flex-col gap-2">
-        <span className="text-[16px] font-semibold">
+        <span className="text-[1rem] font-semibold">
           {report ? "Your report or certificate" : "A photo that shows it's fixed"}
         </span>
         {files.map((f) => (
@@ -204,8 +204,8 @@ function SendSheet({ it, onClose }: { it: Item; onClose: () => void }) {
           >
             <FileText aria-hidden className="size-5 shrink-0" />
             <div className="min-w-0 flex-1">
-              <div className="truncate text-[15.5px]">{f.file.name}</div>
-              <div className="text-[13px] text-muted-foreground">
+              <div className="truncate text-[0.96875rem]">{f.file.name}</div>
+              <div className="text-[0.8125rem] text-muted-foreground">
                 {fmtSize(f.file.size)} · {f.done ? "uploaded" : "uploading"}
               </div>
             </div>
@@ -229,7 +229,7 @@ function SendSheet({ it, onClose }: { it: Item; onClose: () => void }) {
           </div>
         ))}
         {files.length < 5 && (
-          <label className="flex h-12 cursor-pointer items-center justify-center rounded-xl border border-dashed border-subtle bg-surface text-[15.5px] font-semibold">
+          <label className="flex h-12 cursor-pointer items-center justify-center rounded-xl border border-dashed border-subtle bg-surface text-[0.96875rem] font-semibold">
             {files.length ? "Add another" : report ? "Upload the PDF or a photo of it" : "Take or choose a photo"}
             <input
               type="file"
@@ -247,7 +247,7 @@ function SendSheet({ it, onClose }: { it: Item; onClose: () => void }) {
         )}
       </div>
       <div className="flex flex-col gap-2">
-        <label htmlFor="cp-note" className="text-[16px] font-semibold">
+        <label htmlFor="cp-note" className="text-[1rem] font-semibold">
           Anything the site manager should know?
         </label>
         <TextArea
@@ -257,7 +257,7 @@ function SendSheet({ it, onClose }: { it: Item; onClose: () => void }) {
           placeholder={report ? "Optional. For example, what you found" : "Optional. For example, what you replaced"}
         />
       </div>
-      <p className="m-0 text-[14px] text-muted-foreground">The site manager checks it before it counts.</p>
+      <p className="m-0 text-[0.875rem] text-muted-foreground">The site manager checks it before it counts.</p>
     </Sheet>
   )
 }

@@ -89,7 +89,7 @@ export function PropertyLink({
 function Num({ value, label }: { value: React.ReactNode; label: string }) {
   return (
     <div className="flex flex-col rounded-lg bg-sidebar px-2.5 py-2">
-      <b className="tabular text-[18px] font-semibold">{value}</b>
+      <b className="tabular text-[1.125rem] font-semibold">{value}</b>
       <span className="text-xs text-muted-foreground">{label}</span>
     </div>
   )
@@ -114,10 +114,10 @@ export function PropertyCard({ p }: { p: PropertyRow }) {
         <ScoreRing score={ringScore} status={ringStatus} redLine={p.red_line} />
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
-            <span className="text-[17px] font-semibold">{p.name}</span>
+            <span className="text-[1.0625rem] font-semibold">{p.name}</span>
             <span className="mono-id text-muted-foreground">{p.code}</span>
           </span>
-          <span className="block text-[12.5px] text-muted-foreground">{placeLine(p)}</span>
+          <span className="block text-[0.78125rem] text-muted-foreground">{placeLine(p)}</span>
         </span>
         <StatusFor p={p} />
       </div>
@@ -147,7 +147,7 @@ export function PropertyCard({ p }: { p: PropertyRow }) {
               </>
             )}
           </div>
-          {p.note && <span className="text-[12.5px] text-muted-foreground">{p.note}</span>}
+          {p.note && <span className="text-[0.78125rem] text-muted-foreground">{p.note}</span>}
         </>
       )}
     </PropertyLink>

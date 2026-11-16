@@ -163,12 +163,12 @@
     input:not([type="checkbox"], [type="radio"], [type="range"]),
     textarea,
     select {
-      font-size: max(16px, 1em);
+      font-size: max(1rem, 1em);
     }
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-size: 14px;
+    font-size: 0.875rem; /* 14px at the default 16px; rem so a larger browser font size scales every page (WCAG 1.4.4) */
     line-height: 1.45;
   }
   h1,
@@ -229,6 +229,6 @@
 
 @utility mono-id {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11.5px;
+  font-size: 0.71875rem;
   color: var(--c-subtle);
 }

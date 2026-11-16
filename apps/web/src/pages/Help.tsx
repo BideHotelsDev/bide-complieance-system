@@ -133,7 +133,7 @@ export function HelpPage() {
           <a
             key={s.id}
             href={`#${s.id}`}
-            className="inline-flex h-8 items-center gap-2 rounded-full border border-border bg-surface px-3 text-[13px] font-medium text-foreground no-underline hover:bg-hover"
+            className="inline-flex h-8 items-center gap-2 rounded-full border border-border bg-surface px-3 text-[0.8125rem] font-medium text-foreground no-underline hover:bg-hover"
           >
             <span className="tabular text-muted-foreground">{i + 1}</span>
             {s.label}
@@ -151,7 +151,7 @@ export function HelpPage() {
           {places.map((p) => (
             <li
               key={p.to}
-              className="grid grid-cols-1 gap-x-6 gap-y-0.5 border-b border-divider px-4 py-3 last:border-b-0 sm:grid-cols-[200px_1fr]"
+              className="grid grid-cols-1 gap-x-6 gap-y-0.5 border-b border-divider px-4 py-3 last:border-b-0 sm:grid-cols-[12.5rem_1fr]"
             >
               <Link to={p.to} className="font-semibold text-foreground no-underline hover:underline">
                 {p.label}
@@ -159,17 +159,17 @@ export function HelpPage() {
               <span className="text-muted-foreground">{p.line}</span>
             </li>
           ))}
-          <li className="grid grid-cols-1 gap-x-6 gap-y-0.5 border-b border-divider px-4 py-3 sm:grid-cols-[200px_1fr]">
+          <li className="grid grid-cols-1 gap-x-6 gap-y-0.5 border-b border-divider px-4 py-3 sm:grid-cols-[12.5rem_1fr]">
             <span className="flex items-center gap-2 font-semibold">
               <Search className="size-4 text-muted-foreground" aria-hidden />
               Search anything
-              <kbd className="rounded border border-border bg-surface px-1.5 text-[11px] font-normal text-muted-foreground coarse:hidden">
+              <kbd className="rounded border border-border bg-surface px-1.5 text-[0.6875rem] font-normal text-muted-foreground coarse:hidden">
                 {searchShortcut}
               </kbd>
             </span>
             <span className="text-muted-foreground">Find a property, check, Action or person from anywhere.</span>
           </li>
-          <li className="grid grid-cols-1 gap-x-6 gap-y-0.5 px-4 py-3 sm:grid-cols-[200px_1fr]">
+          <li className="grid grid-cols-1 gap-x-6 gap-y-0.5 px-4 py-3 sm:grid-cols-[12.5rem_1fr]">
             <span className="font-semibold">Property switcher</span>
             <span className="text-muted-foreground">
               At the top of the sidebar. Pick a property and every page follows it, so you never filter by property
@@ -206,7 +206,7 @@ export function HelpPage() {
             <LegendRow badge={<PriorityBadge priority="low" />} text="Fix within 90 days" />
           </Legend>
         </div>
-        <div className="flex flex-wrap items-center gap-2 border-t border-divider px-4 py-3 text-[13px] text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-2 border-t border-divider px-4 py-3 text-[0.8125rem] text-muted-foreground">
           <span>A single check moves through:</span>
           <TaskBadge status="scheduled" />
           <TaskBadge status="due_soon" />
@@ -228,7 +228,7 @@ export function HelpPage() {
         <ol className="m-0 list-none p-0">
           {RULES.map((r, i) => (
             <li key={r.title} className="flex gap-4 border-b border-divider px-4 py-3.5 last:border-b-0">
-              <span className="tabular inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-[13px] font-semibold text-primary-foreground">
+              <span className="tabular inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-[0.8125rem] font-semibold text-primary-foreground">
                 {i + 1}
               </span>
               <span>
@@ -244,7 +244,7 @@ export function HelpPage() {
         <div className="flex flex-col gap-5 p-4">
           {FLOWS.map((f, i) => (
             <div key={f.title}>
-              <h3 className="m-0 mb-2.5 text-[13.5px] font-medium">
+              <h3 className="m-0 mb-2.5 text-[0.84375rem] font-medium">
                 {i + 1} · {f.title}
               </h3>
               <ol className="m-0 grid list-none gap-2 p-0 lg:grid-cols-[repeat(5,minmax(0,1fr))]">
@@ -260,7 +260,7 @@ export function HelpPage() {
                     >
                       <span
                         className={cn(
-                          "text-[11px] font-semibold tracking-[0.06em] uppercase",
+                          "text-[0.6875rem] font-semibold tracking-[0.06em] uppercase",
                           s.tone === "result" ? "opacity-80" : "text-muted-foreground",
                         )}
                       >
@@ -268,7 +268,7 @@ export function HelpPage() {
                       </span>
                       <span className="mt-1.5 font-semibold">{s.title}</span>
                       <span
-                        className={cn("mt-1 text-[13px]", s.tone === "result" ? "opacity-80" : "text-muted-foreground")}
+                        className={cn("mt-1 text-[0.8125rem]", s.tone === "result" ? "opacity-80" : "text-muted-foreground")}
                       >
                         {s.body}
                       </span>
@@ -287,7 +287,7 @@ export function HelpPage() {
         </div>
       </Section>
 
-      <p className="m-0 text-[13px] text-muted-foreground">
+      <p className="m-0 text-[0.8125rem] text-muted-foreground">
         Still stuck? Ask {contact}. Your notification and display settings are in{" "}
         <Link to="/me" className="text-link">
           Your account
@@ -314,11 +314,11 @@ function Section({
   return (
     <Card id={id} aria-labelledby={`${id}-h`} className="scroll-mt-4">
       <div className="border-b border-divider px-4 py-3">
-        <h2 id={`${id}-h`} className="m-0 text-[15px] font-semibold">
+        <h2 id={`${id}-h`} className="m-0 text-[0.9375rem] font-semibold">
           <span className="tabular mr-2 text-muted-foreground">{n}</span>
           {title}
         </h2>
-        <p className="m-0 mt-0.5 text-[13px] text-muted-foreground">{sub}</p>
+        <p className="m-0 mt-0.5 text-[0.8125rem] text-muted-foreground">{sub}</p>
       </div>
       {children}
     </Card>
@@ -328,7 +328,7 @@ function Section({
 function Legend({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-2.5 bg-surface p-4">
-      <h3 className="m-0 text-[13px] font-medium text-muted-foreground">{title}</h3>
+      <h3 className="m-0 text-[0.8125rem] font-medium text-muted-foreground">{title}</h3>
       {children}
     </div>
   )
@@ -336,7 +336,7 @@ function Legend({ title, children }: { title: string; children: React.ReactNode 
 
 function LegendRow({ badge, text }: { badge: React.ReactNode; text: string }) {
   return (
-    <div className="flex items-start gap-3 text-[13.5px]">
+    <div className="flex items-start gap-3 text-[0.84375rem]">
       <span className="flex w-[76px] shrink-0">{badge}</span>
       <span>{text}</span>
     </div>

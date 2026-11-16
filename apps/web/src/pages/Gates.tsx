@@ -46,7 +46,7 @@ export function GatesPage() {
         cell: ({ row: { original: r } }) => (
           <span className="flex min-w-[160px] items-center gap-2.5">
             <Progress value={r.done} total={r.applicable} className="w-24" />
-            <span className="tabular text-[12.5px] text-muted-foreground">
+            <span className="tabular text-[0.78125rem] text-muted-foreground">
               {r.done} of {r.applicable} · {r.percent}%
             </span>
           </span>
@@ -78,10 +78,10 @@ export function GatesPage() {
         id: "stage",
         header: "Stage",
         cell: ({ row: { original: r } }) => (
-          <span className="text-[13px]">
+          <span className="text-[0.8125rem]">
             {STAGE[r.stage] ?? r.stage}
             {r.opening_date && (
-              <span className="block text-[12px] text-muted-foreground">
+              <span className="block text-[0.75rem] text-muted-foreground">
                 {r.stage === "trading" ? "since" : "opens"} {fmtDate(r.opening_date, true)}
               </span>
             )}
@@ -121,7 +121,7 @@ export function GatesPage() {
                   <GateBadge status={r.status} className="ml-auto" />
                 </div>
                 <Progress value={r.done} total={r.applicable} />
-                <span className="text-[12.5px] text-muted-foreground">
+                <span className="text-[0.78125rem] text-muted-foreground">
                   {r.done} of {r.applicable} done · {r.class_a_open} life-safety open · {r.to_confirm} to confirm
                 </span>
               </div>

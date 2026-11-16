@@ -55,7 +55,7 @@ function InkBar({ parts, label }: { parts: { value: number; cls: string; title: 
 function SummaryCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-2 rounded-[10px] border border-divider bg-surface p-4">
-      <span className="text-[12.5px] text-muted-foreground">{title}</span>
+      <span className="text-[0.78125rem] text-muted-foreground">{title}</span>
       {children}
     </div>
   )
@@ -63,9 +63,9 @@ function SummaryCard({ title, children }: { title: string; children: React.React
 
 function Big({ value, unit }: { value: React.ReactNode; unit?: React.ReactNode }) {
   return (
-    <span className="tabular text-[24px] leading-none font-semibold tracking-[-0.02em]">
+    <span className="tabular text-[1.5rem] leading-none font-semibold tracking-[-0.02em]">
       {value}
-      {unit && <span className="ml-1 text-[13px] font-normal tracking-normal text-muted-foreground">{unit}</span>}
+      {unit && <span className="ml-1 text-[0.8125rem] font-normal tracking-normal text-muted-foreground">{unit}</span>}
     </span>
   )
 }
@@ -125,7 +125,7 @@ export function PropertyPage() {
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="m-0 text-[20px] leading-tight font-semibold">{d.name}</h1>
+            <h1 className="m-0 text-[1.25rem] leading-tight font-semibold">{d.name}</h1>
             <span className="mono-id text-muted-foreground">{d.code}</span>
             {statusBadge}
             {d.legal_hold && <Pill tone="blue">Legal hold</Pill>}
@@ -223,7 +223,7 @@ export function PropertyPage() {
             aria-selected={tab === t.key}
             onClick={() => set({ tab: t.key === "register" ? undefined : t.key, item: undefined })}
             className={cn(
-              "inline-flex shrink-0 items-center gap-1.5 border-b-2 py-2 text-[13px] whitespace-nowrap",
+              "inline-flex shrink-0 items-center gap-1.5 border-b-2 py-2 text-[0.8125rem] whitespace-nowrap",
               tab === t.key
                 ? "border-foreground font-medium text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground",
@@ -231,7 +231,7 @@ export function PropertyPage() {
           >
             {t.label}
             {t.count != null && t.count > 0 && (
-              <Pill tone="grey" className="h-[18px] px-1.5 text-[11.5px]">
+              <Pill tone="grey" className="h-[18px] px-1.5 text-[0.71875rem]">
                 {t.count}
               </Pill>
             )}

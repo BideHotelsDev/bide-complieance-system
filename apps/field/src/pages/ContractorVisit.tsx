@@ -196,7 +196,7 @@ export function ContractorVisitPage() {
   return (
     <FlowScreen
       title="Contractor visit"
-      right={propName && <span className="pr-1 text-[14px] text-muted-foreground">{propName}</span>}
+      right={propName && <span className="pr-1 text-[0.875rem] text-muted-foreground">{propName}</span>}
       footer={
         <>
           <PrimaryButton disabled={!ready || saving} onClick={() => void save()}>
@@ -204,9 +204,9 @@ export function ContractorVisitPage() {
             {saving ? "Saving" : "Save visit"}
           </PrimaryButton>
           {!ready && !saving ? (
-            <p className="m-0 mt-2 text-center text-[14px] text-muted-foreground">{stillNeeded}</p>
+            <p className="m-0 mt-2 text-center text-[0.875rem] text-muted-foreground">{stillNeeded}</p>
           ) : anyWrong === "yes" ? (
-            <p className="m-0 mt-2 text-center text-[14px] text-muted-foreground">
+            <p className="m-0 mt-2 text-center text-[0.875rem] text-muted-foreground">
               Each thing they found becomes an Action with a due date (Urgent: 7 days, Soon: 30 days).
             </p>
           ) : null}
@@ -220,7 +220,7 @@ export function ContractorVisitPage() {
       ) : (
         <>
           {keptFrom && (
-            <div role="status" className="flex items-center gap-3 rounded-xl bg-st-blue-bg px-4 py-3 text-[15px]">
+            <div role="status" className="flex items-center gap-3 rounded-xl bg-st-blue-bg px-4 py-3 text-[0.9375rem]">
               <span className="min-w-0 flex-1">What you'd started at {fmtTime(keptFrom)} was kept on this phone.</span>
               <button type="button" className="h-11 shrink-0 px-2 font-semibold text-link" onClick={startAgain}>
                 Start again
@@ -246,7 +246,7 @@ export function ContractorVisitPage() {
                 placeholder="Choose the contractor"
               />
             )}
-            <p className="m-0 mt-1.5 text-[14px] text-muted-foreground">
+            <p className="m-0 mt-1.5 text-[0.875rem] text-muted-foreground">
               {adding ? (
                 <button type="button" className="min-h-10 font-medium text-link" onClick={() => setAdding(false)}>
                   Choose from the list instead
@@ -263,7 +263,7 @@ export function ContractorVisitPage() {
           </div>
 
           <fieldset className="m-0 border-0 p-0">
-            <legend className="mb-2 p-0 text-[16px] font-semibold">What for?</legend>
+            <legend className="mb-2 p-0 text-[1rem] font-semibold">What for?</legend>
             <div className="flex flex-wrap gap-2">
               {form.data.purposes.map((p) => (
                 <button
@@ -272,7 +272,7 @@ export function ContractorVisitPage() {
                   aria-pressed={purpose === p.label}
                   onClick={() => setPurpose(p.label)}
                   className={cn(
-                    "h-11 rounded-full border px-4 text-[15px] font-medium",
+                    "h-11 rounded-full border px-4 text-[0.9375rem] font-medium",
                     purpose === p.label
                       ? "border-foreground bg-hover shadow-[inset_0_0_0_1px_var(--c-foreground)]"
                       : "border-border bg-surface",
@@ -283,7 +283,7 @@ export function ContractorVisitPage() {
               ))}
             </div>
             {chosen?.links_to && (
-              <p className="m-0 mt-2 text-[14px] text-muted-foreground">
+              <p className="m-0 mt-2 text-[0.875rem] text-muted-foreground">
                 Links to the "{chosen.links_to}" check, so it counts as done.
               </p>
             )}
@@ -295,8 +295,8 @@ export function ContractorVisitPage() {
               <div className="flex min-h-[60px] items-center gap-3 rounded-xl border border-divider bg-surface px-3.5 py-2.5">
                 <FileText aria-hidden className="size-5 shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[15.5px]">{file.name}</div>
-                  <div className="text-[13px] text-muted-foreground">
+                  <div className="truncate text-[0.96875rem]">{file.name}</div>
+                  <div className="text-[0.8125rem] text-muted-foreground">
                     {fmtSize(file.size)} ·{" "}
                     {uploading ? "uploading" : uploaded ? "uploaded" : "on this phone, goes up with the visit"}
                   </div>
@@ -325,7 +325,7 @@ export function ContractorVisitPage() {
                 )}
               </div>
             ) : (
-              <label className="flex h-12 cursor-pointer items-center justify-center rounded-xl border border-dashed border-subtle bg-surface text-[15.5px] font-semibold">
+              <label className="flex h-12 cursor-pointer items-center justify-center rounded-xl border border-dashed border-subtle bg-surface text-[0.96875rem] font-semibold">
                 Upload the PDF or a photo of it
                 <input
                   id="cert"
@@ -357,7 +357,7 @@ export function ContractorVisitPage() {
 
           {anyWrong === "yes" && (
             <div className="rounded-xl border border-divider bg-surface px-3.5 py-3">
-              <div className="mb-2 text-[16px] font-semibold">
+              <div className="mb-2 text-[1rem] font-semibold">
                 {realFixes.length} thing{realFixes.length === 1 ? "" : "s"} to fix
               </div>
               <div className="flex flex-col gap-3">
@@ -371,7 +371,7 @@ export function ContractorVisitPage() {
                           aria-pressed={f.priority === p}
                           onClick={() => setFixes((all) => all.map((x, j) => (j === i ? { ...x, priority: p } : x)))}
                           className={cn(
-                            "h-10 rounded-full px-3.5 text-[14px] font-semibold",
+                            "h-10 rounded-full px-3.5 text-[0.875rem] font-semibold",
                             f.priority === p
                               ? p === "high"
                                 ? "bg-st-red-bg text-st-red ring-2 ring-st-red"
@@ -406,7 +406,7 @@ export function ContractorVisitPage() {
               </div>
               <button
                 type="button"
-                className="mt-2 min-h-11 text-[15px] font-semibold text-link"
+                className="mt-2 min-h-11 text-[0.9375rem] font-semibold text-link"
                 onClick={() => setFixes((all) => [...all, { text: "", priority: "med" }])}
               >
                 + Add another

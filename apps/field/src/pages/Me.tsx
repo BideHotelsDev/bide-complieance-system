@@ -92,13 +92,13 @@ export function MePage() {
       <header className="flex items-center gap-3.5 border-b border-divider bg-surface px-[18px] pt-5 pb-4">
         <span
           aria-hidden
-          className="flex size-12 shrink-0 items-center justify-center rounded-full bg-st-blue-bg text-[16px] font-semibold text-st-blue"
+          className="flex size-12 shrink-0 items-center justify-center rounded-full bg-st-blue-bg text-[1rem] font-semibold text-st-blue"
         >
           {me.data?.initials}
         </span>
         <div className="min-w-0">
-          <h1 className="m-0 text-[20px] leading-tight font-semibold">{me.data?.name}</h1>
-          <p className="m-0 mt-0.5 text-[14.5px] text-muted-foreground">{fm.data?.title ?? me.data?.title}</p>
+          <h1 className="m-0 text-[1.25rem] leading-tight font-semibold">{me.data?.name}</h1>
+          <p className="m-0 mt-0.5 text-[0.90625rem] text-muted-foreground">{fm.data?.title ?? me.data?.title}</p>
         </div>
       </header>
       <main className="flex flex-1 flex-col gap-2.5 px-4 pt-3 pb-6">
@@ -109,7 +109,7 @@ export function MePage() {
           <Stat value={m ? String(m.problems) : "…"} label="Problems found" />
         </div>
         {fm.data && (
-          <Card className="flex items-start gap-3 px-4 py-3.5 text-[15px]">
+          <Card className="flex items-start gap-3 px-4 py-3.5 text-[0.9375rem]">
             <Check aria-hidden className="mt-0.5 size-5 shrink-0 text-st-green" />
             <span>
               {fm.data.streak_days > 0 ? (
@@ -128,7 +128,7 @@ export function MePage() {
         )}
         {fm.data?.away && <AwayCard away={fm.data.away} />}
         {fm.data && fm.data.covering.length > 0 && (
-          <Card className="flex items-start gap-3 px-4 py-3.5 text-[15px]">
+          <Card className="flex items-start gap-3 px-4 py-3.5 text-[0.9375rem]">
             <Users aria-hidden className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
             <span>
               You're covering <strong>{listWords(fm.data.covering)}</strong>'s checks. They're on your Today list.
@@ -162,30 +162,30 @@ export function MePage() {
           <button
             type="button"
             onClick={() => void enablePush().then(setDevice)}
-            className="min-h-12 self-start px-1 text-[15px] font-medium text-link"
+            className="min-h-12 self-start px-1 text-[0.9375rem] font-medium text-link"
           >
             Allow notifications on this phone
           </button>
         )}
-        <p className="m-0 px-1 text-[13.5px] text-muted-foreground">Life-safety alerts always come through.</p>
+        <p className="m-0 px-1 text-[0.84375rem] text-muted-foreground">Life-safety alerts always come through.</p>
 
         <SectionLabel>This phone</SectionLabel>
         <Card className="divide-y divide-divider">
           <div className="flex min-h-[60px] items-center gap-3 px-3.5 py-2.5">
             <div className="min-w-0 flex-1">
-              <div className="text-[15.5px]">Waiting to send</div>
-              <div className="text-[13.5px] text-muted-foreground">Sends when you're back online</div>
+              <div className="text-[0.96875rem]">Waiting to send</div>
+              <div className="text-[0.84375rem] text-muted-foreground">Sends when you're back online</div>
             </div>
-            <span className="tabular rounded-full bg-hover px-2.5 py-0.5 text-[14px] font-semibold">
+            <span className="tabular rounded-full bg-hover px-2.5 py-0.5 text-[0.875rem] font-semibold">
               {queue.length}
             </span>
           </div>
           <div className="flex min-h-[60px] items-center gap-3 px-3.5 py-2.5">
             <div className="min-w-0 flex-1">
-              <div className="text-[15.5px]">Trusted until</div>
-              <div className="text-[13.5px] text-muted-foreground">Then you'll get a new email code</div>
+              <div className="text-[0.96875rem]">Trusted until</div>
+              <div className="text-[0.84375rem] text-muted-foreground">Then you'll get a new email code</div>
             </div>
-            <span className="text-[15px] text-ink2">
+            <span className="text-[0.9375rem] text-ink2">
               {fm.data?.trusted_until ? fmtDate(fm.data.trusted_until) : "–"}
             </span>
           </div>
@@ -193,7 +193,7 @@ export function MePage() {
             type="button"
             onClick={() => (queue.length ? setConfirm(true) : void signOut())}
             disabled={leaving}
-            className="flex min-h-[56px] w-full items-center px-3.5 text-left text-[16px] font-medium text-st-red"
+            className="flex min-h-[56px] w-full items-center px-3.5 text-left text-[1rem] font-medium text-st-red"
           >
             {leaving ? "Signing out" : "Sign out"}
           </button>
@@ -210,14 +210,14 @@ export function MePage() {
             <button
               type="button"
               onClick={() => setConfirm(false)}
-              className="h-12 flex-[1.4] rounded-xl bg-primary text-[16px] font-semibold text-primary-foreground"
+              className="h-12 flex-[1.4] rounded-xl bg-primary text-[1rem] font-semibold text-primary-foreground"
             >
               Stay signed in
             </button>
             <button
               type="button"
               onClick={() => void signOut()}
-              className="h-12 flex-1 rounded-xl border border-st-red text-[16px] font-semibold text-st-red"
+              className="h-12 flex-1 rounded-xl border border-st-red text-[1rem] font-semibold text-st-red"
             >
               Sign out
             </button>
@@ -246,7 +246,7 @@ function AwayCard({ away }: { away: NonNullable<FieldMe["away"]> }) {
   const now = new Date().toISOString().slice(0, 10)
   const on = away.starts_on <= now
   return (
-    <Card className="flex items-start gap-3 px-4 py-3.5 text-[15px]">
+    <Card className="flex items-start gap-3 px-4 py-3.5 text-[0.9375rem]">
       <CalendarDays aria-hidden className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
       <span>
         <strong>
@@ -263,8 +263,8 @@ function AwayCard({ away }: { away: NonNullable<FieldMe["away"]> }) {
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div className="rounded-xl border border-divider bg-surface px-3.5 py-3.5">
-      <div className="tabular text-[26px] leading-none font-semibold">{value}</div>
-      <div className="mt-2 text-[13.5px] leading-tight text-muted-foreground">{label}</div>
+      <div className="tabular text-[1.625rem] leading-none font-semibold">{value}</div>
+      <div className="mt-2 text-[0.84375rem] leading-tight text-muted-foreground">{label}</div>
     </div>
   )
 }

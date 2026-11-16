@@ -71,7 +71,7 @@ export function AddToAction({
             <button
               type="button"
               onClick={onClose}
-              className="h-12 flex-1 rounded-xl border border-border bg-surface text-[16px] font-semibold"
+              className="h-12 flex-1 rounded-xl border border-border bg-surface text-[1rem] font-semibold"
             >
               Cancel
             </button>
@@ -79,7 +79,7 @@ export function AddToAction({
               type="button"
               disabled={busy || (!note.trim() && shots.length === 0)}
               onClick={() => void send()}
-              className="flex h-12 flex-[1.6] items-center justify-center gap-2 rounded-xl bg-primary text-[16px] font-semibold text-primary-foreground disabled:opacity-50"
+              className="flex h-12 flex-[1.6] items-center justify-center gap-2 rounded-xl bg-primary text-[1rem] font-semibold text-primary-foreground disabled:opacity-50"
             >
               {busy && <Spinner />}
               Add to {actionRef}
@@ -97,7 +97,7 @@ export function AddToAction({
           />
         </div>
         <div>
-          <div className="mb-2 text-[16px] font-semibold">Photo</div>
+          <div className="mb-2 text-[1rem] font-semibold">Photo</div>
           <div className="flex flex-wrap gap-2.5">
             {shots.map((s) => (
               <div key={s.id} className="relative size-[88px] overflow-hidden rounded-xl bg-hover">
@@ -115,7 +115,7 @@ export function AddToAction({
             <button
               type="button"
               onClick={() => setCamera(true)}
-              className="flex size-[88px] flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-subtle bg-surface text-[14.5px] font-semibold"
+              className="flex size-[88px] flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-subtle bg-surface text-[0.90625rem] font-semibold"
             >
               <CameraIcon aria-hidden className="size-5" />
               Photo

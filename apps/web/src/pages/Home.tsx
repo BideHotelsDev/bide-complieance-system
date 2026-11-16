@@ -67,9 +67,9 @@ function Panel({
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <h2 className="m-0 text-[15px] font-semibold">{title}</h2>
+        <h2 className="m-0 text-[0.9375rem] font-semibold">{title}</h2>
         {badge}
-        {link && <div className="flex items-center gap-3 text-[13px] font-medium">{link}</div>}
+        {link && <div className="flex items-center gap-3 text-[0.8125rem] font-medium">{link}</div>}
       </div>
       {children}
     </section>
@@ -77,7 +77,7 @@ function Panel({
 }
 
 // Card links and toggles are at least 24px tall (WCAG 2.5.8, UX audit F10) without looking any bigger.
-const LK = "inline-flex min-h-6 items-center text-[13px] font-medium text-link no-underline hover:underline"
+const LK = "inline-flex min-h-6 items-center text-[0.8125rem] font-medium text-link no-underline hover:underline"
 
 function DesktopHome() {
   const me = useMe()
@@ -116,7 +116,7 @@ function DesktopHome() {
     <div className="flex max-w-[1240px] flex-col gap-[18px]">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="m-0 text-[24px] font-semibold tracking-[-0.02em]">
+          <h1 className="m-0 text-[1.5rem] font-semibold tracking-[-0.02em]">
             {hello(me.data?.name, me.data?.first_name)}
           </h1>
           <p className="m-0 mt-0.5 text-muted-foreground">
@@ -170,7 +170,7 @@ function OverviewBody({ o }: { o: Overview }) {
       {o.banner && (
         <div
           role="alert"
-          className="flex items-center gap-3 rounded-[10px] border border-st-red/25 bg-st-red-bg px-3.5 py-2.5 text-[14px] text-st-red"
+          className="flex items-center gap-3 rounded-[10px] border border-st-red/25 bg-st-red-bg px-3.5 py-2.5 text-[0.875rem] text-st-red"
         >
           <AlertTriangle aria-hidden className="size-[18px] shrink-0" />
           <span className="flex-1">
@@ -179,7 +179,7 @@ function OverviewBody({ o }: { o: Overview }) {
           </span>
           <AppLink
             href={o.banner.link}
-            className="inline-flex h-[30px] items-center rounded-md border border-st-red/30 px-3 text-[13px] font-medium whitespace-nowrap text-st-red no-underline hover:bg-st-red/5"
+            className="inline-flex h-[30px] items-center rounded-md border border-st-red/30 px-3 text-[0.8125rem] font-medium whitespace-nowrap text-st-red no-underline hover:bg-st-red/5"
           >
             See what to do
           </AppLink>
@@ -188,7 +188,7 @@ function OverviewBody({ o }: { o: Overview }) {
 
       <section aria-label="Key numbers" className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
         <KpiCard label="Life-safety items open" value={k.life_safety_open.value}>
-          <span className="text-[12.5px] text-muted-foreground">
+          <span className="text-[0.78125rem] text-muted-foreground">
             across {k.life_safety_open.properties} {k.life_safety_open.properties === 1 ? "property" : "properties"}
           </span>
           <Pill tone={k.life_safety_open.value > k.life_safety_open.goal ? "red" : "green"} className="self-start">
@@ -265,7 +265,7 @@ function OverviewBody({ o }: { o: Overview }) {
             </div>
           )}
           {notSetUp.length > 0 && (
-            <span className="text-[12.5px] text-muted-foreground">
+            <span className="text-[0.78125rem] text-muted-foreground">
               Not set up yet: {joinNames(notSetUp.map((p) => p.name))}
               {setupNote ? ` (${setupNote.replace(/^Loads/, "loading")})` : ""}
             </span>
@@ -382,7 +382,7 @@ function OverviewBody({ o }: { o: Overview }) {
                   className="flex items-center gap-2.5 border-b border-divider py-[9px] text-foreground no-underline last:border-b-0 hover:bg-hover/40"
                 >
                   <span className="flex w-11 shrink-0 flex-col items-center text-xs leading-[1.1] text-muted-foreground">
-                    <strong className="tabular text-[18px] font-semibold text-foreground">
+                    <strong className="tabular text-[1.125rem] font-semibold text-foreground">
                       {new Date(`${c.expires_on}T12:00:00Z`).getUTCDate()}
                     </strong>
                     {new Date(`${c.expires_on}T12:00:00Z`).toLocaleDateString("en-GB", { month: "short" })}
@@ -403,7 +403,7 @@ function OverviewBody({ o }: { o: Overview }) {
 
       {heatRows.length > 0 && (
         <Panel title="Status by property and area">
-          <p className="m-0 -mt-1.5 text-[12.5px] text-muted-foreground">
+          <p className="m-0 -mt-1.5 text-[0.78125rem] text-muted-foreground">
             The worst status in each area. Pick a cell to see those checks.
           </p>
           <Heatmap
@@ -439,9 +439,9 @@ function KpiCard({
 }) {
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-divider bg-surface p-4" title={title}>
-      <span className="flex items-center gap-1.5 text-[13px] font-medium text-ink2">{label}</span>
+      <span className="flex items-center gap-1.5 text-[0.8125rem] font-medium text-ink2">{label}</span>
       <span className="flex items-center gap-3">
-        <span className="tabular text-[32px] leading-none font-semibold tracking-[-0.03em]">{value}</span>
+        <span className="tabular text-[2rem] leading-none font-semibold tracking-[-0.03em]">{value}</span>
         {aside}
       </span>
       {children}
@@ -501,17 +501,17 @@ function PropertyTile({ p }: { p: PropertySummary }) {
   }
   const body = (
     <>
-      <span className="text-[13.5px] font-semibold">{p.name}</span>
+      <span className="text-[0.84375rem] font-semibold">{p.name}</span>
       <span className="text-xs text-muted-foreground">{p.town ?? " "}</span>
       <span
         className={cn(
-          "tabular mt-1.5 text-[30px] leading-[1.1] font-semibold tracking-[-0.02em]",
+          "tabular mt-1.5 text-[1.875rem] leading-[1.1] font-semibold tracking-[-0.02em]",
           !p.register_loaded && "text-subtle",
         )}
       >
         {big}
       </span>
-      <span className="text-[12.5px] text-ink2">{caption}</span>
+      <span className="text-[0.78125rem] text-ink2">{caption}</span>
       {p.register_loaded && p.score != null && (
         <>
           <span className="mt-1.5 block h-1.5 rounded-[3px] bg-hover" title={`Score ${p.score}%`}>

@@ -44,7 +44,7 @@ function Frame({ children }: { children: React.ReactNode }) {
       <div className="w-full max-w-[400px] rounded-xl border border-divider bg-surface p-6 shadow-sm">
         <div className="mb-5 flex items-center gap-2">
           <Mark size={26} />
-          <span className="text-[15px] font-semibold">{appName}</span>
+          <span className="text-[0.9375rem] font-semibold">{appName}</span>
         </div>
         {children}
       </div>
@@ -80,23 +80,23 @@ export function SignInPage() {
     <Frame>
       {search.reason === "idle" ? (
         <>
-          <h1 className="m-0 text-[18px] font-semibold">You've been signed out</h1>
-          <p className="mt-1 text-[13.5px] text-muted-foreground">
+          <h1 className="m-0 text-[1.125rem] font-semibold">You've been signed out</h1>
+          <p className="mt-1 text-[0.84375rem] text-muted-foreground">
             For safety, after 30 minutes without activity. Comments and notes you hadn't sent are kept in this tab; sign
             in again here to carry on.
           </p>
         </>
       ) : (
         <>
-          <h1 className="m-0 text-[18px] font-semibold">Sign in</h1>
-          <p className="mt-1 text-[13.5px] text-muted-foreground">
+          <h1 className="m-0 text-[1.125rem] font-semibold">Sign in</h1>
+          <p className="mt-1 text-[0.84375rem] text-muted-foreground">
             {/* The Hub decides how (Google, password, passkey), so this doesn't say (UX audit F12). */}
             {signinMessage ?? "Sign in with your Bide account."}
           </p>
         </>
       )}
       {search.error && (
-        <p role="alert" className="mt-3 rounded-md bg-st-red-bg px-3 py-2 text-[13px] text-st-red">
+        <p role="alert" className="mt-3 rounded-md bg-st-red-bg px-3 py-2 text-[0.8125rem] text-st-red">
           {ERRORS[search.error] ?? "Sign-in didn't work. Try again."}
         </p>
       )}
@@ -113,7 +113,7 @@ export function SignInPage() {
         <span className="h-px flex-1 bg-divider" />
       </div>
       {sent ? (
-        <p className="text-[13.5px]">
+        <p className="text-[0.84375rem]">
           If <strong>{email}</strong> is set up in Bide Comply
           {bide ? " as a contractor or other outside person" : ""}, a sign-in link is on its way. It works once, within
           7 days.
@@ -148,7 +148,7 @@ export function SignInPage() {
                 setEmail(e.target.value)
                 if (emailError) setEmailError(null)
               }}
-              className="h-9 rounded-md border border-border bg-surface px-2.5 text-[14px] font-normal text-foreground aria-invalid:border-st-red"
+              className="h-9 rounded-md border border-border bg-surface px-2.5 text-[0.875rem] font-normal text-foreground aria-invalid:border-st-red"
               autoComplete="email"
               required
               aria-invalid={emailError ? true : undefined}
@@ -156,12 +156,12 @@ export function SignInPage() {
             />
           </label>
           {emailError && (
-            <p id="magic-email-error" role="alert" className="m-0 text-[13px] text-st-red">
+            <p id="magic-email-error" role="alert" className="m-0 text-[0.8125rem] text-st-red">
               {emailError}
             </p>
           )}
           {magic.isError && (
-            <p role="alert" className="m-0 text-[13px] text-st-red">
+            <p role="alert" className="m-0 text-[0.8125rem] text-st-red">
               {magic.error instanceof ApiError && magic.error.status === 429
                 ? "Too many links asked for. Wait a few minutes, then try again."
                 : magic.error instanceof ApiError && magic.error.status < 500
@@ -185,7 +185,7 @@ export function SignInPage() {
                 key={p.id}
                 type="button"
                 onClick={() => devSignIn.mutate(p.id)}
-                className="flex items-center justify-between rounded-md px-2 py-1.5 text-left text-[13px] hover:bg-hover"
+                className="flex items-center justify-between rounded-md px-2 py-1.5 text-left text-[0.8125rem] hover:bg-hover"
               >
                 <span>{p.name}</span>
                 <span className="text-xs text-muted-foreground">{p.title}</span>
@@ -210,7 +210,7 @@ function CodeBoxes({ value, onChange, length = 6 }: { value: string; onChange: (
       value={value}
       onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, length))}
       aria-label={`${length}-digit code`}
-      className="tabular h-14 w-full rounded-lg border border-border bg-surface text-center text-[26px] font-semibold tracking-[0.5em]"
+      className="tabular h-14 w-full rounded-lg border border-border bg-surface text-center text-[1.625rem] font-semibold tracking-[0.5em]"
       autoFocus
     />
   )
@@ -235,20 +235,20 @@ export function AdminSignInPage() {
     },
   })
   const err = go.error instanceof ApiError ? go.error.message : go.error ? "Sign-in didn't work. Try again." : null
-  const field = "h-9 rounded-md border border-border bg-surface px-2.5 text-[14px] font-normal text-foreground"
+  const field = "h-9 rounded-md border border-border bg-surface px-2.5 text-[0.875rem] font-normal text-foreground"
   return (
     <Frame>
-      <h1 className="m-0 text-[18px] font-semibold">Admin sign-in</h1>
+      <h1 className="m-0 text-[1.125rem] font-semibold">Admin sign-in</h1>
       {state.data && !state.data.enabled ? (
         <>
-          <p className="mt-1 text-[13.5px] text-muted-foreground">Password sign-in is switched off.</p>
-          <a href="/signin" className="mt-4 inline-block text-[13px]">
+          <p className="mt-1 text-[0.84375rem] text-muted-foreground">Password sign-in is switched off.</p>
+          <a href="/signin" className="mt-4 inline-block text-[0.8125rem]">
             Go to sign-in
           </a>
         </>
       ) : (
         <>
-          <p className="mt-1 text-[13.5px] text-muted-foreground">
+          <p className="mt-1 text-[0.84375rem] text-muted-foreground">
             For the system's admin account only. You'll confirm with your authenticator app next.
           </p>
           <form
@@ -280,14 +280,14 @@ export function AdminSignInPage() {
               />
             </label>
             {err && (
-              <p role="alert" className="m-0 text-[13px] text-st-red">
+              <p role="alert" className="m-0 text-[0.8125rem] text-st-red">
                 {err}
               </p>
             )}
             <Button type="submit" size="lg" disabled={!username || !password || go.isPending}>
               Sign in
             </Button>
-            <a href="/signin" className="text-[13px]">
+            <a href="/signin" className="text-[0.8125rem]">
               {bide ? "Sign in with Bide instead" : "Sign in with Google instead"}
             </a>
           </form>
@@ -324,15 +324,15 @@ export function CodePage({ stage }: { stage: "code" | "totp" | "totp-setup" }) {
     <Frame>
       {stage === "code" ? (
         <>
-          <h1 className="m-0 text-[18px] font-semibold">Enter the code we emailed you</h1>
-          <p className="mt-1 text-[13.5px] text-muted-foreground">
+          <h1 className="m-0 text-[1.125rem] font-semibold">Enter the code we emailed you</h1>
+          <p className="mt-1 text-[0.84375rem] text-muted-foreground">
             First sign-in on this computer. Sent to {pending.data?.email_masked ?? "your email"}.
           </p>
         </>
       ) : stage === "totp-setup" ? (
         <>
-          <h1 className="m-0 text-[18px] font-semibold">Set up your authenticator app</h1>
-          <p className="mt-1 text-[13.5px] text-muted-foreground">
+          <h1 className="m-0 text-[1.125rem] font-semibold">Set up your authenticator app</h1>
+          <p className="mt-1 text-[0.84375rem] text-muted-foreground">
             Admin accounts confirm sign-in with an authenticator app, such as Google Authenticator or Microsoft
             Authenticator. Scan this code with it, then enter the 6-digit code it shows.
           </p>
@@ -340,8 +340,8 @@ export function CodePage({ stage }: { stage: "code" | "totp" | "totp-setup" }) {
         </>
       ) : (
         <>
-          <h1 className="m-0 text-[18px] font-semibold">Confirm it's you</h1>
-          <p className="mt-1 text-[13.5px] text-muted-foreground">
+          <h1 className="m-0 text-[1.125rem] font-semibold">Confirm it's you</h1>
+          <p className="mt-1 text-[0.84375rem] text-muted-foreground">
             Enter the 6-digit code from your authenticator app.
           </p>
         </>
@@ -355,12 +355,12 @@ export function CodePage({ stage }: { stage: "code" | "totp" | "totp-setup" }) {
       >
         <CodeBoxes value={code} onChange={setCode} />
         {err && (
-          <p role="alert" className="m-0 text-[13px] text-st-red">
+          <p role="alert" className="m-0 text-[0.8125rem] text-st-red">
             {err}
           </p>
         )}
         {stage === "code" && (
-          <label className="flex items-center gap-2 text-[13.5px]">
+          <label className="flex items-center gap-2 text-[0.84375rem]">
             <input
               type="checkbox"
               checked={trust}
@@ -372,7 +372,7 @@ export function CodePage({ stage }: { stage: "code" | "totp" | "totp-setup" }) {
         )}
         <div className="flex items-center justify-between gap-2">
           {stage === "code" ? (
-            <span className="text-[13px] text-muted-foreground">
+            <span className="text-[0.8125rem] text-muted-foreground">
               Didn't get it?{" "}
               <button type="button" className="text-link hover:underline" onClick={() => resend.mutate()}>
                 Send a new code
@@ -385,7 +385,7 @@ export function CodePage({ stage }: { stage: "code" | "totp" | "totp-setup" }) {
             Verify
           </Button>
         </div>
-        <a href="/signin" className="text-[13px]">
+        <a href="/signin" className="text-[0.8125rem]">
           Use a different account
         </a>
       </form>

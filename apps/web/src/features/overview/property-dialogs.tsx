@@ -26,7 +26,7 @@ import { useDraft } from "@/lib/draft"
 import type { AssignOptions, Option, RegisterDetail } from "./property-types"
 
 const selectCls =
-  "h-9 w-full rounded-md border border-input bg-surface px-2.5 text-[13.5px] outline-none focus-visible:outline-2 focus-visible:outline-focus"
+  "h-9 w-full rounded-md border border-input bg-surface px-2.5 text-[0.84375rem] outline-none focus-visible:outline-2 focus-visible:outline-focus"
 
 function Field({ id, label, hint, children }: { id: string; label: string; hint?: string; children: React.ReactNode }) {
   return (
@@ -41,7 +41,7 @@ function Field({ id, label, hint, children }: { id: string; label: string; hint?
 function ErrorLine({ error }: { error: string | null }) {
   if (!error) return null
   return (
-    <Callout tone="red" className="text-[13px]">
+    <Callout tone="red" className="text-[0.8125rem]">
       <span role="alert">{error}</span>
     </Callout>
   )

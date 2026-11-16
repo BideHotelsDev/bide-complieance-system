@@ -54,7 +54,7 @@ export function NaSheet({ open, onClose, task }: { open: boolean; onClose: () =>
           <button
             type="button"
             onClick={onClose}
-            className="h-12 flex-1 rounded-xl border border-border bg-surface text-[16px] font-semibold"
+            className="h-12 flex-1 rounded-xl border border-border bg-surface text-[1rem] font-semibold"
           >
             Cancel
           </button>
@@ -62,7 +62,7 @@ export function NaSheet({ open, onClose, task }: { open: boolean; onClose: () =>
             type="button"
             disabled={!note.trim() || send.isPending}
             onClick={() => send.mutate()}
-            className="h-12 flex-[1.6] rounded-xl bg-primary text-[16px] font-semibold text-primary-foreground disabled:opacity-50"
+            className="h-12 flex-[1.6] rounded-xl bg-primary text-[1rem] font-semibold text-primary-foreground disabled:opacity-50"
           >
             Ask manager to agree
           </button>
@@ -88,11 +88,11 @@ export function NaSheet({ open, onClose, task }: { open: boolean; onClose: () =>
         />
       </div>
       {send.error && (send.error as { status?: number }).status !== 0 && (
-        <p role="alert" className="m-0 text-[14.5px] text-st-red">
+        <p role="alert" className="m-0 text-[0.90625rem] text-st-red">
           {send.error.message}
         </p>
       )}
-      <p className="m-0 rounded-xl bg-st-grey-bg px-4 py-3 text-[14.5px] text-ink2">
+      <p className="m-0 rounded-xl bg-st-grey-bg px-4 py-3 text-[0.90625rem] text-ink2">
         {classA
           ? "Life-safety checks can't be marked not applicable by staff. A manager must agree."
           : "Your manager will be asked to agree. Until then the check stays on your list."}

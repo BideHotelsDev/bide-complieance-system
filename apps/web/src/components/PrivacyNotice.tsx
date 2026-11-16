@@ -29,15 +29,15 @@ export function PrivacyNotice() {
           onPointerDownOutside={(e: Event) => e.preventDefault()}
           className="fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-32px)] w-[min(480px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border border-border bg-surface p-5 shadow-2xl"
         >
-          <DialogPrimitive.Title className="m-0 text-[17px] font-semibold">
+          <DialogPrimitive.Title className="m-0 text-[1.0625rem] font-semibold">
             What Bide Comply records about you
           </DialogPrimitive.Title>
           {/* It can't be dismissed, so on a small phone the wording scrolls and the button always stays reachable. */}
-          <DialogPrimitive.Description className="mt-2 min-h-0 overflow-y-auto overscroll-contain text-[14px] text-ink2">
+          <DialogPrimitive.Description className="mt-2 min-h-0 overflow-y-auto overscroll-contain text-[0.875rem] text-ink2">
             {words.data?.privacy_notice || privacyText(contact)}
           </DialogPrimitive.Description>
           {seen.isError && (
-            <p role="alert" className="m-0 mt-3 shrink-0 text-[13px] text-st-red">
+            <p role="alert" className="m-0 mt-3 shrink-0 text-[0.8125rem] text-st-red">
               That didn't save. Check your connection and try again.
             </p>
           )}

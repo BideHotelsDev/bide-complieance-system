@@ -19,7 +19,7 @@ function useTableToggle() {
 
 function SimpleTable({ headers, rows }: { headers: string[]; rows: (string | number | null)[][] }) {
   return (
-    <table className="w-full text-[13px]">
+    <table className="w-full text-[0.8125rem]">
       <thead>
         <tr>
           {headers.map((h, i) => (
@@ -60,9 +60,9 @@ export function ChartCard({
   return (
     <section className={cn("rounded-[10px] border border-divider bg-surface p-4", className)}>
       <div className="mb-3 flex items-center gap-2">
-        <h2 className="m-0 text-[14px] font-semibold">{title}</h2>
+        <h2 className="m-0 text-[0.875rem] font-semibold">{title}</h2>
         {badge}
-        <div className="ml-auto flex items-center gap-3 text-[13px]">{action}</div>
+        <div className="ml-auto flex items-center gap-3 text-[0.8125rem]">{action}</div>
       </div>
       {children}
     </section>
@@ -171,7 +171,7 @@ export function LineTrend({
       {table ? (
         <SimpleTable headers={["Week", `% ${valueName}`]} rows={points.map((p) => [p.title ?? p.label, p.value])} />
       ) : vals.length === 0 ? (
-        <div className="flex h-[164px] items-center justify-center text-[13px] text-muted-foreground">
+        <div className="flex h-[164px] items-center justify-center text-[0.8125rem] text-muted-foreground">
           Not enough checks yet to draw a trend.
         </div>
       ) : (
@@ -314,7 +314,7 @@ export function HBars({
       ) : (
         <ul role="img" aria-label={label} className="m-0 flex list-none flex-col gap-3 p-0">
           {rows.map((r) => (
-            <li key={r.label} className="grid grid-cols-[96px_1fr_40px] items-center gap-3 text-[13px]">
+            <li key={r.label} className="grid grid-cols-[6rem_1fr_2.5rem] items-center gap-3 text-[0.8125rem]">
               <span className="truncate">{r.label}</span>
               <span className="h-2.5 overflow-hidden rounded-full bg-hover" title={`${r.label}: ${r.value}${unit}`}>
                 <span
@@ -351,7 +351,7 @@ export function Heatmap({
   const word: Record<string, string> = { red: "Red", amber: "Amber", green: "Green", grey: "N/A" }
   return (
     <div className="overflow-x-auto">
-      <table className="w-full border-separate border-spacing-1 text-[12px]">
+      <table className="w-full border-separate border-spacing-1 text-[0.75rem]">
         <thead>
           <tr>
             <th className="text-left font-medium text-muted-foreground" />
@@ -440,7 +440,7 @@ export function ExpiryTimeline({
       </div>
       <div className="relative mt-1 h-2 rounded-full bg-hover">
         <div className="absolute inset-y-0 left-0 rounded-l-full bg-st-amber-bg" style={{ width: `${win}%` }} />
-        <span className="absolute -top-5 left-0 text-[11px] text-st-amber">{windowDays}-day window</span>
+        <span className="absolute -top-5 left-0 text-[0.6875rem] text-st-amber">{windowDays}-day window</span>
         {placed.map((m) => (
           <span
             key={m.id}

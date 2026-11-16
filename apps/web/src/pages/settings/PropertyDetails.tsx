@@ -59,7 +59,7 @@ type Detail = {
   dutyholders: { id: string; name: string }[]
 }
 
-const field = "h-8 w-full rounded-md border border-border bg-surface px-2.5 text-[13.5px]"
+const field = "h-8 w-full rounded-md border border-border bg-surface px-2.5 text-[0.84375rem]"
 const lbl = "flex flex-col gap-1 text-xs font-medium text-ink2"
 
 function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
@@ -323,13 +323,13 @@ export function PropertyDetailsPage() {
           </Field>
         </Card>
         <Card title="What this property has" bodyClassName="p-4">
-          <p className="mt-0 mb-3 text-[13px] text-muted-foreground">
+          <p className="mt-0 mb-3 text-[0.8125rem] text-muted-foreground">
             Templates use these to decide whether they apply. A new property gets the matching templates proposed in
             Property setup.
           </p>
           <div className="grid grid-cols-2 gap-2">
             {Object.entries(labels).map(([k, label]) => (
-              <label key={k} className="flex items-center gap-2 text-[13.5px]">
+              <label key={k} className="flex items-center gap-2 text-[0.84375rem]">
                 <input
                   type="checkbox"
                   className="size-4 accent-[var(--c-primary)]"
@@ -340,7 +340,7 @@ export function PropertyDetailsPage() {
               </label>
             ))}
           </div>
-          <h3 className="mt-5 mb-2 text-[13px] font-semibold">Location check (geofence)</h3>
+          <h3 className="mt-5 mb-2 text-[0.8125rem] font-semibold">Location check (geofence)</h3>
           <div className="grid grid-cols-3 gap-3">
             <Field label="Latitude">
               <DecimalInput
@@ -375,7 +375,7 @@ export function PropertyDetailsPage() {
             Read once when a check is sent, never tracked. Outside submissions are allowed and flagged for review.
           </p>
           {me.roles.includes("super_admin") && !isNew && (
-            <label className="mt-4 flex items-center gap-2 text-[13.5px]">
+            <label className="mt-4 flex items-center gap-2 text-[0.84375rem]">
               <input
                 type="checkbox"
                 className="size-4 accent-[var(--c-primary)]"
@@ -437,14 +437,14 @@ function Licences({ d }: { d: Detail }) {
       }
     >
       {d.licences.length === 0 && !adding && (
-        <p className="m-0 p-4 text-[13px] text-muted-foreground">
+        <p className="m-0 p-4 text-[0.8125rem] text-muted-foreground">
           No licences recorded. Class 7 hotels are normally outside short-term let licensing (gate item A03 confirms
           it).
         </p>
       )}
       {d.licences.map((l) => (
         <div key={l.id} className="border-b border-divider p-4 last:border-0">
-          <div className="flex flex-wrap items-center gap-2 text-[13.5px]">
+          <div className="flex flex-wrap items-center gap-2 text-[0.84375rem]">
             <strong className="font-semibold">
               {{ stl: "Short-term let licence", premises: "Premises licence", other: "Licence" }[l.type] ?? l.type}
             </strong>
@@ -460,7 +460,7 @@ function Licences({ d }: { d: Detail }) {
             </span>
           </div>
           {l.conditions.length > 0 && (
-            <ul className="mt-2 mb-0 pl-5 text-[13px]">
+            <ul className="mt-2 mb-0 pl-5 text-[0.8125rem]">
               {l.conditions.map((c, i) => (
                 <li key={i}>
                   {c.text} <span className="text-xs text-muted-foreground">({c.kind})</span>
@@ -519,7 +519,7 @@ function Licences({ d }: { d: Detail }) {
             Conditions, one per line (start a line with "local:" for a local condition)
             <textarea
               rows={4}
-              className="rounded-md border border-border bg-surface p-2.5 text-[13.5px] font-normal"
+              className="rounded-md border border-border bg-surface p-2.5 text-[0.84375rem] font-normal"
               value={f.conditions}
               onChange={(e) => setF({ ...f, conditions: e.target.value })}
             />
@@ -558,7 +558,7 @@ function Locations({ d }: { d: Detail }) {
         <span className="text-xs text-muted-foreground">Call points rotate in this order in the weekly alarm test</span>
       }
     >
-      <table className="w-full text-[13.5px]">
+      <table className="w-full text-[0.84375rem]">
         <thead>
           <tr className="text-left text-xs text-muted-foreground">
             <th className="border-b border-divider px-4 py-2 font-medium">Name</th>
@@ -576,7 +576,7 @@ function Locations({ d }: { d: Detail }) {
                   href={`/api/admin/locations/${l.id}/qr.svg`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-[13px]"
+                  className="inline-flex items-center gap-1 text-[0.8125rem]"
                 >
                   <QrCode className="size-3.5" /> Print label
                 </a>
@@ -643,11 +643,11 @@ export function PropertyListAdmin() {
                 to={`/settings/properties/${p.code}`}
                 className="flex items-center gap-3 px-4 py-3 text-foreground no-underline hover:bg-hover"
               >
-                <span className="inline-flex h-6 w-8 items-center justify-center rounded bg-hover text-[11px] font-semibold">
+                <span className="inline-flex h-6 w-8 items-center justify-center rounded bg-hover text-[0.6875rem] font-semibold">
                   {p.code}
                 </span>
                 <span className="flex-1 font-medium">{p.name}</span>
-                <span className="text-[13px] text-muted-foreground">{p.town}</span>
+                <span className="text-[0.8125rem] text-muted-foreground">{p.town}</span>
               </Link>
             </li>
           ))}

@@ -122,7 +122,7 @@ export function ContentPage() {
                 type="button"
                 disabled={!selected || reset.isPending}
                 onClick={() => selected && reset.mutate(selected)}
-                className="inline-flex h-9 items-center rounded-md border border-border bg-surface px-3.5 text-[13.5px] font-medium hover:bg-hover disabled:opacity-40"
+                className="inline-flex h-9 items-center rounded-md border border-border bg-surface px-3.5 text-[0.84375rem] font-medium hover:bg-hover disabled:opacity-40"
               >
                 Reset to default
               </button>
@@ -130,7 +130,7 @@ export function ContentPage() {
                 type="button"
                 disabled={!(anyEdited || editorDirty) || publish.isPending}
                 onClick={() => publish.mutate()}
-                className="inline-flex h-9 items-center rounded-md bg-primary px-3.5 text-[13.5px] font-medium text-primary-foreground hover:opacity-90 disabled:opacity-40"
+                className="inline-flex h-9 items-center rounded-md bg-primary px-3.5 text-[0.84375rem] font-medium text-primary-foreground hover:opacity-90 disabled:opacity-40"
               >
                 {publish.isPending ? "Publishing…" : "Publish changes"}
               </button>
@@ -153,7 +153,7 @@ export function ContentPage() {
             )}
             {groups.map((g) => (
               <div key={g.key} className="mb-3">
-                <div className="px-3.5 pt-1 pb-2 text-[12.5px] font-medium text-muted-foreground">{g.label}</div>
+                <div className="px-3.5 pt-1 pb-2 text-[0.78125rem] font-medium text-muted-foreground">{g.label}</div>
                 {g.items.map((it) => (
                   <a
                     key={it.key}
@@ -168,14 +168,14 @@ export function ContentPage() {
                       it.key === selected ? "border-divider bg-surface" : "border-transparent hover:bg-hover",
                     )}
                   >
-                    <span className="flex items-center gap-2 text-[14px] font-medium">
+                    <span className="flex items-center gap-2 text-[0.875rem] font-medium">
                       {it.name}
                       {it.edited && (
                         <span className="size-1.5 rounded-full bg-st-amber" aria-label="Edited, not published" />
                       )}
                     </span>
                     {it.channels.length > 0 && (
-                      <span className="block text-[12.5px] text-muted-foreground">
+                      <span className="block text-[0.78125rem] text-muted-foreground">
                         {channelCaption(it.channels).replace(/^./, (c) => c.toUpperCase())}
                       </span>
                     )}
@@ -336,9 +336,9 @@ function Editor({
     <>
       <section aria-label="Editor" className="min-w-0 rounded-[10px] border border-divider bg-surface">
         <div className="flex items-center gap-3 border-b border-divider px-[18px] py-3.5">
-          <h2 className="m-0 text-[15px] font-semibold">{msg.name}</h2>
+          <h2 className="m-0 text-[0.9375rem] font-semibold">{msg.name}</h2>
           <span className="ml-auto flex items-center gap-2">
-            <span aria-live="polite" className="text-[12px] text-subtle">
+            <span aria-live="polite" className="text-[0.75rem] text-subtle">
               {state === "saving" ? "Saving…" : state === "saved" ? "Draft saved" : ""}
             </span>
             {edited && <Pill tone="amber">Edited · not published</Pill>}
@@ -346,7 +346,7 @@ function Editor({
         </div>
         <div className="flex flex-col gap-4 p-[18px]">
           <div>
-            <label htmlFor="message-body" className="mb-1.5 block text-[13px] font-medium">
+            <label htmlFor="message-body" className="mb-1.5 block text-[0.8125rem] font-medium">
               Message
             </label>
             <div
@@ -358,7 +358,7 @@ function Editor({
               <div
                 ref={backdrop}
                 aria-hidden
-                className="pointer-events-none absolute inset-0 overflow-hidden px-3 py-2.5 text-[14px] leading-6 break-words whitespace-pre-wrap text-foreground"
+                className="pointer-events-none absolute inset-0 overflow-hidden px-3 py-2.5 text-[0.875rem] leading-6 break-words whitespace-pre-wrap text-foreground"
               >
                 {parts.map((p, i) =>
                   /^\{[a-z_]+\}$/.test(p) ? (
@@ -392,11 +392,11 @@ function Editor({
                 onScroll={(e) => {
                   if (backdrop.current) backdrop.current.scrollTop = e.currentTarget.scrollTop
                 }}
-                className="relative block min-h-[96px] w-full resize-none overflow-hidden bg-transparent px-3 py-2.5 text-[14px] leading-6 break-words text-transparent caret-[var(--c-foreground)] outline-none selection:bg-st-blue/25"
+                className="relative block min-h-[96px] w-full resize-none overflow-hidden bg-transparent px-3 py-2.5 text-[0.875rem] leading-6 break-words text-transparent caret-[var(--c-foreground)] outline-none selection:bg-st-blue/25"
               />
             </div>
             {error && (
-              <p id="message-error" role="alert" className="m-0 mt-1.5 text-[13px] text-st-red">
+              <p id="message-error" role="alert" className="m-0 mt-1.5 text-[0.8125rem] text-st-red">
                 {error}
               </p>
             )}
@@ -404,7 +404,7 @@ function Editor({
 
           {canEdit && msg.placeholders.length > 0 && (
             <div>
-              <div className="mb-1.5 text-[13px] font-medium">Insert a detail</div>
+              <div className="mb-1.5 text-[0.8125rem] font-medium">Insert a detail</div>
               <div className="flex flex-wrap gap-1.5">
                 {msg.placeholders.map((p) => (
                   <button
@@ -412,7 +412,7 @@ function Editor({
                     type="button"
                     onClick={() => insert(p)}
                     aria-label={`Insert ${p.replace(/_/g, " ")}`}
-                    className="inline-flex h-[26px] items-center rounded-md bg-st-blue-bg px-2 font-mono text-[12px] text-st-blue hover:opacity-80"
+                    className="inline-flex h-[26px] items-center rounded-md bg-st-blue-bg px-2 font-mono text-[0.75rem] text-st-blue hover:opacity-80"
                   >
                     {`{${p}}`}
                   </button>
@@ -428,10 +428,10 @@ function Editor({
               allOk ? "bg-st-green-bg text-st-green" : "bg-st-amber-bg text-st-amber",
             )}
           >
-            <div className="text-[14px] font-semibold">
+            <div className="text-[0.875rem] font-semibold">
               {allOk ? "Tone check: looks good" : "Tone check: worth another look"}
             </div>
-            <ul className="m-0 mt-1 flex list-none flex-wrap gap-x-3 gap-y-1 p-0 text-[13px]">
+            <ul className="m-0 mt-1 flex list-none flex-wrap gap-x-3 gap-y-1 p-0 text-[0.8125rem]">
               {preview.tone.map((t) => (
                 <li key={t.rule} className="inline-flex items-center gap-1">
                   {t.ok ? <Check aria-hidden className="size-3.5" /> : <X aria-hidden className="size-3.5" />}
@@ -448,18 +448,18 @@ function Editor({
       </section>
 
       <aside aria-label="Preview" className="flex min-w-0 flex-col gap-3 lg:col-start-2 xl:col-start-auto">
-        <div className="text-[13px] font-medium text-ink2">Preview with a real example</div>
+        <div className="text-[0.8125rem] font-medium text-ink2">Preview with a real example</div>
         <div className="rounded-[10px] border border-divider bg-surface p-3.5">
           <div className="flex gap-2.5">
-            <Mark size={22} className="mt-0.5 rounded-[5px] text-[12px]" />
+            <Mark size={22} className="mt-0.5 rounded-[5px] text-[0.75rem]" />
             <div className="min-w-0 flex-1">
-              <div className="text-[13.5px]">
+              <div className="text-[0.84375rem]">
                 <span className="font-semibold">bide Comply</span>{" "}
-                <span className="text-[12px] text-muted-foreground">{isAlert ? "Slack · 09:00" : "On screen"}</span>
+                <span className="text-[0.75rem] text-muted-foreground">{isAlert ? "Slack · 09:00" : "On screen"}</span>
               </div>
-              <p className="m-0 mt-0.5 text-[13.5px] break-words whitespace-pre-wrap">{preview.text}</p>
+              <p className="m-0 mt-0.5 text-[0.84375rem] break-words whitespace-pre-wrap">{preview.text}</p>
               {isAlert && (
-                <span className="mt-2 inline-flex h-7 items-center rounded-md border border-border px-2.5 text-[13px] font-medium">
+                <span className="mt-2 inline-flex h-7 items-center rounded-md border border-border px-2.5 text-[0.8125rem] font-medium">
                   {OPEN_LABEL[msg.key] ?? "Open check"}
                 </span>
               )}
@@ -470,14 +470,14 @@ function Editor({
           <>
             <div className="rounded-[10px] border border-divider bg-sidebar p-3.5">
               <div className="flex gap-2.5">
-                <Mark size={22} className="mt-0.5 rounded-[5px] text-[12px]" />
-                <div className="min-w-0 text-[13px]">
+                <Mark size={22} className="mt-0.5 rounded-[5px] text-[0.75rem]" />
+                <div className="min-w-0 text-[0.8125rem]">
                   <div className="font-semibold">{pushTitle}</div>
                   {pushRest.length > 0 && <div>{pushRest.join(" · ")}</div>}
                 </div>
               </div>
             </div>
-            <p className="m-0 text-[12.5px] text-muted-foreground">
+            <p className="m-0 text-[0.78125rem] text-muted-foreground">
               Push notifications use a shorter version automatically.
             </p>
           </>

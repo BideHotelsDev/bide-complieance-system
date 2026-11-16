@@ -18,8 +18,8 @@ export function NotFoundPage({
   return (
     <div className="mx-auto flex max-w-md flex-col items-center gap-2 px-6 py-16 text-center">
       <Icon aria-hidden className="mb-1 size-7 text-subtle" />
-      <h1 className="m-0 text-[20px] font-semibold">{title}</h1>
-      <p className="m-0 text-[14px] text-muted-foreground">{message}</p>
+      <h1 className="m-0 text-[1.25rem] font-semibold">{title}</h1>
+      <p className="m-0 text-[0.875rem] text-muted-foreground">{message}</p>
       <Button asChild className="mt-3">
         <Link to={back.to}>{back.label}</Link>
       </Button>

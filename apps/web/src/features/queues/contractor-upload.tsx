@@ -99,13 +99,13 @@ export function ContractorUpload({ id, onDecided }: { id: string; onDecided: (la
       <header className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           {u.class && <ClassBadge klass={u.class} />}
-          {u.ref && <span className="mono-id text-[12px]">{u.ref}</span>}
+          {u.ref && <span className="mono-id text-[0.75rem]">{u.ref}</span>}
           <Pill tone={u.status === "pending" ? "blue" : u.status === "approved" ? "green" : "amber"}>
             {u.status === "pending" ? "Waiting for a check" : u.status === "approved" ? "Approved" : "Sent back"}
           </Pill>
           <Pill tone="grey">From {u.contractor}</Pill>
         </div>
-        <h2 className="m-0 mt-1.5 text-[18px] font-semibold">{u.title}</h2>
+        <h2 className="m-0 mt-1.5 text-[1.125rem] font-semibold">{u.title}</h2>
         <p className="m-0 mt-0.5 text-muted-foreground">{u.subtitle}</p>
       </header>
 
@@ -126,7 +126,7 @@ export function ContractorUpload({ id, onDecided }: { id: string; onDecided: (la
                 {f.content_type.startsWith("image/") ? (
                   <img src={f.url} alt={`File ${i + 1}: ${f.file_name}`} className="size-full object-cover" />
                 ) : (
-                  <span className="flex size-full items-center justify-center p-4 text-center text-[13px] text-st-grey">
+                  <span className="flex size-full items-center justify-center p-4 text-center text-[0.8125rem] text-st-grey">
                     {f.file_name}
                   </span>
                 )}
@@ -139,7 +139,7 @@ export function ContractorUpload({ id, onDecided }: { id: string; onDecided: (la
         </div>
         <div className="flex flex-col gap-2.5 rounded-[10px] border border-divider bg-surface p-3.5">
           <span className="font-semibold">Details</span>
-          <dl className="m-0 grid grid-cols-[110px_1fr] gap-y-1.5 text-[13px]">
+          <dl className="m-0 grid grid-cols-[6.875rem_1fr] gap-y-1.5 text-[0.8125rem]">
             <dt className="text-muted-foreground">Sent by</dt>
             <dd className="m-0">{u.sent_by === u.contractor ? u.sent_by : `${u.sent_by} (${u.contractor})`}</dd>
             <dt className="text-muted-foreground">Sent</dt>
@@ -165,7 +165,7 @@ export function ContractorUpload({ id, onDecided }: { id: string; onDecided: (la
         <>
           <div className="flex flex-wrap items-center gap-3 rounded-[10px] border border-divider bg-surface p-3.5">
             <label className="flex min-w-0 flex-[1_1_320px] flex-col gap-[5px]">
-              <span className="text-[12px] font-medium text-ink2">
+              <span className="text-[0.75rem] font-medium text-ink2">
                 Comment <span className="font-normal text-muted-foreground">(required to send back)</span>
               </span>
               <input
@@ -181,12 +181,12 @@ export function ContractorUpload({ id, onDecided }: { id: string; onDecided: (la
                   u.kind === "fix" ? "e.g. The photo doesn't show the repair" : "e.g. The certificate isn't signed"
                 }
                 className={cn(
-                  "h-8 rounded-md border border-border bg-surface px-2.5 text-[13px] outline-none placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-focus",
+                  "h-8 rounded-md border border-border bg-surface px-2.5 text-[0.8125rem] outline-none placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-focus",
                   needComment && !comment.trim() && "border-st-red",
                 )}
               />
               {needComment && !comment.trim() && (
-                <span role="alert" className="text-[12px] text-st-red">
+                <span role="alert" className="text-[0.75rem] text-st-red">
                   Say what's wrong, so the contractor can put it right.
                 </span>
               )}
@@ -206,7 +206,7 @@ export function ContractorUpload({ id, onDecided }: { id: string; onDecided: (la
               </Button>
             </div>
           </div>
-          <p className="m-0 text-[12px] text-muted-foreground">
+          <p className="m-0 text-[0.75rem] text-muted-foreground">
             {u.can_decide ? u.on_approve : "Only someone who can close Actions here can approve a fix."} Send back tells
             the contractor why, in their portal.
           </p>
