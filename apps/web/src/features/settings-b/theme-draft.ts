@@ -15,6 +15,8 @@ export type DraftTokens = {
   density: "comfortable" | "compact"
   tone: string
   preset?: string | null
+  /** What everyone sees, unless they choose otherwise in My account. */
+  mode?: "light" | "dark"
 }
 export type Branding = {
   appName?: string

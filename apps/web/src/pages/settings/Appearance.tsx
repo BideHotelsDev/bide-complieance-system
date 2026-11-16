@@ -86,6 +86,7 @@ export function AppearancePage() {
     const base = d.draft ?? d.live
     if (!base) return
     setTokens(base.tokens)
+    setMode(base.tokens.mode === "dark" ? "dark" : "light")
     setBranding(base.branding ?? {})
     setChecks(base.checks)
     setHasDraft(!!d.draft)
@@ -290,6 +291,7 @@ export function AppearancePage() {
                           dark: pr.dark,
                           highContrast: q.data.presets.high_contrast?.light ?? t.highContrast,
                           preset: p.key,
+                          mode: pr.default_mode === "dark" ? "dark" : "light",
                           font: pr.font ?? "Inter",
                           displayFont: pr.displayFont ?? null,
                         }))
@@ -317,10 +319,7 @@ export function AppearancePage() {
                   )
                 })}
               </div>
-              <Hint>
-                The Bide brand uses Jost, with a serif for page titles; the others use Inter. Staff can also follow
-                their phone's light or dark setting.
-              </Hint>
+              <Hint>The Bide brand uses Jost, with a serif for page titles; the others use Inter.</Hint>
             </Section>
 
             <Section title="Brand">
@@ -361,6 +360,26 @@ export function AppearancePage() {
             </Section>
 
             <Section title="Colour">
+              <div>
+                <FieldLabel>Everyone sees</FieldLabel>
+                <ButtonGroup<Mode>
+                  label="Everyone sees"
+                  value={tokens.mode === "dark" ? "dark" : "light"}
+                  onChange={(m) => {
+                    change((t) => ({ ...t, mode: m }))
+                    setMode(m)
+                  }}
+                  disabled={!canEdit}
+                  options={[
+                    { value: "light", label: "Light" },
+                    { value: "dark", label: "Dark" },
+                  ]}
+                />
+                <Hint>
+                  Whatever their computer or phone is set to. Anyone can still pick Light, Dark or High contrast for
+                  themselves in My account.
+                </Hint>
+              </div>
               <div>
                 <FieldLabel>Preview mode</FieldLabel>
                 <ButtonGroup<Mode>

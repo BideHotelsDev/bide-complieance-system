@@ -8,6 +8,8 @@ export type ThemeTokens = {
   highContrast?: Record<string, string>
   radius?: number
   density?: "comfortable" | "compact"
+  /** Light or dark: what everyone sees unless they choose otherwise for themselves (My account › Appearance). */
+  mode?: "light" | "dark"
   font?: string
   displayFont?: string | null
 }
@@ -96,6 +98,11 @@ export function applyTheme(theme: Theme, opts: { preview?: boolean } = {}): void
       /* private mode: fine, it just won't be cached */
     }
   }
+  if (!opts.preview) {
+    themeMode = t.mode === "dark" ? "dark" : "light"
+    // Someone following the theme switches with it as soon as a new theme arrives.
+    if (savedMode() === "theme") applyMode("theme")
+  }
   if (theme.branding?.appName) document.title = theme.branding.appName
   branding = theme.branding ?? {}
   listeners.forEach((l) => l())
@@ -103,6 +110,9 @@ export function applyTheme(theme: Theme, opts: { preview?: boolean } = {}): void
   const root = document.documentElement
   if (!root.dataset.densityOwn) root.dataset.density = t.density === "compact" ? "compact" : "comfortable"
 }
+
+// Light or dark as the live theme sets it (Settings › Appearance).
+let themeMode: "light" | "dark" = "light"
 
 // The app name and sign-in message from Appearance, for headers and the sign-in page.
 let branding: Theme["branding"] = {}
@@ -131,12 +141,14 @@ export function applyCachedTheme(): Theme | null {
   }
 }
 
-export type Mode = "light" | "dark" | "system" | "contrast"
+/* "theme" follows Settings › Appearance; the others are a person's own choice. The computer's or browser's light or
+   dark setting is deliberately not used: the theme the organisation publishes is what people see. */
+export type Mode = "theme" | "light" | "dark" | "contrast"
 
 export function applyMode(mode: Mode): void {
-  const dark = mode === "dark" || (mode === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches)
-  document.documentElement.classList.toggle("dark", dark)
-  document.documentElement.classList.toggle("hc", mode === "contrast")
+  const look = mode === "theme" ? themeMode : mode
+  document.documentElement.classList.toggle("dark", look === "dark")
+  document.documentElement.classList.toggle("hc", look === "contrast")
   try {
     localStorage.setItem(MODE_KEY, mode)
   } catch {
@@ -146,9 +158,11 @@ export function applyMode(mode: Mode): void {
 
 export function savedMode(): Mode {
   try {
-    return (localStorage.getItem(MODE_KEY) as Mode) || "system"
+    const m = localStorage.getItem(MODE_KEY)
+    // "system" (match the device) was the old default; it now means follow the theme.
+    return m === "light" || m === "dark" || m === "contrast" ? m : "theme"
   } catch {
-    return "system"
+    return "theme"
   }
 }
 

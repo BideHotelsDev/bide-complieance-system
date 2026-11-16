@@ -548,3 +548,18 @@ def test_sign_in_message_does_not_name_google(app):
     finally:
         with engine.begin() as conn:
             conn.execute(update(theme_version).where(theme_version.c.id == live.id).values(branding=live.branding))
+
+
+def test_the_published_theme_sets_light_or_dark_for_everyone(login):
+    """Appearance decides light or dark, not each person's computer or browser setting."""
+    c = login("David Liddell")
+    tokens = dict(c.get("/api/theme").json()["tokens"])
+    assert tokens.get("mode", "light") == "light"
+    r = c.put("/api/settings/appearance/draft", json={"tokens": {**tokens, "mode": "dark"}, "name": "Dark"})
+    assert r.status_code == 200, r.text
+    assert c.post("/api/settings/appearance/publish").status_code == 200
+    assert c.get("/api/theme").json()["tokens"]["mode"] == "dark"
+    # Anything other than dark is light.
+    c.put("/api/settings/appearance/draft", json={"tokens": {**tokens, "mode": "purple"}, "name": "Odd"})
+    c.post("/api/settings/appearance/publish")
+    assert c.get("/api/theme").json()["tokens"]["mode"] == "light"
