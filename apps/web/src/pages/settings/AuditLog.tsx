@@ -229,7 +229,7 @@ export function AuditLogPage() {
           </EmptyState>
         ) : (
           <div className="overflow-x-auto">
-            <table className={cn("w-full min-w-[640px] border-collapse text-[0.84375rem]", q.isFetching && "opacity-70")}>
+            <table className={cn("table-stack w-full min-w-[640px] border-collapse text-[0.84375rem]", q.isFetching && "opacity-70")}>
               <thead>
                 <tr className="text-left text-[0.78125rem] text-muted-foreground">
                   <th className="h-[38px] w-12 border-b border-divider px-3.5 font-medium">
@@ -251,7 +251,8 @@ export function AuditLogPage() {
                         onClick={() => toggle(r.id)}
                         className={cn("cursor-pointer hover:bg-hover", isOpen && "bg-hover")}
                       >
-                        <td className="border-b border-divider px-3.5 py-2.5">
+                        {/* On a phone the whole card opens the details, so the toggle cell isn't shown. */}
+                        <td className="stack-hide border-b border-divider px-3.5 py-2.5">
                           <span className="flex items-center gap-1">
                             <button
                               type="button"
@@ -275,16 +276,25 @@ export function AuditLogPage() {
                             )}
                           </span>
                         </td>
-                        <td className="border-b border-divider px-3.5 py-2.5 font-mono text-[0.75rem] whitespace-nowrap text-muted-foreground">
+                        <td
+                          data-label="Time"
+                          className="border-b border-divider px-3.5 py-2.5 font-mono text-[0.75rem] whitespace-nowrap text-muted-foreground">
                           {when !== "today" && <span className="mr-1.5 font-sans">{fmtDate(r.date)}</span>}
                           {r.time}
                         </td>
-                        <td className="border-b border-divider px-3.5 py-2.5 whitespace-nowrap">{r.who}</td>
-                        <td className="border-b border-divider px-3.5 py-2.5">{r.what}</td>
-                        <td className="border-b border-divider px-3.5 py-2.5 whitespace-nowrap">
+                        <td data-label="Who" className="border-b border-divider px-3.5 py-2.5 whitespace-nowrap">
+                          {r.who}
+                        </td>
+                        <td className="stack-title border-b border-divider px-3.5 py-2.5">
+                          {r.flag && <span className="text-st-red md:hidden">Failed submission · </span>}
+                          {r.what}
+                        </td>
+                        <td data-label="Record" className="border-b border-divider px-3.5 py-2.5 whitespace-nowrap">
                           <RecordCell row={r} />
                         </td>
-                        <td className="border-b border-divider px-3.5 py-2.5 whitespace-nowrap text-ink2">{r.from}</td>
+                        <td data-label="From" className="border-b border-divider px-3.5 py-2.5 whitespace-nowrap text-ink2">
+                          {r.from}
+                        </td>
                       </tr>
                       {isOpen && (
                         <tr className="bg-sidebar">

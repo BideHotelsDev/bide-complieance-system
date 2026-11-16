@@ -9,6 +9,7 @@ import {
   flexRender,
   getCoreRowModel,
   useReactTable,
+  type Cell,
   type ColumnDef,
   type RowSelectionState,
 } from "@tanstack/react-table"
@@ -26,6 +27,8 @@ type Meta = {
   className?: string
   headerClassName?: string
   mono?: boolean
+  /** Leave this column off the phone card (row actions, a duplicate of the title). */
+  hideOnCard?: boolean
 }
 
 export function DataTable<T extends { id: string }>({
@@ -149,7 +152,8 @@ export function DataTable<T extends { id: string }>({
           </button>
         </div>
       )}
-      <div className={cn("overflow-x-auto", mobileCard && "hidden md:block")}>
+      {/* Below md every table is a list of cards (UX audit M2): the caller's own card, or one built from the columns. */}
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full border-collapse">
           {caption && <caption className="sr-only">{caption}</caption>}
           <thead className="sticky top-0 z-10">
@@ -235,23 +239,63 @@ export function DataTable<T extends { id: string }>({
           </tbody>
         </table>
       </div>
-      {mobileCard && (
-        <ul className="flex flex-col gap-2 md:hidden">
-          {rows.length === 0 && empty}
-          {rows.map((r) => (
+      <ul className="m-0 flex list-none flex-col gap-2 p-0 md:hidden">
+        {rows.length === 0 && empty}
+        {table.getRowModel().rows.map((r) => {
+          const body = mobileCard ? mobileCard(r.original) : <AutoCard cells={r.getVisibleCells()} />
+          const on = selectedId === r.id
+          return (
             <li key={r.id}>
-              <button
-                type="button"
-                onClick={onRowClick ? () => onRowClick(r) : undefined}
-                className="w-full rounded-lg border border-border bg-surface p-3 text-left"
-              >
-                {mobileCard(r)}
-              </button>
+              {onRowClick ? (
+                <button
+                  type="button"
+                  onClick={() => onRowClick(r.original)}
+                  aria-current={on || undefined}
+                  className={cn(
+                    "w-full rounded-lg border border-border bg-surface p-3 text-left",
+                    on && "border-st-blue bg-st-blue-bg/60",
+                  )}
+                >
+                  {body}
+                </button>
+              ) : (
+                <div className="rounded-lg border border-border bg-surface p-3">{body}</div>
+              )}
             </li>
-          ))}
-        </ul>
-      )}
+          )
+        })}
+      </ul>
     </div>
+  )
+}
+
+// The phone card for a table without its own: the first column as the title, then each other column as a labelled
+// line. Columns marked hideOnCard, and cells that render nothing, are left out.
+function AutoCard<T>({ cells }: { cells: Cell<T, unknown>[] }) {
+  const [first, ...rest] = cells
+  return (
+    <span className="flex min-w-0 flex-col gap-1.5 text-[0.84375rem]">
+      {first && (
+        <span className="min-w-0 font-medium">{flexRender(first.column.columnDef.cell, first.getContext())}</span>
+      )}
+      {rest.length > 0 && (
+        <span className="grid grid-cols-[minmax(5.5rem,auto)_minmax(0,1fr)] gap-x-3 gap-y-1">
+          {rest
+            .filter((c) => !((c.column.columnDef.meta ?? {}) as Meta).hideOnCard)
+            .map((c) => {
+              const head = c.column.columnDef.header
+              return (
+                <React.Fragment key={c.id}>
+                  <span className="text-[0.78125rem] text-muted-foreground">
+                    {typeof head === "string" ? head : c.column.id}
+                  </span>
+                  <span className="min-w-0 break-words">{flexRender(c.column.columnDef.cell, c.getContext())}</span>
+                </React.Fragment>
+              )
+            })}
+        </span>
+      )}
+    </span>
   )
 }
 
