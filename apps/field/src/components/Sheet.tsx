@@ -1,5 +1,6 @@
 /* A bottom sheet on the phone: the shared Dialog (focus trap, Escape, outside tap) pinned to the thumb zone. */
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@bide-comply/ui/components/dialog"
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@bide-comply/ui/components/dialog"
+import { X } from "lucide-react"
 import * as React from "react"
 
 export function Sheet({
@@ -25,8 +26,17 @@ export function Sheet({
         showCloseButton={false}
         className="top-auto bottom-0 flex max-h-[92dvh] max-w-[480px] translate-y-0 flex-col gap-0 overflow-hidden rounded-t-2xl rounded-b-none border-0 bg-surface p-0 sm:max-w-[480px]"
       >
-        <div className="shrink-0 px-5 pt-5">
-          <DialogTitle className="text-[19px] leading-snug">{title}</DialogTitle>
+        <div className="relative shrink-0 px-5 pt-5">
+          {/* A visible way out, not only Escape or a tap outside (UX audit F42). */}
+          {dismissable && (
+            <DialogClose
+              aria-label="Close"
+              className="absolute top-3 right-3 flex size-11 items-center justify-center rounded-full text-muted-foreground hover:bg-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            >
+              <X className="size-5" aria-hidden />
+            </DialogClose>
+          )}
+          <DialogTitle className="pr-10 text-[19px] leading-snug">{title}</DialogTitle>
           {description ? (
             <DialogDescription className="mt-1 text-[14.5px]">{description}</DialogDescription>
           ) : (

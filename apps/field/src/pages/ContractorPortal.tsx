@@ -15,6 +15,7 @@ import * as React from "react"
 import { Card, ErrorBox, Loading, Page, PrimaryButton, SecondaryButton, Spinner, TextArea } from "@/components/kit"
 import { Sheet } from "@/components/Sheet"
 import { toastCouldntSave, toastSent } from "@/components/sync"
+import { appPath } from "@/lib/base"
 import { fmtSize } from "@/lib/format"
 
 type Item = {
@@ -42,12 +43,19 @@ export function ContractorPortalPage() {
     queryFn: () => api.get<Portal>("/api/contractor-portal"),
   })
   const [sending, setSending] = React.useState<Item | null>(null)
+  const [leaving, setLeaving] = React.useState(false)
+  // A shared or borrowed phone: end this link's session here. The emailed link still works to come back.
+  const signOut = async () => {
+    setLeaving(true)
+    await api.post("/api/auth/logout").catch(() => undefined)
+    window.location.href = appPath("/signin")
+  }
 
   return (
     <Page>
       <header className="flex items-center gap-2.5 border-b border-divider bg-surface px-[18px] py-4">
         <Mark size={28} />
-        <span className="text-[15px] font-semibold">bide Hotels</span>
+        <span className="text-[15px] font-semibold">bide Comply</span>
         <span className="ml-auto text-[13px] text-muted-foreground">Contractor</span>
       </header>
       <main className="flex flex-1 flex-col gap-3 px-4 pt-4 pb-8">
@@ -79,6 +87,12 @@ export function ContractorPortalPage() {
             </Card>
           </>
         )}
+        <footer className="mt-auto flex flex-col items-center gap-2 pt-4 text-center text-[13px] text-muted-foreground">
+          <p className="m-0">Questions about a visit? Reply to the email Bide sent you.</p>
+          <SecondaryButton className="h-11 px-5 text-[14px]" disabled={leaving} onClick={() => void signOut()}>
+            {leaving ? "Signing out…" : "Sign out on this phone"}
+          </SecondaryButton>
+        </footer>
       </main>
       {sending && <SendSheet it={sending} onClose={() => setSending(null)} />}
     </Page>

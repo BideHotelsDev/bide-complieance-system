@@ -5,7 +5,8 @@ import { ErrorState, LoadingPage } from "@bide-comply/ui/components/page"
 import { ContactProvider } from "@bide-comply/ui/lib/contact"
 import { Sheet, SheetContent, SheetTitle } from "@bide-comply/ui/components/sheet"
 
-import { useMe } from "@/lib/session"
+import { navFor, useMe } from "@/lib/session"
+import { NotFoundPage } from "@/pages/NotFound"
 import { CommandPalette } from "./CommandPalette"
 import { PhoneMenuProvider, PhoneTabBar, PhoneTopBar } from "./PhoneNav"
 import { PrivacyNotice } from "./PrivacyNotice"
@@ -94,7 +95,16 @@ export function AppShell() {
             {/* Phone Home draws its own header (design: Manager on phone), with the menu button in it. */}
             {path !== "/" && !focus && <PhoneTopBar onSearch={() => setSearch(true)} />}
             <main id="main" className="min-w-0 flex-1 px-4 pt-5 pb-24 md:px-7 md:py-6">
-              <Outlet />
+              {/* Settings open by address too, so check the same rule the menu uses (UX audit F45). */}
+              {path.startsWith("/settings") && !navFor(me.data).settings ? (
+                <NotFoundPage
+                  icon="lock"
+                  title="You don't have access to Settings"
+                  message="Settings are for the people who keep the register. Ask them if something here needs changing."
+                />
+              ) : (
+                <Outlet />
+              )}
             </main>
           </div>
           {!focus && <PhoneTabBar />}
