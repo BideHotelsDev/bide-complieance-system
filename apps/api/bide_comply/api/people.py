@@ -146,7 +146,7 @@ def list_people(
                 "name": p["name"],
                 "initials": initials(p["name"]),
                 "title": p["title"],
-                "property": " · ".join(props) or "Group",
+                "property": " · ".join(props) or "All properties",
                 "codes": codes or ["GROUP"],
                 "roles": [
                     {"role": r.role, "label": ROLES.get(r.role, r.role), "property": r.name or "All properties"}
@@ -165,7 +165,7 @@ def list_people(
             "prop",
             "Property",
             lambda r: r["codes"],
-            [(c, n) for c, n in all_props] + [("GROUP", "Group")],
+            [(c, n) for c, n in all_props] + [("GROUP", "All properties")],
             multi_value=True,
         ),
         listing.Facet("role", "Role", lambda r: r["role_keys"], [(k, v) for k, v in ROLES.items()], multi_value=True),

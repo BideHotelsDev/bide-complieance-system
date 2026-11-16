@@ -43,10 +43,11 @@ const SORTS = [
 ] as const
 
 const FACET_KEYS = ["prop", "type", "prio", "source", "gate"] as const
+// Status colours, as Help teaches them: red needs someone now, amber soon, grey later. Each clears 3:1 on a card.
 const PRIO_COLOR: Record<Priority, string> = {
-  high: "var(--c-foreground)",
-  med: "var(--c-subtle)",
-  low: "var(--c-border)",
+  high: "var(--c-red)",
+  med: "var(--c-amber)",
+  low: "var(--c-grey)",
 }
 
 export function ActionsPage() {

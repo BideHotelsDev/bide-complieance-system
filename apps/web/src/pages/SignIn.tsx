@@ -13,7 +13,7 @@ import { Button } from "@bide-comply/ui/components/button"
 import { Mark } from "@bide-comply/ui/components/page"
 import { useBranding } from "@bide-comply/ui/lib/theme"
 
-import { useBideHub } from "@/lib/session"
+import { useBideHub, useMe } from "@/lib/session"
 
 // Codes the sign-in callbacks put in ?error=.
 const ERRORS: Record<string, string> = {
@@ -23,6 +23,17 @@ const ERRORS: Record<string, string> = {
   denied: "Your Bide account doesn't have access to Bide Comply. Ask an Admin of Bide Comply to add you.",
   inactive: "This account no longer has access.",
   unverified: "Your Bide account's email address isn't verified yet. Verify it on Bide Hub, then sign in again.",
+}
+
+/* Someone already signed in who opens a sign-in page goes on to where they were heading, or Home (UX audit F43).
+   Only same-site paths are followed, so ?next= can't send anyone off-site. */
+function useSignedInRedirect(next?: string) {
+  const me = useMe()
+  React.useEffect(() => {
+    if (!me.data) return
+    const safe = next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/signin")
+    window.location.replace(safe ? next : "/")
+  }, [me.data, next])
 }
 
 function Frame({ children }: { children: React.ReactNode }) {
@@ -43,6 +54,7 @@ function Frame({ children }: { children: React.ReactNode }) {
 export function SignInPage() {
   const search = useSearch({ strict: false }) as { next?: string; error?: string; reason?: string }
   const navigate = useNavigate()
+  useSignedInRedirect(search.error ? undefined : search.next)
   const { signinMessage } = useBranding()
   const bide = useBideHub().data?.enabled ?? false
   const [email, setEmail] = React.useState("")
@@ -205,6 +217,7 @@ function CodeBoxes({ value, onChange, length = 6 }: { value: string; onChange: (
 // Break-glass sign-in for the one Super Admin set in ADMIN_LOGIN_*, before Google sign-in and email are set up. It
 // isn't linked from the sign-in page; the authenticator app follows the password.
 export function AdminSignInPage() {
+  useSignedInRedirect()
   const bide = useBideHub().data?.enabled ?? false
   const [username, setUsername] = React.useState("")
   const [password, setPassword] = React.useState("")
