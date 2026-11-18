@@ -138,6 +138,7 @@ export type FieldMe = {
   title: string | null
   month: { on_time: number | null; done: number; problems: number }
   streak_days: number
+  overdue_on_list: number
   trusted_until: string | null
   preferences: Record<string, unknown>
   away: { starts_on: string; ends_on: string; cover: string | null; approved: boolean } | null

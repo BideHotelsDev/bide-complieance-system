@@ -55,6 +55,7 @@ function leftWord(f: FormField): string {
   const l = f.label.replace(/\?$/, "").trim()
   const lower = l.charAt(0).toLowerCase() + l.slice(1)
   if (f.type === "photo") return /photo/i.test(l) ? lower : `${lower} photo`
+  if (f.key === "notes") return "a note on what's wrong"
   return lower
 }
 
@@ -202,7 +203,12 @@ function CheckForm({ task }: { task: TaskDetail }) {
   )
   const photosTaken = photoFields.reduce((n, f) => n + Math.min(count(f.key), need(f)), 0)
 
+  const lifeSafety = task.class === "A"
+  const problem = form.some((f) => failing(f, values[f.key]))
+  // A life-safety problem goes to whoever fixes it straight away: it needs a word on what's wrong.
+  const noteNeeded = (f: FormField) => lifeSafety && problem && f.key === "notes"
   const missing = form.filter((f) => {
+    if (noteNeeded(f)) return isEmpty(values[f.key]) || String(values[f.key]).trim() === ""
     if (EVIDENCE.has(f.type)) return count(f.key) < need(f)
     if (f.type === "signature") return Boolean(f.required) && !signature
     if (f.type === "number" && !isEmpty(values[f.key]) && Number.isNaN(Number(values[f.key]))) return true
@@ -284,6 +290,9 @@ function CheckForm({ task }: { task: TaskDetail }) {
 
   if (result) return <FailedResult task={task} result={result} />
 
+  // "3 of 5 done": every answer, photo or signature the check asks for.
+  const counted = form.filter((f) => EVIDENCE.has(f.type) || noteNeeded(f) || Boolean(f.required))
+  const doneCount = counted.filter((f) => !missing.includes(f)).length
   const words = missing.map(leftWord)
   const left = words.length > 2 ? [...words.slice(0, 2), `${words.length - 2} more`] : words
   const cameraIndex = Math.min(photosTaken + 1, photosNeeded)
@@ -296,9 +305,32 @@ function CheckForm({ task }: { task: TaskDetail }) {
       right={task.class === "A" ? <Pill tone="red">Life safety</Pill> : undefined}
       footer={
         <>
+          {task.can_submit && counted.length > 1 && (
+            <div className="mb-2.5 flex items-center gap-3 text-[0.8125rem] text-muted-foreground">
+              <div
+                role="progressbar"
+                aria-label="Answered"
+                aria-valuemin={0}
+                aria-valuemax={counted.length}
+                aria-valuenow={doneCount}
+                className="h-1.5 flex-1 overflow-hidden rounded-full bg-divider"
+              >
+                <div
+                  className={cn(
+                    "h-full rounded-full transition-[width] duration-300 motion-reduce:transition-none",
+                    problem ? "bg-st-red" : "bg-st-green",
+                  )}
+                  style={{ width: `${(100 * doneCount) / counted.length}%` }}
+                />
+              </div>
+              <span className="tabular shrink-0">
+                {doneCount} of {counted.length} done
+              </span>
+            </div>
+          )}
           <PrimaryButton disabled={missing.length > 0 || sending || !task.can_submit} onClick={() => void submit()}>
             {sending && <Spinner />}
-            {sending ? "Sending" : "Submit check"}
+            {sending ? "Sending" : problem ? "Send and report problem" : "Submit check"}
           </PrimaryButton>
           <p aria-live="polite" className="m-0 mt-2 line-clamp-2 text-center text-[0.875rem] text-muted-foreground">
             {!task.can_submit
@@ -369,6 +401,8 @@ function CheckForm({ task }: { task: TaskDetail }) {
             files={shots.filter((s) => s.key === f.key)}
             onFile={(file) => add(f.key, file, new Date().toISOString(), "upload")}
             onRemoveFile={remove}
+            lifeSafety={lifeSafety}
+            problem={problem}
           />
         ))}
 
@@ -490,6 +524,40 @@ function ShotTile({ shot, label, onRemove }: { shot: Shot; label: string; onRemo
   )
 }
 
+/* Does this answer fail the check? The server decides for real (services/checks.py); this only lets the form say so
+   while the person is still answering. */
+function failing(f: FormField, v: unknown): boolean {
+  if (isEmpty(v)) return false
+  switch (f.type) {
+    case "yes_no":
+      return Boolean(f.fail_on) && v === f.fail_on
+    case "pass_fail":
+      return v === "fail"
+    case "pass_fail_items":
+      return Object.values((v as Record<string, string>) ?? {}).includes("fail")
+    case "select":
+      return (f.fail_options ?? []).includes(v as string)
+    case "number": {
+      const n = Number(v)
+      return !Number.isNaN(n) && ((f.min != null && n < f.min) || (f.max != null && n > f.max))
+    }
+    default:
+      return false
+  }
+}
+
+function FailNote({ lifeSafety }: { lifeSafety: boolean }) {
+  return (
+    <p role="status" className="m-0 mt-2 flex items-start gap-2 text-[0.875rem] text-st-red">
+      <CircleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
+      <span>
+        This is reported as a problem when you send, and someone is asked to fix it.
+        {lifeSafety ? " Say what's wrong in the note below." : " A note below helps whoever fixes it."}
+      </span>
+    </p>
+  )
+}
+
 function FieldInput({
   field: f,
   value,
@@ -499,6 +567,8 @@ function FieldInput({
   files,
   onFile,
   onRemoveFile,
+  lifeSafety,
+  problem,
 }: {
   field: FormField
   value: unknown
@@ -508,6 +578,9 @@ function FieldInput({
   files: Shot[]
   onFile: (f: File) => void
   onRemoveFile: (id: string) => void
+  lifeSafety: boolean
+  /** Some answer on the form fails the check: the notes box asks what's wrong. */
+  problem: boolean
 }) {
   const id = `f-${f.key}`
   const labelId = `${id}-label`
@@ -517,11 +590,11 @@ function FieldInput({
       const opts =
         f.type === "yes_no"
           ? [
-              { value: "yes", label: "Yes", tone: f.fail_on === "yes" ? ("fail" as const) : undefined },
-              { value: "no", label: "No", tone: f.fail_on === "no" ? ("fail" as const) : undefined },
+              { value: "yes", label: "Yes", tone: f.fail_on ? (f.fail_on === "yes" ? "fail" : "pass") : undefined },
+              { value: "no", label: "No", tone: f.fail_on ? (f.fail_on === "no" ? "fail" : "pass") : undefined },
             ]
           : [
-              { value: "pass", label: "Pass" },
+              { value: "pass", label: "Pass", tone: "pass" as const },
               { value: "fail", label: "Fail", tone: "fail" as const },
             ]
       return (
@@ -529,7 +602,13 @@ function FieldInput({
           <FieldLabel id={labelId} help={f.help}>
             {f.label}
           </FieldLabel>
-          <Choice value={value as string | undefined} options={opts} onChange={onChange} labelledBy={labelId} />
+          <Choice
+            value={value as string | undefined}
+            options={opts as { value: string; label: string; tone?: "pass" | "fail" }[]}
+            onChange={onChange}
+            labelledBy={labelId}
+          />
+          {failing(f, value) && <FailNote lifeSafety={lifeSafety} />}
         </div>
       )
     }
@@ -551,7 +630,7 @@ function FieldInput({
                   value={v[it]}
                   labelledBy={`${labelId}-${it}`}
                   options={[
-                    { value: "pass", label: "Pass" },
+                    { value: "pass", label: "Pass", tone: "pass" },
                     { value: "fail", label: "Fail", tone: "fail" },
                   ]}
                   onChange={(r) => onChange({ ...v, [it]: r })}
@@ -559,6 +638,7 @@ function FieldInput({
               </div>
             ))}
           </div>
+          {failing(f, value) && <FailNote lifeSafety={lifeSafety} />}
         </div>
       )
     }
@@ -732,11 +812,15 @@ function FieldInput({
     case "text":
     default: {
       const long = /note|describe|detail|comment|what/i.test(f.key + f.label)
+      // Once an answer fails, the notes box asks what's wrong; on a life-safety check it must be filled in.
+      const asks = f.key === "notes" && problem
       return (
         <div>
-          <FieldLabel htmlFor={id} help={f.help}>
-            {f.label}
-            {!f.required && <span className="font-normal text-muted-foreground"> (optional)</span>}
+          <FieldLabel htmlFor={id} help={asks ? "What you saw, where, and anything you did about it." : f.help}>
+            {asks ? "What's wrong?" : f.label}
+            {!f.required && !(asks && lifeSafety) && (
+              <span className="font-normal text-muted-foreground"> (optional)</span>
+            )}
           </FieldLabel>
           {long ? (
             <TextArea id={id} value={(value as string | undefined) ?? ""} onChange={(e) => onChange(e.target.value)} />

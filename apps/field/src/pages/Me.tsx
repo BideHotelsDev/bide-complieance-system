@@ -5,7 +5,7 @@ import { appPath } from "@/lib/base"
  */
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { api } from "@bide-comply/api-client"
-import { CalendarDays, Check, Users } from "lucide-react"
+import { AlertTriangle, CalendarDays, Check, Users } from "lucide-react"
 import * as React from "react"
 
 import { Card, SectionLabel, TabBar, Toggle } from "@/components/kit"
@@ -87,7 +87,7 @@ export function MePage() {
 
   const m = fm.data?.month
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col bg-background">
+    <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col bg-background md:max-w-[56rem]">
       <OfflineBanner />
       <header className="flex items-center gap-3.5 border-b border-divider bg-surface px-[18px] pt-5 pb-4">
         <span
@@ -101,30 +101,43 @@ export function MePage() {
           <p className="m-0 mt-0.5 text-[0.90625rem] text-muted-foreground">{fm.data?.title ?? me.data?.title}</p>
         </div>
       </header>
-      <main className="flex flex-1 flex-col gap-2.5 px-4 pt-3 pb-6">
+      <main className="flex flex-1 flex-col gap-2.5 px-4 pt-3 pb-6 md:px-6">
         <SectionLabel>This month</SectionLabel>
         <div className="grid grid-cols-3 gap-2">
           <Stat value={m ? (m.on_time == null ? "–" : `${m.on_time}%`) : "…"} label="On time" />
           <Stat value={m ? String(m.done) : "…"} label="Checks done" />
           <Stat value={m ? String(m.problems) : "…"} label="Problems found" />
         </div>
-        {fm.data && (
-          <Card className="flex items-start gap-3 px-4 py-3.5 text-[0.9375rem]">
-            <Check aria-hidden className="mt-0.5 size-5 shrink-0 text-st-green" />
+        {fm.data && fm.data.overdue_on_list > 0 ? (
+          // Their own score can read 100% (the owner answers for a check left overdue); don't let it say all is well.
+          <Card className="flex items-start gap-3 border-st-red/40 bg-st-red-bg px-4 py-3.5 text-[0.9375rem]">
+            <AlertTriangle aria-hidden className="mt-0.5 size-5 shrink-0 text-st-red" />
             <span>
-              {fm.data.streak_days > 0 ? (
-                <>
-                  <strong>
-                    {fm.data.streak_days} day{fm.data.streak_days === 1 ? "" : "s"} in a row
-                  </strong>{" "}
-                  with every check on time.
-                </>
-              ) : (
-                "Do today's checks on time to start a streak."
-              )}{" "}
-              Finding problems never costs you points.
+              <strong>
+                {fm.data.overdue_on_list} check{fm.data.overdue_on_list === 1 ? " is" : "s are"} overdue
+              </strong>{" "}
+              on your list. They're on Today, and doing them now still counts.
             </span>
           </Card>
+        ) : (
+          fm.data && (
+            <Card className="flex items-start gap-3 px-4 py-3.5 text-[0.9375rem]">
+              <Check aria-hidden className="mt-0.5 size-5 shrink-0 text-st-green" />
+              <span>
+                {fm.data.streak_days > 0 ? (
+                  <>
+                    <strong>
+                      {fm.data.streak_days} day{fm.data.streak_days === 1 ? "" : "s"} in a row
+                    </strong>{" "}
+                    with every check on time.
+                  </>
+                ) : (
+                  "Do today's checks on time to start a streak."
+                )}{" "}
+                Finding problems never costs you points.
+              </span>
+            </Card>
+          )
         )}
         {fm.data?.away && <AwayCard away={fm.data.away} />}
         {fm.data && fm.data.covering.length > 0 && (

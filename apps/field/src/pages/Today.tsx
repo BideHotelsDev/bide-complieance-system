@@ -82,7 +82,12 @@ export function TodayPage() {
             {d ? `${d.date_label} · ${toDo} to do today` : " "}
           </p>
           {/* Reporting a hazard is never more than one tap from the top, however long the list. */}
-          <div className={cn("mt-3.5 grid gap-2", me.data?.can["task.complete"] ? "grid-cols-[repeat(auto-fit,minmax(10rem,1fr))]" : "grid-cols-1")}>
+          <div
+            className={cn(
+              "mt-3.5 grid gap-2",
+              me.data?.can["task.complete"] ? "grid-cols-[repeat(auto-fit,minmax(10rem,1fr))]" : "grid-cols-1",
+            )}
+          >
             <Link
               to="/report"
               className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 text-[0.9375rem] font-semibold text-foreground no-underline"
@@ -113,14 +118,20 @@ export function TodayPage() {
           {overdue.length > 0 && (
             <>
               <SectionLabel className="text-st-red">Overdue · {overdue.length}</SectionLabel>
-              {overdue.map((c) => (
-                <TaskLink key={c.task_id} card={c} overdue />
-              ))}
+              <div className={GRID}>
+                {overdue.map((c) => (
+                  <TaskLink key={c.task_id} card={c} overdue />
+                ))}
+              </div>
             </>
           )}
           <SectionLabel>Today · {todays.length}</SectionLabel>
           {todays.length ? (
-            todays.map((c) => <TaskLink key={c.task_id} card={c} />)
+            <div className={GRID}>
+              {todays.map((c) => (
+                <TaskLink key={c.task_id} card={c} />
+              ))}
+            </div>
           ) : (
             <p className="m-0 rounded-xl border border-divider bg-surface px-4 py-4 text-[0.9375rem] text-muted-foreground">
               {overdue.length ? "Nothing else due today." : (d!.nothing_overdue ?? "Nothing due today. Thank you.")}
@@ -129,27 +140,32 @@ export function TodayPage() {
           {d!.upcoming.length > 0 && (
             <>
               <SectionLabel>Coming up</SectionLabel>
-              {d!.upcoming.map((c) => (
-                <div key={c.task_id} className="rounded-xl border border-divider bg-surface px-3.5 py-3">
-                  <div className="text-[1rem] font-semibold">{c.title}</div>
-                  <div className="text-[0.875rem] text-muted-foreground">{c.badge}</div>
-                </div>
-              ))}
+              <div className={GRID}>
+                {d!.upcoming.map((c) => (
+                  <div key={c.task_id} className="rounded-xl border border-divider bg-surface px-3.5 py-3">
+                    <div className="text-[1rem] font-semibold">{c.title}</div>
+                    <div className="text-[0.875rem] text-muted-foreground">{c.badge}</div>
+                  </div>
+                ))}
+              </div>
             </>
           )}
-          <div className="mt-1 flex items-center gap-3 rounded-xl bg-hover px-4 py-3.5 text-[0.9375rem]">
-            <ChartNoAxesColumn aria-hidden className="size-5 shrink-0" />
-            {d!.streak_weeks > 0 ? (
-              <span>
-                <strong>
-                  {d!.streak_weeks} week{d!.streak_weeks === 1 ? "" : "s"}
-                </strong>{" "}
-                of every check on time
-              </span>
-            ) : (
-              <span>Every check on time this week starts a streak.</span>
-            )}
-          </div>
+          {/* Not while checks on the list are overdue: "every check on time" would read as all being well. */}
+          {overdue.length === 0 && (
+            <div className="mt-1 flex items-center gap-3 rounded-xl bg-hover px-4 py-3.5 text-[0.9375rem]">
+              <ChartNoAxesColumn aria-hidden className="size-5 shrink-0" />
+              {d!.streak_weeks > 0 ? (
+                <span>
+                  <strong>
+                    {d!.streak_weeks} week{d!.streak_weeks === 1 ? "" : "s"}
+                  </strong>{" "}
+                  of every check on time
+                </span>
+              ) : (
+                <span>Every check on time this week starts a streak.</span>
+              )}
+            </div>
+          )}
         </>
       )}
       <InstallHint />
@@ -157,6 +173,9 @@ export function TodayPage() {
     </TabScreen>
   )
 }
+
+// One column on phones, two from md up (the page is wider there).
+const GRID = "grid gap-2.5 md:grid-cols-2"
 
 function TaskLink({ card, overdue }: { card: TaskCard; overdue?: boolean }) {
   const dueToday = card.badge === "Due today"

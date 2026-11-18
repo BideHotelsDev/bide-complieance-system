@@ -1224,11 +1224,16 @@ def me(pr: Current, conn: ConnDep) -> dict:
             )
         )
     ]
+    # The scorecard holds a check's owner to account when it's left overdue, so this person's own figures can read
+    # 100% while checks on their list sit overdue. Say so, counted as Today counts them (one per register item).
+    mine = _my_tasks_query(conn, pr, None).where(task.c.status == "overdue").subquery()
+    overdue_on_list = conn.execute(select(func.count(func.distinct(mine.c.register_item_id)))).scalar() or 0
     return {
         "name": pr.name,
         "title": p.title,
         "month": {"on_time": wk["on_time"], "done": done, "problems": problems},
         "streak_days": days,
+        "overdue_on_list": overdue_on_list,
         "trusted_until": dev.trusted_until if dev else None,
         "preferences": p.preferences or {},
         "away": {

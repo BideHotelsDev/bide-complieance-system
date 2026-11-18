@@ -4,20 +4,25 @@
  */
 import { Link } from "@tanstack/react-router"
 import { cn } from "@bide-comply/ui/lib/utils"
-import { ChevronDown, ChevronLeft, User, Clock, File, Check } from "lucide-react"
+import { ChevronDown, ChevronLeft, User, Clock, File, Check, X } from "lucide-react"
 import * as React from "react"
 
 import { OfflineBanner } from "./sync"
 
 export function Page({ children, className }: { children?: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("mx-auto flex min-h-dvh w-full max-w-[480px] flex-col bg-background", className)}>
+    <div
+      className={cn("mx-auto flex min-h-dvh w-full max-w-[480px] flex-col bg-background md:max-w-[56rem]", className)}
+    >
       {children}
     </div>
   )
 }
 
-/* A main tab: title block, content, the bottom tab bar. */
+/* Phones get the whole width; tablets and laptops (md and up) a wider column, so the app isn't a phone-sized strip
+   in the middle of the screen. Forms keep a readable width inside it (FlowScreen). Page above does this. */
+
+/* A main tab: title block, content, and the tab bar (bottom on phones, top on wider screens). */
 export function TabScreen({
   title,
   subtitle,
@@ -32,7 +37,7 @@ export function TabScreen({
   return (
     <Page>
       <OfflineBanner />
-      <header className="border-b border-divider bg-surface px-[18px] pt-5 pb-3.5">
+      <header className="border-b border-divider bg-surface px-[18px] pt-5 pb-3.5 md:px-6 md:pt-6">
         {header ?? (
           <>
             <h1 className="m-0 text-[1.5rem] leading-tight font-semibold">{title}</h1>
@@ -40,7 +45,7 @@ export function TabScreen({
           </>
         )}
       </header>
-      <main className="flex flex-1 flex-col gap-2.5 px-4 pt-4 pb-6">{children}</main>
+      <main className="flex flex-1 flex-col gap-2.5 px-4 pt-4 pb-6 md:px-6 md:pt-5">{children}</main>
       <TabBar />
     </Page>
   )
@@ -55,13 +60,17 @@ const TABS = [
 
 export function TabBar() {
   return (
-    <nav aria-label="App" className="pb-safe sticky bottom-0 z-20 grid grid-cols-4 border-t border-divider bg-surface">
+    // At the bottom on phones (thumb reach); along the top on wider screens, where a bottom bar reads as a phone app.
+    <nav
+      aria-label="App"
+      className="pb-safe sticky bottom-0 z-20 grid grid-cols-4 border-t border-divider bg-surface md:top-0 md:bottom-auto md:order-first md:flex md:justify-start md:gap-1 md:border-t-0 md:border-b md:px-4 md:pb-0"
+    >
       {TABS.map((t) => (
         <Link
           key={t.to}
           to={t.to}
           activeOptions={{ exact: true }}
-          className="flex min-h-[60px] flex-col items-center justify-center gap-1 text-[0.75rem] font-medium text-muted-foreground no-underline aria-[current=page]:font-semibold aria-[current=page]:text-foreground"
+          className="flex min-h-[60px] flex-col items-center justify-center gap-1 text-[0.75rem] font-medium text-muted-foreground no-underline aria-[current=page]:font-semibold aria-[current=page]:text-foreground md:min-h-14 md:flex-row md:gap-2 md:border-b-2 md:border-transparent md:px-4 md:text-[0.9375rem] md:hover:text-foreground md:aria-[current=page]:border-foreground"
         >
           <t.icon aria-hidden className="size-[22px]" strokeWidth={1.75} />
           {t.label}
@@ -106,10 +115,12 @@ export function FlowScreen({
         </div>
         {right}
       </header>
-      <main className="flex flex-1 flex-col gap-5 px-4 pt-4 pb-6">{children}</main>
+      <main className="flex w-full flex-1 flex-col gap-5 px-4 pt-4 pb-6 md:mx-auto md:max-w-[40rem] md:pt-6">
+        {children}
+      </main>
       {footer && (
         <footer className="pb-safe-3 sticky bottom-0 z-20 border-t border-divider bg-surface px-4 pt-3">
-          <div className="pb-3">{footer}</div>
+          <div className="pb-3 md:mx-auto md:max-w-[40rem]">{footer}</div>
         </footer>
       )}
     </Page>
@@ -172,9 +183,9 @@ export function SecondaryButton({ className, ...props }: React.ComponentProps<"b
   )
 }
 
-/* Two or more choices as big buttons (Yes / No, Pass / Fail). aria-pressed carries the state, not colour alone.
-   One selected style across the app: a strong outline on a tinted fill. An answer that fails the check
-   (tone "fail") turns red when picked, so choosing Fail never looks like the gold "go" button. */
+/* Two or more choices as big buttons (Yes / No, Pass / Fail). aria-pressed carries the state, and an icon backs up
+   the colour. Picked, an answer that passes (tone "pass") goes solid green with a tick, one that fails (tone "fail")
+   solid red with a cross, and a neutral one dark with a tick: there's no doubt from arm's length what was answered. */
 export function Choice<T extends string>({
   value,
   options,
@@ -182,7 +193,7 @@ export function Choice<T extends string>({
   labelledBy,
 }: {
   value: T | null | undefined
-  options: { value: T; label: string; tone?: "fail" }[]
+  options: { value: T; label: string; tone?: "pass" | "fail" }[]
   onChange: (v: T) => void
   labelledBy?: string
 }) {
@@ -190,6 +201,7 @@ export function Choice<T extends string>({
     <div role="group" aria-labelledby={labelledBy} className="grid grid-cols-2 gap-2">
       {options.map((o) => {
         const on = value === o.value
+        const Icon = on && o.tone === "fail" ? X : Check
         return (
           <button
             key={o.value}
@@ -197,14 +209,14 @@ export function Choice<T extends string>({
             aria-pressed={on}
             onClick={() => onChange(o.value)}
             className={cn(
-              "h-12 rounded-xl border text-[1rem] font-semibold transition-colors",
+              "inline-flex h-12 items-center justify-center gap-1.5 rounded-xl border text-[1rem] font-semibold transition-[background-color,border-color,color,transform] duration-150 active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100",
               !on && "border-border bg-surface text-foreground hover:bg-hover",
-              on &&
-                (o.tone === "fail"
-                  ? "border-st-red bg-st-red-bg text-st-red shadow-[inset_0_0_0_1px_var(--c-red)]"
-                  : "border-foreground bg-hover text-foreground shadow-[inset_0_0_0_1px_var(--c-foreground)]"),
+              on && o.tone === "fail" && "border-st-red bg-st-red text-surface",
+              on && o.tone === "pass" && "border-st-green bg-st-green text-surface",
+              on && !o.tone && "border-foreground bg-foreground text-background",
             )}
           >
+            {on && <Icon aria-hidden className="size-[1.125rem]" strokeWidth={2.75} />}
             {o.label}
           </button>
         )
