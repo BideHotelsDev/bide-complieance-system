@@ -362,6 +362,25 @@ class TestMe:
                 c.execute(delete(leave).where(leave.c.id == lid))
             pam.post("/api/me/preferences", json={"push": True, "quiet_days_off": False})
 
+    def test_me_counts_the_overdue_checks_on_the_persons_own_list(self, login):
+        # The scorecard holds the owner (often the site lead) to account for a check left overdue, so Pamela's own
+        # on-time figure can stay at 100%. Me must still say how many checks on her list are overdue.
+        pam = login(PAM, "field")
+        t = pam.get("/api/field/today").json()
+        tid = uuid.UUID((t["today"] + t["upcoming"] + t["overdue"])[0]["task_id"])
+        with engine.begin() as c:
+            before = c.execute(select(task.c.due_at, task.c.status).where(task.c.id == tid)).one()
+            c.execute(
+                update(task).where(task.c.id == tid).values(due_at=clock.now() - timedelta(days=45), status="overdue")
+            )
+        try:
+            overdue_now = len(pam.get("/api/field/today").json()["overdue"])
+            assert overdue_now >= 1
+            assert pam.get("/api/field/me").json()["overdue_on_list"] == overdue_now
+        finally:
+            with engine.begin() as c:
+                c.execute(update(task).where(task.c.id == tid).values(due_at=before.due_at, status=before.status))
+
     def test_push_key_and_subscription(self, login):
         pam = login(PAM, "field")
         assert pam.get("/api/push/key").json() == {"public_key": None}  # no VAPID keys in tests: handled by the app
